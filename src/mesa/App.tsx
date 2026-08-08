@@ -5,6 +5,7 @@ import TableSelect from './components/TableSelect'
 import MenuScreen from './components/MenuScreen'
 import CartScreen from './components/CartScreen'
 import ConfirmationScreen from './components/ConfirmationScreen'
+import { useKeepFullscreen } from './useFullscreen'
 import type { CartItem } from './types'
 import { cartItemTotal } from './types'
 
@@ -21,6 +22,8 @@ export default function App() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
+
+  useKeepFullscreen()
 
   useEffect(() => {
     if (table) localStorage.setItem(STORAGE_KEY, JSON.stringify(table))

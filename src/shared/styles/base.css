@@ -165,7 +165,7 @@ img {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  padding: var(--space-4) var(--space-5);
+  padding: max(var(--space-4), env(safe-area-inset-top)) var(--space-5) var(--space-4);
   background: linear-gradient(120deg, rgba(42, 31, 61, 0.92), rgba(21, 15, 32, 0.96));
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);

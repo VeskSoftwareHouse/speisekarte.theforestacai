@@ -7,3 +7,6 @@ dist
 *.tsbuildinfo
 .claude/settings.local.json
 brand-assets/
+
+.vercel
+.env*
