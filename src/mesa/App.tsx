@@ -2,14 +2,12 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@shared/supabaseClient'
 import type { RestaurantTable } from '@shared/types'
 import TableSelect from './components/TableSelect'
-import MenuScreen from './components/MenuScreen'
-import CartScreen from './components/CartScreen'
+import DashboardScreen from './components/DashboardScreen'
 import ConfirmationScreen from './components/ConfirmationScreen'
 import { useKeepFullscreen } from './useFullscreen'
 import type { CartItem } from './types'
-import { cartItemTotal } from './types'
 
-type View = 'menu' | 'cart' | 'confirmation'
+type View = 'dashboard' | 'confirmation'
 
 const STORAGE_KEY = 'cardapio:table'
 
@@ -18,7 +16,7 @@ export default function App() {
     const raw = localStorage.getItem(STORAGE_KEY)
     return raw ? (JSON.parse(raw) as RestaurantTable) : null
   })
-  const [view, setView] = useState<View>('menu')
+  const [view, setView] = useState<View>('dashboard')
   const [cart, setCart] = useState<CartItem[]>([])
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
@@ -31,7 +29,7 @@ export default function App() {
 
   function handleSelectTable(t: RestaurantTable) {
     setTable(t)
-    setView('menu')
+    setView('dashboard')
   }
 
   function handleChangeTable() {
@@ -100,48 +98,34 @@ export default function App() {
     return <TableSelect onSelect={handleSelectTable} />
   }
 
-  const cartCount = cart.reduce((sum, i) => sum + i.quantidade, 0)
-  const cartTotal = cart.reduce((sum, i) => sum + cartItemTotal(i), 0)
-
   if (view === 'confirmation') {
     return (
       <ConfirmationScreen
         tableNumero={table.numero}
         onNewOrder={() => {
-          setView('menu')
+          setView('dashboard')
         }}
       />
     )
   }
 
-  if (view === 'cart') {
-    return (
-      <>
-        <CartScreen
-          items={cart}
-          sending={sending}
-          onBack={() => setView('menu')}
-          onChangeQuantity={handleChangeQuantity}
-          onRemove={handleRemove}
-          onSubmit={handleSubmit}
-        />
-        {sendError && (
-          <div className="toast toast--error" role="alert">
-            {sendError}
-          </div>
-        )}
-      </>
-    )
-  }
-
   return (
-    <MenuScreen
-      table={table}
-      cartCount={cartCount}
-      cartTotal={cartTotal}
-      onAddToCart={handleAddToCart}
-      onOpenCart={() => setView('cart')}
-      onChangeTable={handleChangeTable}
-    />
+    <>
+      <DashboardScreen
+        table={table}
+        cart={cart}
+        sending={sending}
+        onAddToCart={handleAddToCart}
+        onChangeQuantity={handleChangeQuantity}
+        onRemove={handleRemove}
+        onSubmit={handleSubmit}
+        onChangeTable={handleChangeTable}
+      />
+      {sendError && (
+        <div className="toast toast--error" role="alert">
+          {sendError}
+        </div>
+      )}
+    </>
   )
 }

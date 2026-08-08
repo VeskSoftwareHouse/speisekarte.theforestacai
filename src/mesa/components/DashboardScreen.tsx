@@ -1,0 +1,187 @@
+import { useMemo, useState } from 'react'
+import { useMenu } from '@shared/hooks/useMenu'
+import type { MenuItemWithModifiers, ModifierOption, RestaurantTable } from '@shared/types'
+import { formatCHF } from '@shared/format'
+import Sidebar, { FEATURED_ID } from './Sidebar'
+import CartPanel from './CartPanel'
+import IngredientBar from './IngredientBar'
+import ItemModal from './ItemModal'
+import type { CartItem } from '../types'
+
+interface Props {
+  table: RestaurantTable
+  cart: CartItem[]
+  sending: boolean
+  onAddToCart: (item: CartItem) => void
+  onChangeQuantity: (cartId: string, delta: number) => void
+  onRemove: (cartId: string) => void
+  onSubmit: () => void
+  onChangeTable: () => void
+}
+
+const CATEGORY_ICON: Record<string, string> = {
+  'Açaí im Becher': '🥣',
+  Kombos: '🎁',
+  'Säfte — Klassiker': '🍍',
+  'Säfte — Exotisch': '🌺',
+  'Säfte — Premium': '✨',
+}
+
+export default function DashboardScreen({
+  table,
+  cart,
+  sending,
+  onAddToCart,
+  onChangeQuantity,
+  onRemove,
+  onSubmit,
+  onChangeTable,
+}: Props) {
+  const { categories, itemsByCategory, loading, error } = useMenu()
+  const [activeCategory, setActiveCategory] = useState<string>(FEATURED_ID)
+  const [selectedItem, setSelectedItem] = useState<MenuItemWithModifiers | null>(null)
+
+  const featuredItems = useMemo(
+    () => categories.flatMap((c) => (itemsByCategory[c.id] ?? []).slice(0, 2)).slice(0, 6),
+    [categories, itemsByCategory],
+  )
+
+  // O item de açaí é o único com limite de ingredientes — usamos isso para achar
+  // a categoria e montar a barra de ingredientes sem depender do nome exato.
+  const acaiItem = useMemo(
+    () => Object.values(itemsByCategory).flat().find((i) => i.max_ingredientes != null) ?? null,
+    [itemsByCategory],
+  )
+
+  const ingredientChips = useMemo(() => {
+    if (!acaiItem) return []
+    const seen = new Map<string, ModifierOption>()
+    for (const group of acaiItem.modifierGroups) {
+      if (!group.conta_para_limite) continue
+      for (const option of group.options) {
+        if (!seen.has(option.nome)) seen.set(option.nome, option)
+      }
+    }
+    return Array.from(seen.values()).slice(0, 8)
+  }, [acaiItem])
+
+  const items = activeCategory === FEATURED_ID ? featuredItems : itemsByCategory[activeCategory] ?? []
+  const activeCategoryObj = categories.find((c) => c.id === activeCategory)
+  const sectionTitle = activeCategory === FEATURED_ID ? 'Destaques' : activeCategoryObj?.nome ?? ''
+  const sectionIcon = activeCategory === FEATURED_ID ? '🔥' : CATEGORY_ICON[activeCategoryObj?.nome ?? ''] ?? '🍇'
+
+  function handleAddDirect(item: MenuItemWithModifiers) {
+    onAddToCart({
+      cartId: crypto.randomUUID(),
+      menuItem: item,
+      quantidade: 1,
+      observacoes: '',
+      selectedOptions: [],
+      unitPrice: item.preco,
+    })
+  }
+
+  function handleCardClick(item: MenuItemWithModifiers) {
+    if (item.modifierGroups.length > 0) {
+      setSelectedItem(item)
+    } else {
+      handleAddDirect(item)
+    }
+  }
+
+  return (
+    <div className="dashboard">
+      <div className="dashboard__top">
+        <Sidebar
+          categories={categories}
+          activeId={activeCategory}
+          onSelect={setActiveCategory}
+          tableNumero={table.numero}
+          onChangeTable={onChangeTable}
+        />
+
+        <main className="dashboard__main">
+          <header className="dashboard__header">
+            <div>
+              <h1>Olá! O que vai ser hoje?</h1>
+              <p>Monte do seu jeito ou escolha uma das nossas opções</p>
+            </div>
+            <div className="dashboard__notice">
+              <span aria-hidden>👨‍🍳</span>
+              Pedidos feitos aqui são enviados direto para a cozinha
+            </div>
+          </header>
+
+          {error && <p className="menu-screen__error">Erro ao carregar cardápio: {error}</p>}
+          {loading && <p className="menu-screen__status">Carregando cardápio…</p>}
+
+          {!loading && (
+            <>
+              <h2 className="dashboard__section-title">
+                <span aria-hidden>{sectionIcon}</span> {sectionTitle}
+              </h2>
+
+              <div className="menu-grid menu-grid--dashboard">
+                {items.length === 0 && <p className="menu-screen__status">Nenhum item nesta categoria.</p>}
+                {items.map((item) => (
+                  <button key={item.id} className="item-card" onClick={() => handleCardClick(item)}>
+                    <div className="item-card__photo-wrap">
+                      {item.foto_url ? (
+                        <img className="item-card__photo" src={item.foto_url} alt={item.nome} loading="lazy" />
+                      ) : (
+                        <span className="item-card__photo-fallback" aria-hidden>
+                          🍇
+                        </span>
+                      )}
+                    </div>
+                    <div className="item-card__body">
+                      <h3 className="item-card__name">{item.nome}</h3>
+                      {item.descricao && <p className="item-card__desc">{item.descricao}</p>}
+                      <div className="item-card__footer">
+                        <span className="item-card__price">{formatCHF(item.preco)}</span>
+                        <span className="item-card__add" aria-hidden>
+                          +
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {activeCategory === FEATURED_ID && categories[0] && (
+                <button className="dashboard__see-all" onClick={() => setActiveCategory(categories[0].id)}>
+                  Ver cardápio completo ⌄
+                </button>
+              )}
+            </>
+          )}
+        </main>
+
+        <CartPanel
+          items={cart}
+          sending={sending}
+          onChangeQuantity={onChangeQuantity}
+          onRemove={onRemove}
+          onSubmit={onSubmit}
+        />
+      </div>
+
+      <IngredientBar
+        active={activeCategory === acaiItem?.categoria_id}
+        ingredients={ingredientChips}
+        onJumpToAcai={() => acaiItem && setActiveCategory(acaiItem.categoria_id)}
+      />
+
+      {selectedItem && (
+        <ItemModal
+          item={selectedItem}
+          onClose={() => setSelectedItem(null)}
+          onAdd={(cartItem) => {
+            onAddToCart(cartItem)
+            setSelectedItem(null)
+          }}
+        />
+      )}
+    </div>
+  )
+}
