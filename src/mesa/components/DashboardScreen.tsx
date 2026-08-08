@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
+import { ChefHat, ChevronDown, Plus } from 'lucide-react'
 import { useMenu } from '@shared/hooks/useMenu'
 import type { MenuItemWithModifiers, RestaurantTable } from '@shared/types'
 import { formatCHF } from '@shared/format'
 import Sidebar, { FEATURED_ID } from './Sidebar'
 import CartPanel from './CartPanel'
 import ItemModal from './ItemModal'
+import { iconFor, FeaturedIcon, FallbackPhotoIcon } from '../categoryIcons'
 import type { CartItem } from '../types'
 
 interface Props {
@@ -16,14 +18,6 @@ interface Props {
   onRemove: (cartId: string) => void
   onSubmit: () => void
   onChangeTable: () => void
-}
-
-const CATEGORY_ICON: Record<string, string> = {
-  'Açaí im Becher': '🥣',
-  Kombos: '🎁',
-  'Säfte — Klassiker': '🍍',
-  'Säfte — Exotisch': '🌺',
-  'Säfte — Premium': '✨',
 }
 
 export default function DashboardScreen({
@@ -48,7 +42,7 @@ export default function DashboardScreen({
   const items = activeCategory === FEATURED_ID ? featuredItems : itemsByCategory[activeCategory] ?? []
   const activeCategoryObj = categories.find((c) => c.id === activeCategory)
   const sectionTitle = activeCategory === FEATURED_ID ? 'Destaques' : activeCategoryObj?.nome ?? ''
-  const sectionIcon = activeCategory === FEATURED_ID ? '🔥' : CATEGORY_ICON[activeCategoryObj?.nome ?? ''] ?? '🍇'
+  const SectionIcon = activeCategory === FEATURED_ID ? FeaturedIcon : iconFor(activeCategoryObj?.nome ?? '')
 
   function handleAddDirect(item: MenuItemWithModifiers) {
     onAddToCart({
@@ -87,7 +81,7 @@ export default function DashboardScreen({
               <p>Monte do seu jeito ou escolha uma das nossas opções</p>
             </div>
             <div className="dashboard__notice">
-              <span aria-hidden>👨‍🍳</span>
+              <ChefHat size={18} strokeWidth={2} aria-hidden />
               Pedidos feitos aqui são enviados direto para a cozinha
             </div>
           </header>
@@ -98,7 +92,7 @@ export default function DashboardScreen({
           {!loading && (
             <>
               <h2 className="dashboard__section-title">
-                <span aria-hidden>{sectionIcon}</span> {sectionTitle}
+                <SectionIcon size={22} strokeWidth={2} aria-hidden /> {sectionTitle}
               </h2>
 
               <div className="menu-grid menu-grid--dashboard">
@@ -109,9 +103,7 @@ export default function DashboardScreen({
                       {item.foto_url ? (
                         <img className="item-card__photo" src={item.foto_url} alt={item.nome} loading="lazy" />
                       ) : (
-                        <span className="item-card__photo-fallback" aria-hidden>
-                          🍇
-                        </span>
+                        <FallbackPhotoIcon className="item-card__photo-fallback" size={40} strokeWidth={1.5} aria-hidden />
                       )}
                     </div>
                     <div className="item-card__body">
@@ -120,7 +112,7 @@ export default function DashboardScreen({
                       <div className="item-card__footer">
                         <span className="item-card__price">{formatCHF(item.preco)}</span>
                         <span className="item-card__add" aria-hidden>
-                          +
+                          <Plus size={18} strokeWidth={2.5} />
                         </span>
                       </div>
                     </div>
@@ -130,7 +122,8 @@ export default function DashboardScreen({
 
               {activeCategory === FEATURED_ID && categories[0] && (
                 <button className="dashboard__see-all" onClick={() => setActiveCategory(categories[0].id)}>
-                  Ver cardápio completo ⌄
+                  Ver cardápio completo
+                  <ChevronDown size={18} strokeWidth={2} aria-hidden />
                 </button>
               )}
             </>

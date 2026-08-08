@@ -148,7 +148,8 @@
   transition: background 0.12s ease, color 0.12s ease;
 }
 .sidebar__item-icon {
-  font-size: 1.2rem;
+  flex: 0 0 auto;
+  opacity: 0.85;
 }
 .sidebar__item--active {
   background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary));
@@ -225,7 +226,9 @@
   margin: 0 0 var(--space-4);
 }
 .dashboard__see-all {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   margin: 0 auto var(--space-5);
   background: none;
   border: none;
@@ -267,6 +270,9 @@
   position: relative;
   width: 100%;
   height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: linear-gradient(160deg, #f1e9fb, #f7f2ea);
   overflow: hidden;
 }
@@ -276,12 +282,8 @@
   object-fit: cover;
 }
 .item-card__photo-fallback {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.75rem;
+  color: var(--color-primary);
+  opacity: 0.5;
 }
 .item-card__photo-wrap::after {
   content: '';
@@ -402,7 +404,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+}
+.cart-panel__thumb-fallback {
+  color: var(--color-primary);
+  opacity: 0.6;
 }
 .cart-panel__thumb img {
   width: 100%;
@@ -424,10 +429,12 @@
   font-size: 0.92rem;
 }
 .cart-panel__remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   color: var(--color-text-muted);
-  font-size: 0.85rem;
   padding: 2px;
   min-height: auto;
 }
@@ -496,7 +503,9 @@
   border: none;
   background: rgba(21, 15, 32, 0.55);
   color: #fff;
-  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 1;
   backdrop-filter: blur(4px);
 }
@@ -659,10 +668,10 @@
   height: 96px;
   border-radius: 50%;
   background: linear-gradient(135deg, #4ade80, var(--color-success));
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.75rem;
   box-shadow: 0 12px 28px rgba(47, 143, 82, 0.35);
   margin-bottom: var(--space-2);
 }

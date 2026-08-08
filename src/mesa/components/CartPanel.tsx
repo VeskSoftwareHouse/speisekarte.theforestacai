@@ -1,4 +1,6 @@
+import { ShoppingBag, X, Minus, Plus } from 'lucide-react'
 import { formatCHF } from '@shared/format'
+import { FallbackPhotoIcon } from '../categoryIcons'
 import type { CartItem } from '../types'
 import { cartItemTotal } from '../types'
 
@@ -17,7 +19,7 @@ export default function CartPanel({ items, sending, onChangeQuantity, onRemove, 
   return (
     <aside className="cart-panel">
       <header className="cart-panel__header">
-        <span aria-hidden>🛍️</span>
+        <ShoppingBag size={20} strokeWidth={2} aria-hidden />
         Meu pedido
         {count > 0 && <span className="cart-panel__count">{count}</span>}
       </header>
@@ -36,7 +38,7 @@ export default function CartPanel({ items, sending, onChangeQuantity, onRemove, 
                 {item.menuItem.foto_url ? (
                   <img src={item.menuItem.foto_url} alt="" />
                 ) : (
-                  <span aria-hidden>🍇</span>
+                  <FallbackPhotoIcon className="cart-panel__thumb-fallback" size={22} strokeWidth={1.5} aria-hidden />
                 )}
               </div>
               <div className="cart-panel__info">
@@ -47,7 +49,7 @@ export default function CartPanel({ items, sending, onChangeQuantity, onRemove, 
                     onClick={() => onRemove(item.cartId)}
                     aria-label="Remover item"
                   >
-                    ✕
+                    <X size={16} strokeWidth={2} />
                   </button>
                 </div>
                 {item.selectedOptions.length > 0 && (
@@ -61,7 +63,7 @@ export default function CartPanel({ items, sending, onChangeQuantity, onRemove, 
                       onClick={() => onChangeQuantity(item.cartId, -1)}
                       aria-label="Diminuir quantidade"
                     >
-                      −
+                      <Minus size={14} strokeWidth={2.5} />
                     </button>
                     <span className="stepper__value">{item.quantidade}</span>
                     <button
@@ -69,7 +71,7 @@ export default function CartPanel({ items, sending, onChangeQuantity, onRemove, 
                       onClick={() => onChangeQuantity(item.cartId, 1)}
                       aria-label="Aumentar quantidade"
                     >
-                      +
+                      <Plus size={14} strokeWidth={2.5} />
                     </button>
                   </div>
                   <span className="cart-panel__price">{formatCHF(cartItemTotal(item))}</span>

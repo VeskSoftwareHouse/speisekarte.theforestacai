@@ -42,7 +42,7 @@
         backdrop-filter: blur(2px);
       }
       a.card:active { background: #d6a93b; border-color: #d6a93b; color: #17121f; }
-      .emoji { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
+      .card-icon { display: block; margin: 0 auto 0.75rem; }
     </style>
   </head>
   <body>
@@ -51,8 +51,14 @@
       <h1>FOREST AÇAÍ — Cardápio Digital</h1>
       <p class="subtitle">Protótipo — escolha o app para abrir</p>
       <div class="links">
-        <a class="card" href="/mesa/"><span class="emoji">📱</span>App da Mesa</a>
-        <a class="card" href="/equipe/"><span class="emoji">🍇</span>App da Equipe</a>
+        <a class="card" href="/mesa/">
+          <svg class="card-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+          App da Mesa
+        </a>
+        <a class="card" href="/equipe/">
+          <svg class="card-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+          App da Equipe
+        </a>
       </div>
     </div>
   </body>

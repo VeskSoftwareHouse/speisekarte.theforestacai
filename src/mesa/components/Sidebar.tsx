@@ -1,18 +1,7 @@
 import type { Category } from '@shared/types'
+import { iconFor, FeaturedIcon } from '../categoryIcons'
 
 export const FEATURED_ID = '__destaques__'
-
-const CATEGORY_ICON: Record<string, string> = {
-  'Açaí im Becher': '🥣',
-  Kombos: '🎁',
-  'Säfte — Klassiker': '🍍',
-  'Säfte — Exotisch': '🌺',
-  'Säfte — Premium': '✨',
-}
-
-function iconFor(nome: string): string {
-  return CATEGORY_ICON[nome] ?? '🍇'
-}
 
 interface Props {
   categories: Category[]
@@ -36,19 +25,22 @@ export default function Sidebar({ categories, activeId, onSelect, tableNumero, o
           className={`sidebar__item ${activeId === FEATURED_ID ? 'sidebar__item--active' : ''}`}
           onClick={() => onSelect(FEATURED_ID)}
         >
-          <span className="sidebar__item-icon">🔥</span>
+          <FeaturedIcon className="sidebar__item-icon" size={20} strokeWidth={2} />
           Destaques
         </button>
-        {categories.map((c) => (
-          <button
-            key={c.id}
-            className={`sidebar__item ${activeId === c.id ? 'sidebar__item--active' : ''}`}
-            onClick={() => onSelect(c.id)}
-          >
-            <span className="sidebar__item-icon">{iconFor(c.nome)}</span>
-            {c.nome}
-          </button>
-        ))}
+        {categories.map((c) => {
+          const Icon = iconFor(c.nome)
+          return (
+            <button
+              key={c.id}
+              className={`sidebar__item ${activeId === c.id ? 'sidebar__item--active' : ''}`}
+              onClick={() => onSelect(c.id)}
+            >
+              <Icon className="sidebar__item-icon" size={20} strokeWidth={2} />
+              {c.nome}
+            </button>
+          )
+        })}
       </nav>
 
       <div className="sidebar__footer">

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { X, Minus, Plus } from 'lucide-react'
 import type { MenuItemWithModifiers, SelectedModifierOption } from '@shared/types'
 import { formatCHF } from '@shared/format'
 import type { CartItem } from '../types'
@@ -78,7 +79,7 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <button className="modal__close" onClick={onClose} aria-label="Fechar">
-          ✕
+          <X size={20} strokeWidth={2} />
         </button>
 
         <div className="modal__scroll">
@@ -145,7 +146,7 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
                 onClick={() => setQuantidade((q) => Math.max(1, q - 1))}
                 aria-label="Diminuir quantidade"
               >
-                −
+                <Minus size={18} strokeWidth={2.5} />
               </button>
               <span className="stepper__value">{quantidade}</span>
               <button
@@ -153,7 +154,7 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
                 onClick={() => setQuantidade((q) => q + 1)}
                 aria-label="Aumentar quantidade"
               >
-                +
+                <Plus size={18} strokeWidth={2.5} />
               </button>
             </div>
           </div>
