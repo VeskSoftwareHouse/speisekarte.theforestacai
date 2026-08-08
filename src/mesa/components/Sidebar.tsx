@@ -56,11 +56,6 @@ export default function Sidebar({ categories, activeId, onSelect, tableNumero, o
           <span>Mesa {tableNumero}</span>
           <button onClick={onChangeTable}>Trocar</button>
         </div>
-        <button className="sidebar__help">
-          <span aria-hidden>🛎️</span>
-          Precisa de ajuda?
-          <small>Chame nossa equipe</small>
-        </button>
       </div>
     </aside>
   )

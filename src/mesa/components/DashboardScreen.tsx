@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useMenu } from '@shared/hooks/useMenu'
-import type { MenuItemWithModifiers, ModifierOption, RestaurantTable } from '@shared/types'
+import type { MenuItemWithModifiers, RestaurantTable } from '@shared/types'
 import { formatCHF } from '@shared/format'
 import Sidebar, { FEATURED_ID } from './Sidebar'
 import CartPanel from './CartPanel'
-import IngredientBar from './IngredientBar'
 import ItemModal from './ItemModal'
 import type { CartItem } from '../types'
 
@@ -45,25 +44,6 @@ export default function DashboardScreen({
     () => categories.flatMap((c) => (itemsByCategory[c.id] ?? []).slice(0, 2)).slice(0, 6),
     [categories, itemsByCategory],
   )
-
-  // O item de açaí é o único com limite de ingredientes — usamos isso para achar
-  // a categoria e montar a barra de ingredientes sem depender do nome exato.
-  const acaiItem = useMemo(
-    () => Object.values(itemsByCategory).flat().find((i) => i.max_ingredientes != null) ?? null,
-    [itemsByCategory],
-  )
-
-  const ingredientChips = useMemo(() => {
-    if (!acaiItem) return []
-    const seen = new Map<string, ModifierOption>()
-    for (const group of acaiItem.modifierGroups) {
-      if (!group.conta_para_limite) continue
-      for (const option of group.options) {
-        if (!seen.has(option.nome)) seen.set(option.nome, option)
-      }
-    }
-    return Array.from(seen.values()).slice(0, 8)
-  }, [acaiItem])
 
   const items = activeCategory === FEATURED_ID ? featuredItems : itemsByCategory[activeCategory] ?? []
   const activeCategoryObj = categories.find((c) => c.id === activeCategory)
@@ -165,12 +145,6 @@ export default function DashboardScreen({
           onSubmit={onSubmit}
         />
       </div>
-
-      <IngredientBar
-        active={activeCategory === acaiItem?.categoria_id}
-        ingredients={ingredientChips}
-        onJumpToAcai={() => acaiItem && setActiveCategory(acaiItem.categoria_id)}
-      />
 
       {selectedItem && (
         <ItemModal
