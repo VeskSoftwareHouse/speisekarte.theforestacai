@@ -108,6 +108,7 @@ body {
   flex: 1;
   min-height: 0;
   display: flex;
+  justify-content: center;
   gap: var(--space-5);
   padding: var(--space-5);
   overflow-x: auto;
