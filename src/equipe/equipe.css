@@ -73,9 +73,34 @@ body {
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--color-text-muted);
+  text-align: center;
+}
+.date-strip__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.date-strip__nav {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text-muted);
+}
+.date-strip__nav:active {
+  background: var(--color-bg);
+  color: var(--color-primary);
 }
 .date-strip__days {
+  flex: 1;
+  min-width: 0;
   display: flex;
+  justify-content: center;
   gap: 6px;
   overflow-x: auto;
   padding-bottom: 2px;
