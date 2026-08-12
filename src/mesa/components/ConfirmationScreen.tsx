@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react'
+import { useLanguage } from '../i18n/LanguageContext'
 
 interface Props {
   tableNumero: string
@@ -6,17 +7,17 @@ interface Props {
 }
 
 export default function ConfirmationScreen({ tableNumero, onNewOrder }: Props) {
+  const { t } = useLanguage()
+
   return (
     <div className="confirmation-screen">
       <div className="confirmation-screen__icon">
         <Check size={44} strokeWidth={3} />
       </div>
-      <h1>Pedido enviado!</h1>
-      <p>
-        Seu pedido chegou na cozinha da <strong>Mesa {tableNumero}</strong>. Em breve nossa equipe começa o preparo.
-      </p>
+      <h1>{t('confirmationTitle')}</h1>
+      <p>{t('confirmationBody', { numero: tableNumero })}</p>
       <button className="btn btn-primary" onClick={onNewOrder}>
-        Fazer outro pedido
+        {t('newOrderButton')}
       </button>
     </div>
   )

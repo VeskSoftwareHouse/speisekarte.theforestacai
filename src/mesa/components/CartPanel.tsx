@@ -1,6 +1,7 @@
 import { ShoppingBag, X, Minus, Plus } from 'lucide-react'
 import { formatCHF } from '@shared/format'
 import { FallbackPhotoIcon } from '../categoryIcons'
+import { useLanguage } from '../i18n/LanguageContext'
 import type { CartItem } from '../types'
 import { cartItemTotal } from '../types'
 
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function CartPanel({ items, sending, onChangeQuantity, onRemove, onSubmit }: Props) {
+  const { t } = useLanguage()
   const total = items.reduce((sum, i) => sum + cartItemTotal(i), 0)
   const count = items.reduce((sum, i) => sum + i.quantidade, 0)
 
@@ -20,15 +22,15 @@ export default function CartPanel({ items, sending, onChangeQuantity, onRemove, 
     <aside className="cart-panel">
       <header className="cart-panel__header">
         <ShoppingBag size={20} strokeWidth={2} aria-hidden />
-        Meu pedido
+        {t('cartTitle')}
         {count > 0 && <span className="cart-panel__count">{count}</span>}
       </header>
 
       {items.length === 0 ? (
         <p className="cart-panel__empty">
-          Seu carrinho está vazio.
+          {t('cartEmptyLine1')}
           <br />
-          Toque em um item para adicionar.
+          {t('cartEmptyLine2')}
         </p>
       ) : (
         <ul className="cart-panel__list">
@@ -47,7 +49,7 @@ export default function CartPanel({ items, sending, onChangeQuantity, onRemove, 
                   <button
                     className="cart-panel__remove"
                     onClick={() => onRemove(item.cartId)}
-                    aria-label="Remover item"
+                    aria-label={t('removeItem')}
                   >
                     <X size={16} strokeWidth={2} />
                   </button>
@@ -55,13 +57,18 @@ export default function CartPanel({ items, sending, onChangeQuantity, onRemove, 
                 {item.selectedOptions.length > 0 && (
                   <p className="cart-panel__mods">{item.selectedOptions.map((o) => o.option_nome).join(', ')}</p>
                 )}
-                {item.observacoes && <p className="cart-panel__obs">Obs: {item.observacoes}</p>}
+                {item.observacoes && (
+                  <p className="cart-panel__obs">
+                    {t('obsPrefix')}
+                    {item.observacoes}
+                  </p>
+                )}
                 <div className="cart-panel__row">
                   <div className="stepper stepper--sm">
                     <button
                       className="stepper__btn"
                       onClick={() => onChangeQuantity(item.cartId, -1)}
-                      aria-label="Diminuir quantidade"
+                      aria-label={t('decreaseQty')}
                     >
                       <Minus size={14} strokeWidth={2.5} />
                     </button>
@@ -69,7 +76,7 @@ export default function CartPanel({ items, sending, onChangeQuantity, onRemove, 
                     <button
                       className="stepper__btn"
                       onClick={() => onChangeQuantity(item.cartId, 1)}
-                      aria-label="Aumentar quantidade"
+                      aria-label={t('increaseQty')}
                     >
                       <Plus size={14} strokeWidth={2.5} />
                     </button>
@@ -84,11 +91,11 @@ export default function CartPanel({ items, sending, onChangeQuantity, onRemove, 
 
       <footer className="cart-panel__footer">
         <div className="cart-panel__total">
-          <span>Total</span>
+          <span>{t('totalLabel')}</span>
           <strong>{formatCHF(total)}</strong>
         </div>
         <button className="btn btn-primary btn-block" disabled={items.length === 0 || sending} onClick={onSubmit}>
-          {sending ? 'Enviando…' : 'Finalizar pedido →'}
+          {sending ? t('sending') : `${t('checkoutButton')} →`}
         </button>
       </footer>
     </aside>

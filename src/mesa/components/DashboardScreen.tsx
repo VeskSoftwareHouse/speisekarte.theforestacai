@@ -7,6 +7,8 @@ import Sidebar, { FEATURED_ID } from './Sidebar'
 import CartPanel from './CartPanel'
 import ItemModal from './ItemModal'
 import { iconFor, FeaturedIcon, FallbackPhotoIcon } from '../categoryIcons'
+import { useLanguage } from '../i18n/LanguageContext'
+import { translatedDescription } from '../i18n/menuTranslations'
 import type { CartItem } from '../types'
 
 interface Props {
@@ -31,6 +33,7 @@ export default function DashboardScreen({
   onChangeTable,
 }: Props) {
   const { categories, itemsByCategory, loading, error } = useMenu()
+  const { lang, t } = useLanguage()
   const [activeCategory, setActiveCategory] = useState<string>(FEATURED_ID)
   const [selectedItem, setSelectedItem] = useState<MenuItemWithModifiers | null>(null)
 
@@ -41,7 +44,7 @@ export default function DashboardScreen({
 
   const items = activeCategory === FEATURED_ID ? featuredItems : itemsByCategory[activeCategory] ?? []
   const activeCategoryObj = categories.find((c) => c.id === activeCategory)
-  const sectionTitle = activeCategory === FEATURED_ID ? 'Destaques' : activeCategoryObj?.nome ?? ''
+  const sectionTitle = activeCategory === FEATURED_ID ? t('navFeatured') : activeCategoryObj?.nome ?? ''
   const SectionIcon = activeCategory === FEATURED_ID ? FeaturedIcon : iconFor(activeCategoryObj?.nome ?? '')
 
   function handleAddDirect(item: MenuItemWithModifiers) {
@@ -77,17 +80,22 @@ export default function DashboardScreen({
         <main className="dashboard__main">
           <header className="dashboard__header">
             <div>
-              <h1>Olá! O que vai ser hoje?</h1>
-              <p>Monte do seu jeito ou escolha uma das nossas opções</p>
+              <h1>{t('greetingTitle')}</h1>
+              <p>{t('greetingSubtitle')}</p>
             </div>
             <div className="dashboard__notice">
               <ChefHat size={18} strokeWidth={2} aria-hidden />
-              Pedidos feitos aqui são enviados direto para a cozinha
+              {t('kitchenNotice')}
             </div>
           </header>
 
-          {error && <p className="menu-screen__error">Erro ao carregar cardápio: {error}</p>}
-          {loading && <p className="menu-screen__status">Carregando cardápio…</p>}
+          {error && (
+            <p className="menu-screen__error">
+              {t('errorMenuPrefix')}
+              {error}
+            </p>
+          )}
+          {loading && <p className="menu-screen__status">{t('loadingMenu')}</p>}
 
           {!loading && (
             <>
@@ -96,33 +104,41 @@ export default function DashboardScreen({
               </h2>
 
               <div className="menu-grid menu-grid--dashboard">
-                {items.length === 0 && <p className="menu-screen__status">Nenhum item nesta categoria.</p>}
-                {items.map((item) => (
-                  <button key={item.id} className="item-card" onClick={() => handleCardClick(item)}>
-                    <div className="item-card__photo-wrap">
-                      {item.foto_url ? (
-                        <img className="item-card__photo" src={item.foto_url} alt={item.nome} loading="lazy" />
-                      ) : (
-                        <FallbackPhotoIcon className="item-card__photo-fallback" size={40} strokeWidth={1.5} aria-hidden />
-                      )}
-                    </div>
-                    <div className="item-card__body">
-                      <h3 className="item-card__name">{item.nome}</h3>
-                      {item.descricao && <p className="item-card__desc">{item.descricao}</p>}
-                      <div className="item-card__footer">
-                        <span className="item-card__price">{formatCHF(item.preco)}</span>
-                        <span className="item-card__add" aria-hidden>
-                          <Plus size={18} strokeWidth={2.5} />
-                        </span>
+                {items.length === 0 && <p className="menu-screen__status">{t('noItemsInCategory')}</p>}
+                {items.map((item) => {
+                  const desc = translatedDescription(item.id, lang, item.descricao)
+                  return (
+                    <button key={item.id} className="item-card" onClick={() => handleCardClick(item)}>
+                      <div className="item-card__photo-wrap">
+                        {item.foto_url ? (
+                          <img className="item-card__photo" src={item.foto_url} alt={item.nome} loading="lazy" />
+                        ) : (
+                          <FallbackPhotoIcon
+                            className="item-card__photo-fallback"
+                            size={40}
+                            strokeWidth={1.5}
+                            aria-hidden
+                          />
+                        )}
                       </div>
-                    </div>
-                  </button>
-                ))}
+                      <div className="item-card__body">
+                        <h3 className="item-card__name">{item.nome}</h3>
+                        {desc && <p className="item-card__desc">{desc}</p>}
+                        <div className="item-card__footer">
+                          <span className="item-card__price">{formatCHF(item.preco)}</span>
+                          <span className="item-card__add" aria-hidden>
+                            <Plus size={18} strokeWidth={2.5} />
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
 
               {activeCategory === FEATURED_ID && categories[0] && (
                 <button className="dashboard__see-all" onClick={() => setActiveCategory(categories[0].id)}>
-                  Ver cardápio completo
+                  {t('seeFullMenu')}
                   <ChevronDown size={18} strokeWidth={2} aria-hidden />
                 </button>
               )}

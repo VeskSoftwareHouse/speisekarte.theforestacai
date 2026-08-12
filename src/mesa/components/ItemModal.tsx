@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { X, Minus, Plus } from 'lucide-react'
 import type { MenuItemWithModifiers, SelectedModifierOption } from '@shared/types'
 import { formatCHF } from '@shared/format'
+import { useLanguage } from '../i18n/LanguageContext'
+import { translatedDescription } from '../i18n/menuTranslations'
 import type { CartItem } from '../types'
 
 interface Props {
@@ -11,6 +13,8 @@ interface Props {
 }
 
 export default function ItemModal({ item, onClose, onAdd }: Props) {
+  const { lang, t } = useLanguage()
+  const desc = translatedDescription(item.id, lang, item.descricao)
   const [quantidade, setQuantidade] = useState(1)
   const [observacoes, setObservacoes] = useState('')
   // groupId -> Set de optionIds selecionados
@@ -78,14 +82,14 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <button className="modal__close" onClick={onClose} aria-label="Fechar">
+        <button className="modal__close" onClick={onClose} aria-label={t('modalClose')}>
           <X size={20} strokeWidth={2} />
         </button>
 
         <div className="modal__scroll">
           {item.foto_url && <img className="modal__photo" src={item.foto_url} alt={item.nome} />}
           <h2 className="modal__title">{item.nome}</h2>
-          {item.descricao && <p className="modal__desc">{item.descricao}</p>}
+          {desc && <p className="modal__desc">{desc}</p>}
           <p className="modal__price">{formatCHF(item.preco)}</p>
 
           {item.modifierGroups.map((group) => (
@@ -93,7 +97,7 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
               <legend className="modal__group-title">
                 {group.nome}
                 <span className={`badge ${group.tipo === 'obrigatorio' ? 'badge--required' : 'badge--optional'}`}>
-                  {group.tipo === 'obrigatorio' ? 'Obrigatório' : 'Opcional'}
+                  {group.tipo === 'obrigatorio' ? t('badgeRequired') : t('badgeOptional')}
                 </span>
                 {group.conta_para_limite && item.max_ingredientes != null && (
                   <span className="badge badge--counter">
@@ -126,12 +130,12 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
 
           <div className="modal__group">
             <label className="modal__group-title" htmlFor="observacoes">
-              Alguma observação?
+              {t('observationLabel')}
             </label>
             <textarea
               id="observacoes"
               className="modal__textarea"
-              placeholder="Ex: sem cebola, ponto bem passado, alergia a amendoim…"
+              placeholder={t('observationPlaceholder')}
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
               rows={2}
@@ -139,12 +143,12 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
           </div>
 
           <div className="modal__qty">
-            <span className="modal__group-title">Quantidade</span>
+            <span className="modal__group-title">{t('quantityLabel')}</span>
             <div className="stepper">
               <button
                 className="stepper__btn"
                 onClick={() => setQuantidade((q) => Math.max(1, q - 1))}
-                aria-label="Diminuir quantidade"
+                aria-label={t('decreaseQty')}
               >
                 <Minus size={18} strokeWidth={2.5} />
               </button>
@@ -152,7 +156,7 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
               <button
                 className="stepper__btn"
                 onClick={() => setQuantidade((q) => q + 1)}
-                aria-label="Aumentar quantidade"
+                aria-label={t('increaseQty')}
               >
                 <Plus size={18} strokeWidth={2.5} />
               </button>
@@ -163,11 +167,13 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
         <div className="modal__footer">
           {!canAdd && (
             <p className="modal__warning">
-              Selecione uma opção em: {missingRequired.map((g) => g.nome).join(', ')}
+              {t('selectOptionIn')}
+              {missingRequired.map((g) => g.nome).join(', ')}
             </p>
           )}
           <button className="btn btn-primary btn-block" disabled={!canAdd} onClick={handleAdd}>
-            Adicionar — {formatCHF(lineTotal)}
+            {t('addToCartPrefix')}
+            {formatCHF(lineTotal)}
           </button>
         </div>
       </div>

@@ -5,6 +5,7 @@ import TableSelect from './components/TableSelect'
 import DashboardScreen from './components/DashboardScreen'
 import ConfirmationScreen from './components/ConfirmationScreen'
 import { useKeepFullscreen } from './useFullscreen'
+import { useLanguage } from './i18n/LanguageContext'
 import type { CartItem } from './types'
 
 type View = 'dashboard' | 'confirmation'
@@ -20,6 +21,7 @@ export default function App() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
+  const { t } = useLanguage()
 
   useKeepFullscreen()
 
@@ -66,7 +68,7 @@ export default function App() {
       .single()
 
     if (orderError || !order) {
-      setSendError(orderError?.message ?? 'Não foi possível criar o pedido.')
+      setSendError(orderError?.message ?? t('genericOrderError'))
       setSending(false)
       return
     }
