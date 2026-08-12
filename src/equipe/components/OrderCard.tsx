@@ -34,8 +34,8 @@ export default function OrderCard({ order, isNew, now, onAdvance, onSeen }: Prop
       {isNew && <span className="order-card__new-badge">NOVO</span>}
 
       <header className="order-card__header">
-        <span className="order-card__table" title={`Mesa ${order.table?.numero ?? '?'}`}>
-          {order.table?.numero ?? '?'}
+        <span className="order-card__table">
+          Mesa {order.table?.numero ?? '?'}
         </span>
         <div className="order-card__meta">
           <span className={`order-card__time ${isWaitingLong ? 'order-card__time--warning' : ''}`}>
