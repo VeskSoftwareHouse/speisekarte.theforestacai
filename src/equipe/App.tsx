@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import type { OrderStatus, OrderWithItems } from '@shared/types'
 import { useOrders } from './hooks/useOrders'
 import OrderCard from './components/OrderCard'
+import DateStrip from './components/DateStrip'
+import { isoToDateKey, toDateKey } from './dateUtils'
 
 const COLUMNS: { status: OrderStatus; label: string }[] = [
   { status: 'recebido', label: 'Recebido' },
@@ -13,11 +15,26 @@ export default function App() {
   const { orders, loading, error, newOrderIds, markSeen, advanceStatus } = useOrders()
   const [now, setNow] = useState(new Date())
   const [showHistory, setShowHistory] = useState(false)
+  const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(new Date()))
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 15000)
     return () => clearInterval(id)
   }, [])
+
+  const orderCountByDate = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const order of orders) {
+      const key = isoToDateKey(order.criado_em)
+      map[key] = (map[key] ?? 0) + 1
+    }
+    return map
+  }, [orders])
+
+  const ordersForDay = useMemo(
+    () => orders.filter((o) => isoToDateKey(o.criado_em) === selectedDateKey),
+    [orders, selectedDateKey],
+  )
 
   const byStatus = useMemo(() => {
     const map: Record<OrderStatus, OrderWithItems[]> = {
@@ -26,11 +43,11 @@ export default function App() {
       pronto: [],
       entregue: [],
     }
-    for (const order of orders) map[order.status].push(order)
+    for (const order of ordersForDay) map[order.status].push(order)
     return map
-  }, [orders])
+  }, [ordersForDay])
 
-  const activeCount = orders.length - byStatus.entregue.length
+  const activeCount = ordersForDay.length - byStatus.entregue.length
 
   return (
     <div className="equipe-app">
@@ -51,12 +68,14 @@ export default function App() {
         />
       </header>
 
+      <DateStrip selectedDateKey={selectedDateKey} onSelect={setSelectedDateKey} orderCountByDate={orderCountByDate} />
+
       {error && <p className="equipe-app__error">Erro ao carregar pedidos: {error}</p>}
       {loading && <p className="equipe-app__status">Carregando pedidos…</p>}
 
       {!loading && showHistory && (
         <main className="history-list">
-          {byStatus.entregue.length === 0 && <p className="equipe-app__status">Nenhum pedido entregue ainda.</p>}
+          {byStatus.entregue.length === 0 && <p className="equipe-app__status">Nenhum pedido entregue neste dia.</p>}
           {byStatus.entregue.map((order) => (
             <OrderCard
               key={order.id}

@@ -8,6 +8,10 @@ import { resolve } from 'path'
 //   /equipe/     -> App da Equipe (staff)
 export default defineConfig({
   plugins: [react()],
+  server: {
+    port: Number(process.env.PORT) || 5173,
+    strictPort: false,
+  },
   resolve: {
     alias: {
       '@shared': resolve(__dirname, 'src/shared'),
