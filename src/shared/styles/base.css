@@ -62,11 +62,7 @@ body,
 body {
   margin: 0;
   font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
-  background:
-    radial-gradient(900px 500px at 100% -10%, rgba(108, 60, 230, 0.07), transparent 60%),
-    radial-gradient(700px 420px at -10% 20%, rgba(214, 169, 59, 0.08), transparent 55%),
-    var(--color-bg);
-  background-attachment: fixed;
+  background: var(--color-bg);
   color: var(--color-text);
   font-size: var(--font-size-base);
   line-height: 1.4;
@@ -132,19 +128,16 @@ img {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary) 55%, var(--color-primary-dark));
+  background: var(--color-primary);
   color: var(--color-primary-contrast);
-  box-shadow: var(--shadow-glow-primary);
 }
 .btn-primary:active {
-  filter: brightness(0.94);
-  box-shadow: 0 6px 16px rgba(108, 60, 230, 0.35);
+  background: var(--color-primary-dark);
 }
 
 .btn-gold {
-  background: linear-gradient(135deg, var(--color-gold-light), var(--color-gold) 70%);
+  background: var(--color-gold);
   color: var(--color-ink);
-  box-shadow: var(--shadow-glow-gold);
 }
 
 .btn-outline {
@@ -166,18 +159,14 @@ img {
   align-items: center;
   gap: var(--space-4);
   padding: max(var(--space-4), env(safe-area-inset-top)) var(--space-5) var(--space-4);
-  background: linear-gradient(120deg, rgba(42, 31, 61, 0.92), rgba(21, 15, 32, 0.96));
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: var(--color-ink);
   color: #fff;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 .brand-banner__logo {
   height: 52px;
   width: 52px;
   object-fit: cover;
   border-radius: var(--radius-sm);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
   flex: 0 0 auto;
 }
 .brand-banner__info {
