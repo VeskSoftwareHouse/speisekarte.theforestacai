@@ -41,7 +41,9 @@ export default function DateStrip({ selectedDateKey, onSelect, orderCountByDate 
             >
               <span className="date-strip__weekday">{weekdayLabel(d)}</span>
               <span className="date-strip__number">{d.getDate()}</span>
-              {count > 0 && <span className="date-strip__badge">{count}</span>}
+              <span className="date-strip__dot-slot">
+                {count > 0 && <span className="date-strip__badge" title={`${count} pedido(s)`} />}
+              </span>
             </button>
           )
         })}

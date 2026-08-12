@@ -15,15 +15,38 @@ body {
 
 /* Versão mais discreta do banner de marca, só nesta tela */
 .equipe-app .brand-banner {
+  background: var(--color-ink);
+  backdrop-filter: none;
   padding-top: max(var(--space-3), env(safe-area-inset-top));
   padding-bottom: var(--space-3);
   box-shadow: none;
 }
+.equipe-app .brand-banner__logo {
+  height: 36px;
+  width: 36px;
+  box-shadow: none;
+}
+.equipe-app .brand-banner__eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: #9c8fb8;
+  font-weight: 600;
+}
+.equipe-app .brand-banner__value {
+  font-size: 1.25rem;
+}
 .equipe-app .brand-banner__value small {
   background: none;
-  color: #c9bfe0;
+  color: #9c8fb8;
   font-weight: 600;
   padding: 0;
+}
+.equipe-app .btn-outline--dark {
+  background: none;
+  border-color: rgba(255, 255, 255, 0.14);
+}
+.equipe-app .btn-outline--dark:active {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .equipe-app__status {
@@ -58,7 +81,6 @@ body {
   padding-bottom: 2px;
 }
 .date-strip__day {
-  position: relative;
   flex: 0 0 auto;
   display: flex;
   flex-direction: column;
@@ -67,7 +89,7 @@ body {
   width: 46px;
   padding: var(--space-2) 0;
   border-radius: var(--radius-md);
-  border: none;
+  border: 1.5px solid transparent;
   background: none;
   color: var(--color-text);
 }
@@ -81,33 +103,27 @@ body {
   font-size: 0.98rem;
   font-weight: 700;
 }
-.date-strip__day--today .date-strip__number::after {
-  content: '';
-  display: block;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  margin: 3px auto 0;
+.date-strip__dot-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 6px;
+}
+.date-strip__day--today {
+  border-color: var(--color-primary);
 }
 .date-strip__day--selected {
   background: var(--color-primary);
+  border-color: transparent;
 }
 .date-strip__day--selected .date-strip__weekday,
 .date-strip__day--selected .date-strip__number {
   color: #fff;
 }
-.date-strip__day--selected .date-strip__number::after {
-  display: none;
-}
 .date-strip__badge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  min-width: 6px;
-  height: 6px;
-  width: 6px;
-  padding: 0;
+  display: block;
+  width: 5px;
+  height: 5px;
   border-radius: 999px;
   background: var(--color-gold);
 }
