@@ -246,12 +246,17 @@ body {
   min-height: 0;
   overflow-y: auto;
   padding: var(--space-5);
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-start;
   gap: var(--space-4);
-  align-content: start;
-  max-width: 1400px;
-  margin: 0 auto;
+}
+.history-list .order-card {
+  flex: 0 1 340px;
+}
+.history-list .equipe-app__status {
+  flex-basis: 100%;
 }
 
 /* ===== Card de pedido ===== */
