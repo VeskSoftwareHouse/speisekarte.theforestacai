@@ -3,7 +3,7 @@ html, body, #root {
 }
 
 body {
-  background: #f2eef8;
+  background: #f7f7f9;
   user-select: text;
 }
 
@@ -11,6 +11,19 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
+}
+
+/* Versão mais discreta do banner de marca, só nesta tela */
+.equipe-app .brand-banner {
+  padding-top: max(var(--space-3), env(safe-area-inset-top));
+  padding-bottom: var(--space-3);
+  box-shadow: none;
+}
+.equipe-app .brand-banner__value small {
+  background: none;
+  color: #c9bfe0;
+  font-weight: 600;
+  padding: 0;
 }
 
 .equipe-app__status {
@@ -34,13 +47,13 @@ body {
 }
 .date-strip__month {
   margin: 0 0 var(--space-2);
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--color-text-muted);
 }
 .date-strip__days {
   display: flex;
-  gap: var(--space-2);
+  gap: 6px;
   overflow-x: auto;
   padding-bottom: 2px;
 }
@@ -50,57 +63,56 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  width: 52px;
+  gap: 3px;
+  width: 46px;
   padding: var(--space-2) 0;
   border-radius: var(--radius-md);
-  border: 1.5px solid transparent;
-  background: var(--color-bg);
+  border: none;
+  background: none;
   color: var(--color-text);
 }
 .date-strip__weekday {
-  font-size: 0.68rem;
-  font-weight: 700;
+  font-size: 0.65rem;
+  font-weight: 600;
   text-transform: uppercase;
   color: var(--color-text-muted);
 }
 .date-strip__number {
-  font-size: 1.05rem;
-  font-weight: 800;
+  font-size: 0.98rem;
+  font-weight: 700;
 }
-.date-strip__day--today {
-  border-color: var(--color-primary);
-}
-.date-strip__day--today .date-strip__weekday {
-  color: var(--color-primary);
+.date-strip__day--today .date-strip__number::after {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  margin: 3px auto 0;
 }
 .date-strip__day--selected {
-  background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary));
-  box-shadow: var(--shadow-glow-primary);
+  background: var(--color-primary);
 }
 .date-strip__day--selected .date-strip__weekday,
 .date-strip__day--selected .date-strip__number {
   color: #fff;
 }
+.date-strip__day--selected .date-strip__number::after {
+  display: none;
+}
 .date-strip__badge {
   position: absolute;
   top: 2px;
-  right: 4px;
-  min-width: 14px;
-  height: 14px;
-  padding: 0 3px;
+  right: 2px;
+  min-width: 6px;
+  height: 6px;
+  width: 6px;
+  padding: 0;
   border-radius: 999px;
   background: var(--color-gold);
-  color: var(--color-ink);
-  font-size: 0.6rem;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 .date-strip__day--selected .date-strip__badge {
   background: #fff;
-  color: var(--color-primary-dark);
 }
 
 /* ===== Kanban ===== */
@@ -117,49 +129,58 @@ body {
 .kanban-column {
   flex: 1 1 320px;
   min-width: 300px;
-  max-width: 460px;
+  max-width: 440px;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
   min-height: 0;
 }
 
 .kanban-column__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--space-2);
   padding: var(--space-4) var(--space-5);
-  color: #fff;
-  font-family: 'Poppins', sans-serif;
+  border-bottom: 1px solid var(--color-border);
+}
+.kanban-column__header::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
 }
 .kanban-column__header h2 {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text);
 }
-.kanban-column__header--recebido {
-  background: linear-gradient(120deg, var(--color-primary-light), var(--color-primary));
+.kanban-column__header--recebido::before {
+  background: var(--color-primary);
 }
-.kanban-column__header--em_preparo {
-  background: linear-gradient(120deg, var(--color-gold-light), var(--color-gold));
-  color: var(--color-ink);
+.kanban-column__header--em_preparo::before {
+  background: var(--color-gold);
 }
-.kanban-column__header--pronto {
-  background: linear-gradient(120deg, #4ade80, var(--color-success));
+.kanban-column__header--pronto::before {
+  background: var(--color-success);
 }
 .kanban-column__count {
-  background: rgba(255, 255, 255, 0.3);
+  margin-left: auto;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
   border-radius: 999px;
-  min-width: 32px;
-  height: 32px;
+  min-width: 26px;
+  height: 26px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0 var(--space-2);
-  font-weight: 800;
+  font-weight: 700;
+  font-size: 0.85rem;
 }
 
 .kanban-column__body {
@@ -169,13 +190,13 @@ body {
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 .kanban-column__empty {
   text-align: center;
   color: var(--color-text-muted);
   padding: var(--space-6) 0;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 /* ===== Histórico (entregues) ===== */
@@ -185,9 +206,11 @@ body {
   overflow-y: auto;
   padding: var(--space-5);
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-4);
   align-content: start;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 /* ===== Card de pedido ===== */
@@ -195,39 +218,35 @@ body {
   position: relative;
   flex-shrink: 0;
   background: var(--color-surface);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
 }
 
 .order-card--new {
-  animation: pulse-border 1.4s ease-in-out infinite;
-}
-@keyframes pulse-border {
-  0%, 100% {
-    box-shadow: var(--shadow-sm), 0 0 0 0 rgba(108, 60, 230, 0.4);
-  }
-  50% {
-    box-shadow: var(--shadow-sm), 0 0 0 8px rgba(108, 60, 230, 0);
-  }
+  border-color: var(--color-primary);
 }
 
 .order-card__new-badge {
   position: absolute;
   top: var(--space-3);
   right: var(--space-3);
-  background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary));
-  color: #fff;
-  font-size: 0.72rem;
+  color: var(--color-primary);
+  font-size: 0.68rem;
   font-weight: 800;
   letter-spacing: 0.06em;
-  padding: 4px 11px;
-  border-radius: 999px;
   z-index: 1;
-  box-shadow: var(--shadow-glow-primary);
+}
+.order-card__new-badge::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  margin-right: 5px;
 }
 
 .order-card__header {
@@ -237,17 +256,17 @@ body {
   padding: var(--space-4) var(--space-4) var(--space-3);
 }
 .order-card__table {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, #efe7fb, #e4d6fa);
-  color: var(--color-primary-dark);
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: 'Poppins', sans-serif;
-  font-size: 1.3rem;
-  font-weight: 800;
+  font-size: 1.05rem;
+  font-weight: 700;
   flex: 0 0 auto;
 }
 .order-card__meta {
@@ -257,7 +276,7 @@ body {
 }
 .order-card__time {
   color: var(--color-text-muted);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
 }
 .order-card__time--warning {
@@ -265,15 +284,15 @@ body {
 }
 
 .status-pill {
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 3px 11px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 10px;
   border-radius: 999px;
   white-space: nowrap;
   width: fit-content;
 }
 .status-pill--entregue {
-  background: #ecebe8;
+  background: var(--color-bg);
   color: var(--color-text-muted);
 }
 
@@ -289,10 +308,10 @@ body {
 .order-card__item-row {
   display: flex;
   gap: var(--space-2);
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 .order-card__item-qty {
-  font-weight: 800;
+  font-weight: 700;
   color: var(--color-primary);
   min-width: 2ch;
 }
@@ -303,7 +322,7 @@ body {
 .order-card__item-obs {
   margin: 1px 0 0 2.4ch;
   color: var(--color-text-muted);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
 }
 .order-card__item-obs {
   color: #a67c1f;
@@ -313,15 +332,22 @@ body {
 .order-card__footer {
   padding: var(--space-3) var(--space-4) var(--space-4);
   margin-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-3);
 }
 .order-card__summary {
   display: flex;
   justify-content: space-between;
   color: var(--color-text-muted);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   margin-bottom: var(--space-3);
 }
 .order-card__advance {
-  min-height: 52px;
-  font-size: 1rem;
+  min-height: 46px;
+  font-size: 0.92rem;
+  background: var(--color-primary);
+  box-shadow: none;
+}
+.order-card__advance:active {
+  background: var(--color-primary-dark);
 }
