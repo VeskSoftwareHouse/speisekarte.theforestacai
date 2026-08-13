@@ -19,10 +19,13 @@ export default function Sidebar({ categories, activeId, onSelect, tableNumero, o
   return (
     <aside className="sidebar">
       <div className="sidebar__logo">
-        <img src="/brand/logo.png" alt="Forest Açaí" className="sidebar__logo-img" />
-        <p className="sidebar__logo-name">FOREST AÇAÍ</p>
+        <div className="sidebar__logo-ring">
+          <img src="/brand/logo.png" alt="Forest Açaí" className="sidebar__logo-img" />
+        </div>
+        {/* <p className="sidebar__logo-name">THE FOREST AÇAÍ</p> */}
         <p className="sidebar__logo-tag">{t('sidebarTagline')}</p>
       </div>
+      <div className="sidebar__divider" />
 
       <nav className="sidebar__nav">
         <button
