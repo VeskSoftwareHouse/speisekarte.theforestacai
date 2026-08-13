@@ -1,6 +1,7 @@
 import type { Category } from '@shared/types'
 import { iconFor, FeaturedIcon } from '../categoryIcons'
 import { useLanguage } from '../i18n/LanguageContext'
+import { translateLabel } from '../i18n/labelTranslations'
 import LanguageSelector from './LanguageSelector'
 
 export const FEATURED_ID = '__destaques__'
@@ -14,7 +15,7 @@ interface Props {
 }
 
 export default function Sidebar({ categories, activeId, onSelect, tableNumero, onChangeTable }: Props) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
 
   return (
     <aside className="sidebar">
@@ -41,7 +42,7 @@ export default function Sidebar({ categories, activeId, onSelect, tableNumero, o
               onClick={() => onSelect(c.id)}
             >
               <Icon className="sidebar__item-icon" size={20} strokeWidth={2} />
-              {c.nome}
+              {translateLabel(c.nome, lang)}
             </button>
           )
         })}

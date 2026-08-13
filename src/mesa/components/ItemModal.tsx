@@ -4,6 +4,7 @@ import type { MenuItemWithModifiers, SelectedModifierOption } from '@shared/type
 import { formatCHF } from '@shared/format'
 import { useLanguage } from '../i18n/LanguageContext'
 import { translatedDescription } from '../i18n/menuTranslations'
+import { translateLabel } from '../i18n/labelTranslations'
 import type { CartItem } from '../types'
 
 interface Props {
@@ -95,7 +96,7 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
           {item.modifierGroups.map((group) => (
             <fieldset key={group.id} className="modal__group">
               <legend className="modal__group-title">
-                {group.nome}
+                {translateLabel(group.nome, lang)}
                 <span className={`badge ${group.tipo === 'obrigatorio' ? 'badge--required' : 'badge--optional'}`}>
                   {group.tipo === 'obrigatorio' ? t('badgeRequired') : t('badgeOptional')}
                 </span>
@@ -117,7 +118,7 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
                       disabled={disabledByLimit}
                       onClick={() => toggleOption(group.id, option.id, group.selecao, group.conta_para_limite)}
                     >
-                      {option.nome}
+                      {translateLabel(option.nome, lang)}
                       {option.preco_adicional > 0 && (
                         <span className="option-pill__price">+{formatCHF(option.preco_adicional)}</span>
                       )}
@@ -168,7 +169,7 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
           {!canAdd && (
             <p className="modal__warning">
               {t('selectOptionIn')}
-              {missingRequired.map((g) => g.nome).join(', ')}
+              {missingRequired.map((g) => translateLabel(g.nome, lang)).join(', ')}
             </p>
           )}
           <button className="btn btn-primary btn-block" disabled={!canAdd} onClick={handleAdd}>

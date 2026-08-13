@@ -9,6 +9,7 @@ import ItemModal from './ItemModal'
 import { iconFor, FeaturedIcon, FallbackPhotoIcon } from '../categoryIcons'
 import { useLanguage } from '../i18n/LanguageContext'
 import { translatedDescription } from '../i18n/menuTranslations'
+import { translateLabel } from '../i18n/labelTranslations'
 import type { CartItem } from '../types'
 
 interface Props {
@@ -44,7 +45,8 @@ export default function DashboardScreen({
 
   const items = activeCategory === FEATURED_ID ? featuredItems : itemsByCategory[activeCategory] ?? []
   const activeCategoryObj = categories.find((c) => c.id === activeCategory)
-  const sectionTitle = activeCategory === FEATURED_ID ? t('navFeatured') : activeCategoryObj?.nome ?? ''
+  const sectionTitle =
+    activeCategory === FEATURED_ID ? t('navFeatured') : translateLabel(activeCategoryObj?.nome ?? '', lang)
   const SectionIcon = activeCategory === FEATURED_ID ? FeaturedIcon : iconFor(activeCategoryObj?.nome ?? '')
 
   function handleAddDirect(item: MenuItemWithModifiers) {

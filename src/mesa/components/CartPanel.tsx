@@ -2,6 +2,7 @@ import { ShoppingBag, X, Minus, Plus } from 'lucide-react'
 import { formatCHF } from '@shared/format'
 import { FallbackPhotoIcon } from '../categoryIcons'
 import { useLanguage } from '../i18n/LanguageContext'
+import { translateLabel } from '../i18n/labelTranslations'
 import type { CartItem } from '../types'
 import { cartItemTotal } from '../types'
 
@@ -14,7 +15,7 @@ interface Props {
 }
 
 export default function CartPanel({ items, sending, onChangeQuantity, onRemove, onSubmit }: Props) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const total = items.reduce((sum, i) => sum + cartItemTotal(i), 0)
   const count = items.reduce((sum, i) => sum + i.quantidade, 0)
 
@@ -55,7 +56,9 @@ export default function CartPanel({ items, sending, onChangeQuantity, onRemove, 
                   </button>
                 </div>
                 {item.selectedOptions.length > 0 && (
-                  <p className="cart-panel__mods">{item.selectedOptions.map((o) => o.option_nome).join(', ')}</p>
+                  <p className="cart-panel__mods">
+                    {item.selectedOptions.map((o) => translateLabel(o.option_nome, lang)).join(', ')}
+                  </p>
                 )}
                 {item.observacoes && (
                   <p className="cart-panel__obs">
