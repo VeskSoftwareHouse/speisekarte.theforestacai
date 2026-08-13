@@ -27,11 +27,13 @@ export default function LoginScreen({ onSignIn }: Props) {
   return (
     <main className="login-screen">
       <form className="login-card" onSubmit={handleSubmit}>
-        <div className="login-card__icon">
-          <Lock size={24} strokeWidth={2} aria-hidden />
+        <div className="login-card__intro">
+          <div className="login-card__icon">
+            <Lock size={22} strokeWidth={1.75} aria-hidden />
+          </div>
+          <h2>Acesso ao cardápio</h2>
+          <p className="login-card__hint">Entre com seu usuário da equipe para gerenciar o cardápio.</p>
         </div>
-        <h2>Acesso ao cardápio</h2>
-        <p className="login-card__hint">Entre com seu usuário da equipe para gerenciar o cardápio.</p>
 
         <label className="admin-form__field">
           <span>Email</span>
