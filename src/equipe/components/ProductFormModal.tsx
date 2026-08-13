@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { X, ImagePlus, Loader2 } from 'lucide-react'
 import type { Category, MenuItem } from '@shared/types'
+import CurrencyInput from '@shared/components/CurrencyInput'
 import type { ProductInput } from '../hooks/useMenuAdmin'
 
 interface Props {
@@ -150,14 +151,7 @@ export default function ProductFormModal({
           <div className="admin-form__row">
             <label className="admin-form__field">
               <span>Preço (CHF)</span>
-              <input
-                type="number"
-                step="0.05"
-                min={0}
-                value={preco}
-                onChange={(e) => setPreco(Number(e.target.value))}
-                required
-              />
+              <CurrencyInput value={preco} onChange={setPreco} required />
             </label>
             <label className="admin-form__field admin-form__field--sm">
               <span>Ordem</span>
