@@ -147,10 +147,16 @@ drop policy if exists "public read categories"          on categories;
 drop policy if exists "public insert categories"        on categories;
 drop policy if exists "public update categories"        on categories;
 drop policy if exists "public delete categories"        on categories;
+drop policy if exists "authenticated insert categories" on categories;
+drop policy if exists "authenticated update categories" on categories;
+drop policy if exists "authenticated delete categories" on categories;
 drop policy if exists "public read menu_items"          on menu_items;
 drop policy if exists "public insert menu_items"        on menu_items;
 drop policy if exists "public update menu_items"        on menu_items;
 drop policy if exists "public delete menu_items"        on menu_items;
+drop policy if exists "authenticated insert menu_items" on menu_items;
+drop policy if exists "authenticated update menu_items" on menu_items;
+drop policy if exists "authenticated delete menu_items" on menu_items;
 drop policy if exists "public read modifiers"           on modifiers;
 drop policy if exists "public read modifier_options"    on modifier_options;
 drop policy if exists "public read menu_item_modifiers" on menu_item_modifiers;
@@ -169,15 +175,15 @@ create policy "public read modifier_options"    on modifier_options    for selec
 create policy "public read menu_item_modifiers" on menu_item_modifiers for select using (true);
 create policy "public read tables"              on tables              for select using (true);
 
--- gestão do cardápio pelo Painel da Equipe (sem autenticação nesta fase —
--- ver nota de segurança no README sobre o alcance disso)
-create policy "public insert categories" on categories for insert with check (true);
-create policy "public update categories" on categories for update using (true) with check (true);
-create policy "public delete categories" on categories for delete using (true);
+-- gestão do cardápio pelo Painel da Equipe: só usuários autenticados
+-- (login da equipe, ver src/equipe/hooks/useAuth.ts) podem escrever.
+create policy "authenticated insert categories" on categories for insert with check (auth.uid() is not null);
+create policy "authenticated update categories" on categories for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete categories" on categories for delete using (auth.uid() is not null);
 
-create policy "public insert menu_items" on menu_items for insert with check (true);
-create policy "public update menu_items" on menu_items for update using (true) with check (true);
-create policy "public delete menu_items" on menu_items for delete using (true);
+create policy "authenticated insert menu_items" on menu_items for insert with check (auth.uid() is not null);
+create policy "authenticated update menu_items" on menu_items for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete menu_items" on menu_items for delete using (auth.uid() is not null);
 
 -- pedidos: leitura pública (painel da equipe), criação pública (app da mesa),
 -- atualização pública (equipe avança status)
@@ -219,12 +225,17 @@ insert into storage.buckets (id, name, public)
 values ('menu-images', 'menu-images', true)
 on conflict (id) do nothing;
 
-drop policy if exists "public read menu-images"   on storage.objects;
-drop policy if exists "public upload menu-images" on storage.objects;
-drop policy if exists "public update menu-images" on storage.objects;
-drop policy if exists "public delete menu-images" on storage.objects;
+drop policy if exists "public read menu-images"          on storage.objects;
+drop policy if exists "public upload menu-images"        on storage.objects;
+drop policy if exists "public update menu-images"        on storage.objects;
+drop policy if exists "public delete menu-images"        on storage.objects;
+drop policy if exists "authenticated upload menu-images" on storage.objects;
+drop policy if exists "authenticated update menu-images" on storage.objects;
+drop policy if exists "authenticated delete menu-images" on storage.objects;
 
-create policy "public read menu-images"   on storage.objects for select using (bucket_id = 'menu-images');
-create policy "public upload menu-images" on storage.objects for insert with check (bucket_id = 'menu-images');
-create policy "public update menu-images" on storage.objects for update using (bucket_id = 'menu-images') with check (bucket_id = 'menu-images');
-create policy "public delete menu-images" on storage.objects for delete using (bucket_id = 'menu-images');
+-- leitura pública (o cardápio do App da Mesa precisa exibir as fotos),
+-- escrita só para usuários autenticados (equipe logada)
+create policy "public read menu-images"          on storage.objects for select using (bucket_id = 'menu-images');
+create policy "authenticated upload menu-images" on storage.objects for insert with check (bucket_id = 'menu-images' and auth.uid() is not null);
+create policy "authenticated update menu-images" on storage.objects for update using (bucket_id = 'menu-images' and auth.uid() is not null) with check (bucket_id = 'menu-images' and auth.uid() is not null);
+create policy "authenticated delete menu-images" on storage.objects for delete using (bucket_id = 'menu-images' and auth.uid() is not null);
