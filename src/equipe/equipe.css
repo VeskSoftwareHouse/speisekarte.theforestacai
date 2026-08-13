@@ -327,7 +327,7 @@ body {
   align-items: center;
   justify-content: center;
   white-space: nowrap;
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display);
   font-size: 0.9rem;
   font-weight: 700;
   flex: 0 0 auto;
@@ -417,14 +417,8 @@ body {
 
 /* =====================================================================
    Gestão de cardápio — elegante e minimalista
-   Fraunces (display, títulos) + Inter (interface, corpo)
+   Fontes vêm dos tokens globais --font-display / --font-ui (base.css)
    ===================================================================== */
-.menu-manager,
-.login-screen {
-  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
-  --font-ui: 'Inter', 'Segoe UI', system-ui, sans-serif;
-}
-
 .menu-manager {
   flex: 1;
   min-height: 0;
@@ -506,8 +500,7 @@ body {
   padding: var(--space-6) var(--space-5);
   text-align: center;
   color: var(--color-text-muted);
-  font-family: var(--font-display);
-  font-style: italic;
+  font-family: var(--font-ui);
   font-size: 0.95rem;
 }
 
@@ -675,8 +668,7 @@ body {
 }
 .admin-product-row__desc {
   margin: 3px 0 0;
-  font-family: var(--font-display);
-  font-style: italic;
+  font-family: var(--font-ui);
   font-size: 0.88rem;
   color: var(--color-text-muted);
   overflow: hidden;
@@ -685,8 +677,8 @@ body {
   max-width: 420px;
 }
 .admin-product-row__price {
-  font-family: var(--font-display);
-  font-weight: 600;
+  font-family: var(--font-ui);
+  font-weight: 700;
   font-size: 1.05rem;
   color: var(--color-primary-dark);
   white-space: nowrap;
