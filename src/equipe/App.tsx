@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
+import { LogOut, UtensilsCrossed } from 'lucide-react'
 import type { OrderStatus, OrderWithItems } from '@shared/types'
 import { useOrders } from './hooks/useOrders'
+import { useAuth } from './hooks/useAuth'
 import OrderCard from './components/OrderCard'
 import DateStrip from './components/DateStrip'
+import MenuManager from './components/MenuManager'
+import LoginScreen from './components/LoginScreen'
 import { isoToDateKey, toDateKey } from './dateUtils'
 
 const COLUMNS: { status: OrderStatus; label: string }[] = [
@@ -11,10 +15,13 @@ const COLUMNS: { status: OrderStatus; label: string }[] = [
   { status: 'pronto', label: 'Pronto' },
 ]
 
+type View = 'board' | 'history' | 'menu'
+
 export default function App() {
   const { orders, loading, error, newOrderIds, markSeen, advanceStatus } = useOrders()
+  const { session, user, loading: authLoading, signIn, signOut } = useAuth()
   const [now, setNow] = useState(new Date())
-  const [showHistory, setShowHistory] = useState(false)
+  const [view, setView] = useState<View>('board')
   const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(new Date()))
 
   useEffect(() => {
@@ -59,21 +66,45 @@ export default function App() {
             Pedidos {activeCount > 0 && <small>{activeCount} ativos</small>}
           </h1>
         </div>
-        <button className="btn btn-outline btn-outline--dark" onClick={() => setShowHistory((s) => !s)}>
-          {showHistory ? '← Quadro' : `Entregues (${byStatus.entregue.length})`}
-        </button>
+        <nav className="brand-banner__nav">
+          <button
+            className={`btn btn-outline btn-outline--dark ${view === 'menu' ? 'btn-outline--dark-active' : ''}`}
+            onClick={() => setView((v) => (v === 'menu' ? 'board' : 'menu'))}
+          >
+            <UtensilsCrossed size={16} strokeWidth={2} aria-hidden />
+            Cardápio
+          </button>
+          <button
+            className={`btn btn-outline btn-outline--dark ${view === 'history' ? 'btn-outline--dark-active' : ''}`}
+            onClick={() => setView((v) => (v === 'history' ? 'board' : 'history'))}
+          >
+            {view === 'history' ? '← Quadro' : `Entregues (${byStatus.entregue.length})`}
+          </button>
+          {view === 'menu' && session && (
+            <button className="btn btn-outline btn-outline--dark" onClick={signOut} title={user?.email ?? ''}>
+              <LogOut size={16} strokeWidth={2} aria-hidden />
+              Sair
+            </button>
+          )}
+        </nav>
         <span
           className={`realtime-dot ${error ? 'realtime-dot--off' : 'realtime-dot--on'}`}
           title={error ?? 'Conectado em tempo real'}
         />
       </header>
 
-      <DateStrip selectedDateKey={selectedDateKey} onSelect={setSelectedDateKey} orderCountByDate={orderCountByDate} />
+      {view !== 'menu' && (
+        <DateStrip selectedDateKey={selectedDateKey} onSelect={setSelectedDateKey} orderCountByDate={orderCountByDate} />
+      )}
 
-      {error && <p className="equipe-app__error">Erro ao carregar pedidos: {error}</p>}
-      {loading && <p className="equipe-app__status">Carregando pedidos…</p>}
+      {view === 'menu' && authLoading && <p className="equipe-app__status">Verificando sessão…</p>}
+      {view === 'menu' && !authLoading && !session && <LoginScreen onSignIn={signIn} />}
+      {view === 'menu' && !authLoading && session && <MenuManager accessToken={session.access_token} currentUserId={user!.id} />}
 
-      {!loading && showHistory && (
+      {view !== 'menu' && error && <p className="equipe-app__error">Erro ao carregar pedidos: {error}</p>}
+      {view !== 'menu' && loading && <p className="equipe-app__status">Carregando pedidos…</p>}
+
+      {!loading && view === 'history' && (
         <main className="history-list">
           {byStatus.entregue.length === 0 && <p className="equipe-app__status">Nenhum pedido entregue neste dia.</p>}
           {byStatus.entregue.map((order) => (
@@ -89,7 +120,7 @@ export default function App() {
         </main>
       )}
 
-      {!loading && !showHistory && (
+      {!loading && view === 'board' && (
         <main className="kanban">
           {COLUMNS.map((col) => (
             <section key={col.status} className="kanban-column">

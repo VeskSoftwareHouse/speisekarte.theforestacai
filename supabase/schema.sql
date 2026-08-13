@@ -144,7 +144,13 @@ alter table orders              enable row level security;
 alter table order_items         enable row level security;
 
 drop policy if exists "public read categories"          on categories;
+drop policy if exists "public insert categories"        on categories;
+drop policy if exists "public update categories"        on categories;
+drop policy if exists "public delete categories"        on categories;
 drop policy if exists "public read menu_items"          on menu_items;
+drop policy if exists "public insert menu_items"        on menu_items;
+drop policy if exists "public update menu_items"        on menu_items;
+drop policy if exists "public delete menu_items"        on menu_items;
 drop policy if exists "public read modifiers"           on modifiers;
 drop policy if exists "public read modifier_options"    on modifier_options;
 drop policy if exists "public read menu_item_modifiers" on menu_item_modifiers;
@@ -162,6 +168,16 @@ create policy "public read modifiers"           on modifiers           for selec
 create policy "public read modifier_options"    on modifier_options    for select using (true);
 create policy "public read menu_item_modifiers" on menu_item_modifiers for select using (true);
 create policy "public read tables"              on tables              for select using (true);
+
+-- gestão do cardápio pelo Painel da Equipe (sem autenticação nesta fase —
+-- ver nota de segurança no README sobre o alcance disso)
+create policy "public insert categories" on categories for insert with check (true);
+create policy "public update categories" on categories for update using (true) with check (true);
+create policy "public delete categories" on categories for delete using (true);
+
+create policy "public insert menu_items" on menu_items for insert with check (true);
+create policy "public update menu_items" on menu_items for update using (true) with check (true);
+create policy "public delete menu_items" on menu_items for delete using (true);
 
 -- pedidos: leitura pública (painel da equipe), criação pública (app da mesa),
 -- atualização pública (equipe avança status)
@@ -193,3 +209,22 @@ begin
     alter publication supabase_realtime add table order_items;
   end if;
 end $$;
+
+-- =====================================================================
+-- Storage — bucket público para fotos de produto enviadas pelo Painel
+-- da Equipe (gestão de cardápio).
+-- =====================================================================
+
+insert into storage.buckets (id, name, public)
+values ('menu-images', 'menu-images', true)
+on conflict (id) do nothing;
+
+drop policy if exists "public read menu-images"   on storage.objects;
+drop policy if exists "public upload menu-images" on storage.objects;
+drop policy if exists "public update menu-images" on storage.objects;
+drop policy if exists "public delete menu-images" on storage.objects;
+
+create policy "public read menu-images"   on storage.objects for select using (bucket_id = 'menu-images');
+create policy "public upload menu-images" on storage.objects for insert with check (bucket_id = 'menu-images');
+create policy "public update menu-images" on storage.objects for update using (bucket_id = 'menu-images') with check (bucket_id = 'menu-images');
+create policy "public delete menu-images" on storage.objects for delete using (bucket_id = 'menu-images');

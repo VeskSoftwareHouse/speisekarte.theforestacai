@@ -140,6 +140,14 @@ img {
   color: var(--color-ink);
 }
 
+.btn-danger {
+  background: var(--color-danger);
+  color: #fff;
+}
+.btn-danger:active {
+  filter: brightness(0.9);
+}
+
 .btn-outline {
   background: var(--color-surface);
   border: 2px solid var(--color-border);
