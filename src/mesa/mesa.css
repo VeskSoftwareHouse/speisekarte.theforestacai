@@ -139,15 +139,12 @@
   text-align: center;
   padding-bottom: var(--space-4);
 }
-.sidebar__logo-ring {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto var(--space-3);
-}
 .sidebar__logo-img {
+  width: 84px;
+  height: 84px;
   border-radius: 50%;
   object-fit: cover;
+  margin: 0 auto var(--space-3);
 }
 .sidebar__logo-name {
   margin: 0;
@@ -757,15 +754,10 @@
     display: flex;
     align-items: center;
   }
-  .sidebar__logo-ring {
-    width: 40px;
-    height: 40px;
-    border: none;
-    margin: 0 var(--space-2) 0 0;
-  }
   .sidebar__logo-img {
     width: 40px;
     height: 40px;
+    margin: 0 var(--space-2) 0 0;
   }
   .sidebar__logo-name,
   .sidebar__logo-tag {
