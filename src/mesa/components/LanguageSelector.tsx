@@ -11,7 +11,7 @@ interface Props {
 export default function LanguageSelector({ variant = 'dark' }: Props) {
   const { lang, setLang, t } = useLanguage()
   const [open, setOpen] = useState(false)
-  const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; right: number } | null>(null)
+  const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; left: number } | null>(null)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
   const menuRef = useRef<HTMLUListElement | null>(null)
   const active = LANGUAGES.find((l) => l.code === lang) ?? LANGUAGES[0]
@@ -20,12 +20,17 @@ export default function LanguageSelector({ variant = 'dark' }: Props) {
     if (!open && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect()
       const estimatedMenuHeight = LANGUAGES.length * 44 + 12
-      const right = window.innerWidth - rect.right
+      const estimatedMenuWidth = 190
+      const idealLeft = rect.left + rect.width / 2
+      const left = Math.min(
+        Math.max(idealLeft, estimatedMenuWidth / 2 + 8),
+        window.innerWidth - estimatedMenuWidth / 2 - 8,
+      )
       const fitsBelow = rect.bottom + 8 + estimatedMenuHeight <= window.innerHeight
       setMenuPos(
         fitsBelow
-          ? { top: rect.bottom + 8, right }
-          : { bottom: window.innerHeight - rect.top + 8, right },
+          ? { top: rect.bottom + 8, left }
+          : { bottom: window.innerHeight - rect.top + 8, left },
       )
     }
     setOpen((v) => !v)
@@ -89,7 +94,7 @@ export default function LanguageSelector({ variant = 'dark' }: Props) {
             ref={menuRef}
             className="language-selector__menu"
             role="listbox"
-            style={{ top: menuPos.top, bottom: menuPos.bottom, right: menuPos.right }}
+            style={{ top: menuPos.top, bottom: menuPos.bottom, left: menuPos.left }}
           >
             {LANGUAGES.map((l) => (
               <li key={l.code} role="option" aria-selected={l.code === lang}>

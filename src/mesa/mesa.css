@@ -31,6 +31,7 @@
 
 .language-selector__menu {
   position: fixed;
+  transform: translateX(-50%);
   min-width: 190px;
   margin: 0;
   padding: 6px;
