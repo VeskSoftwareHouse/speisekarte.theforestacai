@@ -164,9 +164,17 @@ drop policy if exists "public delete menu_items"        on menu_items;
 drop policy if exists "authenticated insert menu_items" on menu_items;
 drop policy if exists "authenticated update menu_items" on menu_items;
 drop policy if exists "authenticated delete menu_items" on menu_items;
-drop policy if exists "public read modifiers"           on modifiers;
-drop policy if exists "public read modifier_options"    on modifier_options;
-drop policy if exists "public read menu_item_modifiers" on menu_item_modifiers;
+drop policy if exists "public read modifiers"                on modifiers;
+drop policy if exists "authenticated insert modifiers"        on modifiers;
+drop policy if exists "authenticated update modifiers"        on modifiers;
+drop policy if exists "authenticated delete modifiers"        on modifiers;
+drop policy if exists "public read modifier_options"          on modifier_options;
+drop policy if exists "authenticated insert modifier_options" on modifier_options;
+drop policy if exists "authenticated update modifier_options" on modifier_options;
+drop policy if exists "authenticated delete modifier_options" on modifier_options;
+drop policy if exists "public read menu_item_modifiers"          on menu_item_modifiers;
+drop policy if exists "authenticated insert menu_item_modifiers" on menu_item_modifiers;
+drop policy if exists "authenticated delete menu_item_modifiers" on menu_item_modifiers;
 drop policy if exists "public read tables"              on tables;
 drop policy if exists "public read orders"              on orders;
 drop policy if exists "public insert orders"             on orders;
@@ -191,6 +199,18 @@ create policy "authenticated delete categories" on categories for delete using (
 create policy "authenticated insert menu_items" on menu_items for insert with check (auth.uid() is not null);
 create policy "authenticated update menu_items" on menu_items for update using (auth.uid() is not null) with check (auth.uid() is not null);
 create policy "authenticated delete menu_items" on menu_items for delete using (auth.uid() is not null);
+
+-- gestão dos adicionais (grupos de modifier, opções e associação com produtos)
+create policy "authenticated insert modifiers" on modifiers for insert with check (auth.uid() is not null);
+create policy "authenticated update modifiers" on modifiers for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete modifiers" on modifiers for delete using (auth.uid() is not null);
+
+create policy "authenticated insert modifier_options" on modifier_options for insert with check (auth.uid() is not null);
+create policy "authenticated update modifier_options" on modifier_options for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete modifier_options" on modifier_options for delete using (auth.uid() is not null);
+
+create policy "authenticated insert menu_item_modifiers" on menu_item_modifiers for insert with check (auth.uid() is not null);
+create policy "authenticated delete menu_item_modifiers" on menu_item_modifiers for delete using (auth.uid() is not null);
 
 -- pedidos: leitura pública (painel da equipe), criação pública (app da mesa),
 -- atualização pública (equipe avança status)

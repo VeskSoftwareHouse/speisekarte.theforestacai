@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { X, ImagePlus, Loader2 } from 'lucide-react'
-import type { Category, MenuItem } from '@shared/types'
+import type { Category, MenuItem, Modifier } from '@shared/types'
 import CurrencyInput from '@shared/components/CurrencyInput'
 import type { ProductInput } from '../hooks/useMenuAdmin'
 
@@ -16,8 +16,10 @@ interface Props {
   product: MenuItem | null
   categories: Category[]
   defaultCategoryId: string | null
+  modifierGroups: Modifier[]
+  linkedModifierIds: string[]
   onClose: () => void
-  onSave: (input: ProductInput) => Promise<void>
+  onSave: (input: ProductInput, modifierIds: string[]) => Promise<void>
   onUploadImage: (file: File) => Promise<string>
 }
 
@@ -25,6 +27,8 @@ export default function ProductFormModal({
   product,
   categories,
   defaultCategoryId,
+  modifierGroups,
+  linkedModifierIds,
   onClose,
   onSave,
   onUploadImage,
@@ -39,6 +43,7 @@ export default function ProductFormModal({
   const [disponivel, setDisponivel] = useState(product?.disponivel ?? true)
   const [ordem, setOrdem] = useState(product?.ordem ?? 0)
   const [fotoUrl, setFotoUrl] = useState(product?.foto_url ?? '')
+  const [selectedModifierIds, setSelectedModifierIds] = useState<string[]>(linkedModifierIds)
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -68,17 +73,20 @@ export default function ProductFormModal({
     try {
       const cleanI18n = (obj: Record<string, string>) =>
         Object.fromEntries(Object.entries(obj).filter(([, v]) => v.trim()))
-      await onSave({
-        nome: nome.trim(),
-        nome_i18n: cleanI18n(nomeI18n),
-        categoria_id: categoriaId,
-        descricao: descricao.trim(),
-        descricao_i18n: cleanI18n(descricaoI18n),
-        preco,
-        foto_url: fotoUrl.trim() || null,
-        disponivel,
-        ordem,
-      })
+      await onSave(
+        {
+          nome: nome.trim(),
+          nome_i18n: cleanI18n(nomeI18n),
+          categoria_id: categoriaId,
+          descricao: descricao.trim(),
+          descricao_i18n: cleanI18n(descricaoI18n),
+          preco,
+          foto_url: fotoUrl.trim() || null,
+          disponivel,
+          ordem,
+        },
+        selectedModifierIds,
+      )
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível salvar.')
@@ -207,6 +215,32 @@ export default function ProductFormModal({
             <input type="checkbox" checked={disponivel} onChange={(e) => setDisponivel(e.target.checked)} />
             <span>Disponível no cardápio</span>
           </label>
+
+          <div className="admin-form__field">
+            <span>Adicionais deste produto</span>
+            {modifierGroups.length === 0 && (
+              <p className="admin-form__hint">Nenhuma categoria de adicionais cadastrada ainda.</p>
+            )}
+            <div className="admin-modifier-checklist">
+              {modifierGroups.map((g) => {
+                const checked = selectedModifierIds.includes(g.id)
+                return (
+                  <label key={g.id} className="admin-modifier-checklist__item">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() =>
+                        setSelectedModifierIds((prev) =>
+                          checked ? prev.filter((id) => id !== g.id) : [...prev, g.id],
+                        )
+                      }
+                    />
+                    <span>{g.nome}</span>
+                  </label>
+                )
+              })}
+            </div>
+          </div>
 
           {error && <p className="admin-form__error">{error}</p>}
 

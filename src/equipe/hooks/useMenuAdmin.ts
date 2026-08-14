@@ -66,10 +66,11 @@ export function useMenuAdmin() {
     await fetchAll()
   }
 
-  async function createProduct(input: ProductInput) {
-    const { error: err } = await supabase.from('menu_items').insert(input)
+  async function createProduct(input: ProductInput): Promise<MenuItem> {
+    const { data, error: err } = await supabase.from('menu_items').insert(input).select().single()
     if (err) throw new Error(err.message)
     await fetchAll()
+    return data
   }
 
   async function updateProduct(id: string, input: ProductInput) {

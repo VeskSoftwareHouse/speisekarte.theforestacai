@@ -876,6 +876,41 @@ body {
   height: 18px;
   accent-color: var(--color-primary);
 }
+.admin-form__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.admin-modifier-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.admin-modifier-checklist__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.admin-modifier-checklist__item input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--color-primary);
+}
+
+.admin-modifier-tag {
+  margin-left: var(--space-2);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
 .admin-form__error {
   color: var(--color-danger);
   font-size: 0.85rem;
