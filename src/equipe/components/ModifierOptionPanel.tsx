@@ -1,5 +1,7 @@
+import { useMemo, useState } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import type { Modifier, ModifierOption } from '@shared/types'
+import AdminSearchInput from './AdminSearchInput'
 
 function formatCHF(value: number): string {
   return `CHF ${value.toFixed(2).replace('.', ',')}`
@@ -14,6 +16,14 @@ interface Props {
 }
 
 export default function ModifierOptionPanel({ options, groupsById, onAdd, onEdit, onDelete }: Props) {
+  const [query, setQuery] = useState('')
+
+  const filteredOptions = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return options
+    return options.filter((o) => o.nome.toLowerCase().includes(q))
+  }, [options, query])
+
   return (
     <section className="admin-panel admin-panel--products">
       <header className="admin-panel__header">
@@ -24,9 +34,13 @@ export default function ModifierOptionPanel({ options, groupsById, onAdd, onEdit
         </button>
       </header>
 
+      <AdminSearchInput value={query} onChange={setQuery} placeholder="Buscar adicional…" />
+
       <div className="admin-panel__body admin-product-list">
-        {options.length === 0 && <p className="admin-panel__empty">Nenhum adicional nesta categoria.</p>}
-        {options.map((o) => (
+        {filteredOptions.length === 0 && (
+          <p className="admin-panel__empty">{query ? 'Nenhum adicional encontrado.' : 'Nenhum adicional nesta categoria.'}</p>
+        )}
+        {filteredOptions.map((o) => (
           <article key={o.id} className="admin-product-row">
             <div className="admin-product-row__info">
               <div className="admin-product-row__title">

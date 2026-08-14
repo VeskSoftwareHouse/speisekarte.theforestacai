@@ -1,5 +1,7 @@
+import { useMemo, useState } from 'react'
 import { Plus, Pencil, Trash2, UserRound } from 'lucide-react'
 import type { AdminUser } from '../hooks/useUserAdmin'
+import AdminSearchInput from './AdminSearchInput'
 
 function formatDate(iso: string | null): string {
   if (!iso) return 'Nunca'
@@ -15,6 +17,14 @@ interface Props {
 }
 
 export default function UsersPanel({ users, currentUserId, onAdd, onEdit, onDelete }: Props) {
+  const [query, setQuery] = useState('')
+
+  const filteredUsers = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return users
+    return users.filter((u) => u.nome.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
+  }, [users, query])
+
   return (
     <section className="admin-panel admin-panel--users">
       <header className="admin-panel__header">
@@ -25,9 +35,13 @@ export default function UsersPanel({ users, currentUserId, onAdd, onEdit, onDele
         </button>
       </header>
 
+      <AdminSearchInput value={query} onChange={setQuery} placeholder="Buscar usuário…" />
+
       <div className="admin-panel__body admin-user-list">
-        {users.length === 0 && <p className="admin-panel__empty">Nenhum usuário cadastrado.</p>}
-        {users.map((u) => (
+        {filteredUsers.length === 0 && (
+          <p className="admin-panel__empty">{query ? 'Nenhum usuário encontrado.' : 'Nenhum usuário cadastrado.'}</p>
+        )}
+        {filteredUsers.map((u) => (
           <article key={u.id} className="admin-user-row">
             <div className="admin-user-row__avatar">
               <UserRound size={20} strokeWidth={1.5} aria-hidden />

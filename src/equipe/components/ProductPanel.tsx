@@ -1,5 +1,7 @@
+import { useMemo, useState } from 'react'
 import { Plus, Pencil, Trash2, ImageOff } from 'lucide-react'
 import type { Category, MenuItem } from '@shared/types'
+import AdminSearchInput from './AdminSearchInput'
 
 function formatCHF(value: number): string {
   return `CHF ${value.toFixed(2).replace('.', ',')}`
@@ -22,6 +24,16 @@ export default function ProductPanel({
   onDelete,
   onToggleAvailable,
 }: Props) {
+  const [query, setQuery] = useState('')
+
+  const filteredProducts = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return products
+    return products.filter(
+      (p) => p.nome.toLowerCase().includes(q) || (p.descricao ?? '').toLowerCase().includes(q),
+    )
+  }, [products, query])
+
   return (
     <section className="admin-panel admin-panel--products">
       <header className="admin-panel__header">
@@ -32,9 +44,15 @@ export default function ProductPanel({
         </button>
       </header>
 
+      <AdminSearchInput value={query} onChange={setQuery} placeholder="Buscar produto…" />
+
       <div className="admin-panel__body admin-product-list">
-        {products.length === 0 && <p className="admin-panel__empty">Nenhum produto nesta categoria.</p>}
-        {products.map((p) => (
+        {filteredProducts.length === 0 && (
+          <p className="admin-panel__empty">
+            {query ? 'Nenhum produto encontrado.' : 'Nenhum produto nesta categoria.'}
+          </p>
+        )}
+        {filteredProducts.map((p) => (
           <article key={p.id} className={`admin-product-row ${!p.disponivel ? 'admin-product-row--off' : ''}`}>
             <div className="admin-product-row__thumb">
               {p.foto_url ? <img src={p.foto_url} alt="" /> : <ImageOff size={20} strokeWidth={1.5} aria-hidden />}
