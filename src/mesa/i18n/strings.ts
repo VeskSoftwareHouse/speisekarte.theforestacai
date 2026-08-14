@@ -46,6 +46,11 @@ export interface StringDict {
   orderSummaryTitle: string
   orderSummarySubtitle: string
   confirmAndPayButton: string
+  orderNameLabel: string
+  orderNamePlaceholder: string
+  tipLabel: string
+  noTip: string
+  subtotalLabel: string
 }
 
 export type StringKey = keyof StringDict
@@ -98,6 +103,11 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     orderSummaryTitle: 'Bestellübersicht',
     orderSummarySubtitle: 'Überprüfe deine Bestellung, bevor du bezahlst.',
     confirmAndPayButton: 'Bestätigen und bezahlen',
+    orderNameLabel: 'Name der Bestellung',
+    orderNamePlaceholder: 'Dein Name (optional)',
+    tipLabel: 'Trinkgeld',
+    noTip: 'Kein Trinkgeld',
+    subtotalLabel: 'Zwischensumme',
   },
   fr: {
     welcomeTitle: 'Bienvenue !',
@@ -146,6 +156,11 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     orderSummaryTitle: 'Récapitulatif de la commande',
     orderSummarySubtitle: 'Vérifiez votre commande avant de payer.',
     confirmAndPayButton: 'Confirmer et payer',
+    orderNameLabel: 'Nom de la commande',
+    orderNamePlaceholder: 'Votre nom (facultatif)',
+    tipLabel: 'Pourboire',
+    noTip: 'Sans pourboire',
+    subtotalLabel: 'Sous-total',
   },
   it: {
     welcomeTitle: 'Benvenuto!',
@@ -194,6 +209,11 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     orderSummaryTitle: "Riepilogo dell'ordine",
     orderSummarySubtitle: 'Controlla il tuo ordine prima di pagare.',
     confirmAndPayButton: 'Conferma e paga',
+    orderNameLabel: "Nome dell'ordine",
+    orderNamePlaceholder: 'Il tuo nome (facoltativo)',
+    tipLabel: 'Mancia',
+    noTip: 'Senza mancia',
+    subtotalLabel: 'Subtotale',
   },
   en: {
     welcomeTitle: 'Welcome!',
@@ -242,6 +262,11 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     orderSummaryTitle: 'Order summary',
     orderSummarySubtitle: 'Double-check your order before paying.',
     confirmAndPayButton: 'Confirm and pay',
+    orderNameLabel: 'Order name',
+    orderNamePlaceholder: 'Your name (optional)',
+    tipLabel: 'Tip',
+    noTip: 'No tip',
+    subtotalLabel: 'Subtotal',
   },
   pt: {
     welcomeTitle: 'Bem-vindo!',
@@ -290,6 +315,11 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     orderSummaryTitle: 'Resumo do pedido',
     orderSummarySubtitle: 'Confira os itens antes de pagar.',
     confirmAndPayButton: 'Confirmar e pagar',
+    orderNameLabel: 'Nome do pedido',
+    orderNamePlaceholder: 'Seu nome (opcional)',
+    tipLabel: 'Gorjeta',
+    noTip: 'Sem gorjeta',
+    subtotalLabel: 'Subtotal',
   },
   es: {
     welcomeTitle: '¡Bienvenido!',
@@ -338,5 +368,10 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     orderSummaryTitle: 'Resumen del pedido',
     orderSummarySubtitle: 'Revisa tu pedido antes de pagar.',
     confirmAndPayButton: 'Confirmar y pagar',
+    orderNameLabel: 'Nombre del pedido',
+    orderNamePlaceholder: 'Tu nombre (opcional)',
+    tipLabel: 'Propina',
+    noTip: 'Sin propina',
+    subtotalLabel: 'Subtotal',
   },
 }

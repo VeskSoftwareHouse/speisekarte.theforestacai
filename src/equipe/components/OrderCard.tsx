@@ -34,9 +34,8 @@ export default function OrderCard({ order, isNew, now, onAdvance, onSeen }: Prop
       {isNew && <span className="order-card__new-badge">NOVO</span>}
 
       <header className="order-card__header">
-        <span className="order-card__table">
-          Mesa {order.table?.numero ?? '?'}
-        </span>
+        <span className="order-card__table">Mesa {order.table?.numero ?? '?'}</span>
+        {order.nome_cliente && <span className="order-card__customer">{order.nome_cliente}</span>}
         <div className="order-card__meta">
           <span className={`order-card__time ${isWaitingLong ? 'order-card__time--warning' : ''}`}>
             {elapsedLabel(order.criado_em, now)}

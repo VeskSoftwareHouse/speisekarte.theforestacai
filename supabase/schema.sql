@@ -115,6 +115,8 @@ alter table orders add constraint orders_status_check check (status in
 alter table orders alter column status set default 'aguardando_pagamento';
 alter table orders add column if not exists sumup_checkout_id text;
 alter table orders add column if not exists valor_pago numeric(10,2);
+alter table orders add column if not exists nome_cliente text;
+alter table orders add column if not exists gorjeta numeric(10,2) not null default 0;
 
 create index if not exists idx_orders_status on orders(status);
 create index if not exists idx_orders_criado_em on orders(criado_em);

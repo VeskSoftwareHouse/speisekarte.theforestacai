@@ -88,7 +88,7 @@ export default function App() {
     }
   }
 
-  async function handleSubmit() {
+  async function handleSubmit(customerName: string, tipPercent: number) {
     if (!table || cart.length === 0) return
     setSending(true)
     setSendError(null)
@@ -106,7 +106,13 @@ export default function App() {
       const res = await fetch('/api/sumup-create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tableId: table.id, tableNumero: table.numero, items: itemsPayload }),
+        body: JSON.stringify({
+          tableId: table.id,
+          tableNumero: table.numero,
+          items: itemsPayload,
+          customerName,
+          tipPercent,
+        }),
       })
       const data = await res.json()
       if (!res.ok || !data.hostedCheckoutUrl) {

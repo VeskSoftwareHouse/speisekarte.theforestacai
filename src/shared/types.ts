@@ -78,6 +78,8 @@ export interface Order {
   atualizado_em: string
   sumup_checkout_id: string | null
   valor_pago: number | null
+  nome_cliente: string | null
+  gorjeta: number
 }
 
 /** Snapshot de uma opção de modifier escolhida, gravado dentro de order_items.modifiers_selecionados */

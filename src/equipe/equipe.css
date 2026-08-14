@@ -332,6 +332,16 @@ body {
   font-weight: 700;
   flex: 0 0 auto;
 }
+.order-card__customer {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
 .order-card__meta {
   display: flex;
   flex-direction: column;

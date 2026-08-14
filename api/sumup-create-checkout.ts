@@ -25,24 +25,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const { tableId, tableNumero, items } = req.body ?? {}
+  const { tableId, tableNumero, items, customerName, tipPercent } = req.body ?? {}
   if (!tableId || !Array.isArray(items) || items.length === 0) {
     res.status(400).json({ error: 'Pedido inválido.' })
     return
   }
 
+  const ALLOWED_TIP_PERCENTAGES = [0, 5, 10, 20]
+  const tipPct = ALLOWED_TIP_PERCENTAGES.includes(tipPercent) ? tipPercent : 0
+  const cleanCustomerName =
+    typeof customerName === 'string' && customerName.trim() ? customerName.trim().slice(0, 80) : null
+
   const cartItems = items as CartItemPayload[]
-  const total = cartItems.reduce((sum, it) => sum + it.preco_unitario * it.quantidade, 0)
-  if (!(total > 0)) {
+  const subtotal = cartItems.reduce((sum, it) => sum + it.preco_unitario * it.quantidade, 0)
+  if (!(subtotal > 0)) {
     res.status(400).json({ error: 'Valor do pedido inválido.' })
     return
   }
+  const tipAmount = Number(((subtotal * tipPct) / 100).toFixed(2))
+  const total = Number((subtotal + tipAmount).toFixed(2))
 
   const supabase = createClient(supabaseUrl, anonKey)
 
   const { data: order, error: orderErr } = await supabase
     .from('orders')
-    .insert({ table_id: tableId, status: 'aguardando_pagamento', valor_pago: Number(total.toFixed(2)) })
+    .insert({
+      table_id: tableId,
+      status: 'aguardando_pagamento',
+      valor_pago: total,
+      gorjeta: tipAmount,
+      nome_cliente: cleanCustomerName,
+    })
     .select()
     .single()
   if (orderErr || !order) {
@@ -78,12 +91,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
       body: JSON.stringify({
         checkout_reference: order.id,
-        amount: Number(total.toFixed(2)),
+        amount: total,
         // TODO: provisório para teste — trocar para a moeda real da conta SumUp
         // (ou tornar configurável via env var) antes de ir para produção.
         currency: 'BRL',
         merchant_code: sumupMerchantCode,
-        description: tableNumero ? `Forest Açaí — Mesa ${tableNumero}` : 'Forest Açaí',
+        description: [cleanCustomerName, tableNumero ? `Mesa ${tableNumero}` : null, 'Forest Açaí']
+          .filter(Boolean)
+          .join(' — '),
         redirect_url: redirectUrl,
         hosted_checkout: { enabled: true },
       }),
