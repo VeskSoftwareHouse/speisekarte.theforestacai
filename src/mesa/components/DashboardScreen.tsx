@@ -8,8 +8,7 @@ import CartPanel from './CartPanel'
 import ItemModal from './ItemModal'
 import { iconFor, FeaturedIcon, FallbackPhotoIcon } from '../categoryIcons'
 import { useLanguage } from '../i18n/LanguageContext'
-import { translatedDescription } from '../i18n/menuTranslations'
-import { translateLabel } from '../i18n/labelTranslations'
+import { translatedField } from '../i18n/menuTranslations'
 import type { CartItem } from '../types'
 
 interface Props {
@@ -46,7 +45,9 @@ export default function DashboardScreen({
   const items = activeCategory === FEATURED_ID ? featuredItems : itemsByCategory[activeCategory] ?? []
   const activeCategoryObj = categories.find((c) => c.id === activeCategory)
   const sectionTitle =
-    activeCategory === FEATURED_ID ? t('navFeatured') : translateLabel(activeCategoryObj?.nome ?? '', lang)
+    activeCategory === FEATURED_ID
+      ? t('navFeatured')
+      : translatedField(activeCategoryObj?.nome_i18n, lang, activeCategoryObj?.nome ?? '')
   const SectionIcon = activeCategory === FEATURED_ID ? FeaturedIcon : iconFor(activeCategoryObj?.nome ?? '')
 
   function handleAddDirect(item: MenuItemWithModifiers) {
@@ -108,12 +109,13 @@ export default function DashboardScreen({
               <div className="menu-grid menu-grid--dashboard">
                 {items.length === 0 && <p className="menu-screen__status">{t('noItemsInCategory')}</p>}
                 {items.map((item) => {
-                  const desc = translatedDescription(item.descricao_i18n, lang, item.descricao)
+                  const desc = translatedField(item.descricao_i18n, lang, item.descricao)
+                  const nome = translatedField(item.nome_i18n, lang, item.nome) ?? item.nome
                   return (
                     <button key={item.id} className="item-card" onClick={() => handleCardClick(item)}>
                       <div className="item-card__photo-wrap">
                         {item.foto_url ? (
-                          <img className="item-card__photo" src={item.foto_url} alt={item.nome} loading="lazy" />
+                          <img className="item-card__photo" src={item.foto_url} alt={nome} loading="lazy" />
                         ) : (
                           <FallbackPhotoIcon
                             className="item-card__photo-fallback"
@@ -124,7 +126,7 @@ export default function DashboardScreen({
                         )}
                       </div>
                       <div className="item-card__body">
-                        <h3 className="item-card__name">{item.nome}</h3>
+                        <h3 className="item-card__name">{nome}</h3>
                         {desc && <p className="item-card__desc">{desc}</p>}
                         <div className="item-card__footer">
                           <span className="item-card__price">{formatCHF(item.preco)}</span>

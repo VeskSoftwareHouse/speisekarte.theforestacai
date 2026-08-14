@@ -15,6 +15,8 @@ export interface Category {
   id: string
   nome: string
   ordem: number
+  /** Traduções manuais do nome por idioma (chaves: fr, it, en, pt, es). Alemão vem de `nome`. */
+  nome_i18n: Record<string, string>
 }
 
 export interface MenuItem {
@@ -30,6 +32,8 @@ export interface MenuItem {
   max_ingredientes: number | null
   /** Traduções manuais da descrição por idioma (chaves: fr, it, en, pt, es). Alemão vem de `descricao`. */
   descricao_i18n: Record<string, string>
+  /** Traduções manuais do nome por idioma (chaves: fr, it, en, pt, es). Alemão vem de `nome`. */
+  nome_i18n: Record<string, string>
 }
 
 export interface Modifier {

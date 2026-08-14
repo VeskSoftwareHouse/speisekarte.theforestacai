@@ -16,6 +16,9 @@ create table if not exists categories (
   ordem      int  not null default 0
 );
 
+-- traduções manuais do nome por idioma (mesmo formato de menu_items.nome_i18n).
+alter table categories add column if not exists nome_i18n jsonb not null default '{}'::jsonb;
+
 -- ---------------------------------------------------------------------
 -- menu_items
 -- ---------------------------------------------------------------------
@@ -34,9 +37,10 @@ create table if not exists menu_items (
 );
 
 alter table menu_items add column if not exists max_ingredientes int;
--- traduções manuais da descrição por idioma, ex: {"fr": "...", "it": "...", "en": "...", "pt": "...", "es": "..."}.
--- alemão continua vindo da coluna `descricao` acima; idiomas ausentes aqui caem no alemão.
+-- traduções manuais da descrição e do nome por idioma, ex: {"fr": "...", "it": "...", "en": "...", "pt": "...", "es": "..."}.
+-- alemão continua vindo das colunas `descricao`/`nome` acima; idiomas ausentes aqui caem no alemão.
 alter table menu_items add column if not exists descricao_i18n jsonb not null default '{}'::jsonb;
+alter table menu_items add column if not exists nome_i18n jsonb not null default '{}'::jsonb;
 
 create index if not exists idx_menu_items_categoria on menu_items(categoria_id);
 
@@ -369,3 +373,49 @@ update menu_items set descricao_i18n = '{
   "pt": "Suco de frutas silvestres rico em antioxidantes.",
   "es": "Zumo de frutos del bosque rico en antioxidantes."
 }'::jsonb where id = '00000000-0000-0000-0000-0000000000ef' and descricao_i18n = '{}'::jsonb;
+
+-- =====================================================================
+-- Backfill: traduções de nome das 5 categorias originais (migradas do
+-- antigo src/mesa/i18n/labelTranslations.ts para categories.nome_i18n).
+-- Só preenche linhas ainda vazias.
+-- =====================================================================
+
+update categories set nome_i18n = '{
+  "fr": "Açaí en bol",
+  "it": "Açaí in coppa",
+  "en": "Açaí Bowls",
+  "pt": "Açaí na Tigela",
+  "es": "Açaí en Bol"
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000c1' and nome_i18n = '{}'::jsonb;
+
+update categories set nome_i18n = '{
+  "fr": "Formules",
+  "it": "Combo",
+  "en": "Combos",
+  "pt": "Combos",
+  "es": "Combos"
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000c2' and nome_i18n = '{}'::jsonb;
+
+update categories set nome_i18n = '{
+  "fr": "Jus — Classiques",
+  "it": "Succhi — Classici",
+  "en": "Juices — Classics",
+  "pt": "Sucos — Clássicos",
+  "es": "Zumos — Clásicos"
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000c3' and nome_i18n = '{}'::jsonb;
+
+update categories set nome_i18n = '{
+  "fr": "Jus — Exotiques",
+  "it": "Succhi — Esotici",
+  "en": "Juices — Exotic",
+  "pt": "Sucos — Exóticos",
+  "es": "Zumos — Exóticos"
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000c4' and nome_i18n = '{}'::jsonb;
+
+update categories set nome_i18n = '{
+  "fr": "Jus — Premium",
+  "it": "Succhi — Premium",
+  "en": "Juices — Premium",
+  "pt": "Sucos — Premium",
+  "es": "Zumos — Premium"
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000c5' and nome_i18n = '{}'::jsonb;

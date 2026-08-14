@@ -3,6 +3,7 @@ import { formatCHF } from '@shared/format'
 import { FallbackPhotoIcon } from '../categoryIcons'
 import { useLanguage } from '../i18n/LanguageContext'
 import { translateLabel } from '../i18n/labelTranslations'
+import { translatedField } from '../i18n/menuTranslations'
 import type { CartItem } from '../types'
 import { cartItemTotal } from '../types'
 
@@ -46,7 +47,9 @@ export default function CartPanel({ items, sending, onChangeQuantity, onRemove, 
               </div>
               <div className="cart-panel__info">
                 <div className="cart-panel__name-row">
-                  <span className="cart-panel__name">{item.menuItem.nome}</span>
+                  <span className="cart-panel__name">
+                    {translatedField(item.menuItem.nome_i18n, lang, item.menuItem.nome) ?? item.menuItem.nome}
+                  </span>
                   <button
                     className="cart-panel__remove"
                     onClick={() => onRemove(item.cartId)}

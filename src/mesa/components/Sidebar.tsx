@@ -1,7 +1,7 @@
 import type { Category } from '@shared/types'
 import { iconFor, FeaturedIcon } from '../categoryIcons'
 import { useLanguage } from '../i18n/LanguageContext'
-import { translateLabel } from '../i18n/labelTranslations'
+import { translatedField } from '../i18n/menuTranslations'
 import LanguageSelector from './LanguageSelector'
 
 export const FEATURED_ID = '__destaques__'
@@ -42,7 +42,7 @@ export default function Sidebar({ categories, activeId, onSelect, tableNumero, o
               onClick={() => onSelect(c.id)}
             >
               <Icon className="sidebar__item-icon" size={20} strokeWidth={2} />
-              {translateLabel(c.nome, lang)}
+              {translatedField(c.nome_i18n, lang, c.nome)}
             </button>
           )
         })}

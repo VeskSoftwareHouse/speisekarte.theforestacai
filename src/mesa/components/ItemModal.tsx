@@ -3,7 +3,7 @@ import { X, Minus, Plus } from 'lucide-react'
 import type { MenuItemWithModifiers, SelectedModifierOption } from '@shared/types'
 import { formatCHF } from '@shared/format'
 import { useLanguage } from '../i18n/LanguageContext'
-import { translatedDescription } from '../i18n/menuTranslations'
+import { translatedField } from '../i18n/menuTranslations'
 import { translateLabel } from '../i18n/labelTranslations'
 import type { CartItem } from '../types'
 
@@ -15,7 +15,8 @@ interface Props {
 
 export default function ItemModal({ item, onClose, onAdd }: Props) {
   const { lang, t } = useLanguage()
-  const desc = translatedDescription(item.descricao_i18n, lang, item.descricao)
+  const desc = translatedField(item.descricao_i18n, lang, item.descricao)
+  const nome = translatedField(item.nome_i18n, lang, item.nome) ?? item.nome
   const [quantidade, setQuantidade] = useState(1)
   const [observacoes, setObservacoes] = useState('')
   // groupId -> Set de optionIds selecionados
@@ -88,8 +89,8 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
         </button>
 
         <div className="modal__scroll">
-          {item.foto_url && <img className="modal__photo" src={item.foto_url} alt={item.nome} />}
-          <h2 className="modal__title">{item.nome}</h2>
+          {item.foto_url && <img className="modal__photo" src={item.foto_url} alt={nome} />}
+          <h2 className="modal__title">{nome}</h2>
           {desc && <p className="modal__desc">{desc}</p>}
           <p className="modal__price">{formatCHF(item.preco)}</p>
 

@@ -3,53 +3,19 @@ import type { LanguageCode } from './languages'
 type NonGermanCode = Exclude<LanguageCode, 'de'>
 
 /**
- * Traduções de categorias, grupos de modifier e opções, por nome alemão
- * (o texto gravado no banco — ver supabase/seed.sql). Não há UUID estável
- * para modifier_options (são gerados de novo a cada reseed), então usamos
- * o texto como chave em todo lugar, por consistência.
+ * Traduções de grupos de modifier e opções, por nome alemão (o texto
+ * gravado no banco — ver supabase/seed.sql). Não há UUID estável para
+ * modifier_options (são gerados de novo a cada reseed), então usamos o
+ * texto como chave. Categorias e nomes/descrições de produto têm suas
+ * próprias traduções em `categories.nome_i18n` e
+ * `menu_items.nome_i18n`/`descricao_i18n` (ver src/mesa/i18n/menuTranslations.ts),
+ * editáveis pela equipe no painel de gestão de cardápio.
  *
  * Nomes que já são internacionais/marcas (Toppings, Oreo, Nutella, Kiwi,
  * Tapioka, Granola…) não precisam de entrada — o fallback já devolve o
  * próprio texto alemão, que é igual nos outros idiomas.
  */
 const LABELS: Record<string, Partial<Record<NonGermanCode, string>>> = {
-  // categorias
-  'Açaí im Becher': {
-    fr: 'Açaí en bol',
-    it: 'Açaí in coppa',
-    en: 'Açaí Bowls',
-    pt: 'Açaí na Tigela',
-    es: 'Açaí en Bol',
-  },
-  Kombos: {
-    fr: 'Formules',
-    it: 'Combo',
-    en: 'Combos',
-    pt: 'Combos',
-    es: 'Combos',
-  },
-  'Säfte — Klassiker': {
-    fr: 'Jus — Classiques',
-    it: 'Succhi — Classici',
-    en: 'Juices — Classics',
-    pt: 'Sucos — Clássicos',
-    es: 'Zumos — Clásicos',
-  },
-  'Säfte — Exotisch': {
-    fr: 'Jus — Exotiques',
-    it: 'Succhi — Esotici',
-    en: 'Juices — Exotic',
-    pt: 'Sucos — Exóticos',
-    es: 'Zumos — Exóticos',
-  },
-  'Säfte — Premium': {
-    fr: 'Jus — Premium',
-    it: 'Succhi — Premium',
-    en: 'Juices — Premium',
-    pt: 'Sucos — Premium',
-    es: 'Zumos — Premium',
-  },
-
   // grupos de modifier
   Früchte: {
     fr: 'Fruits',

@@ -94,6 +94,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
       await updateProduct(product.id, {
         categoria_id: product.categoria_id,
         nome: product.nome,
+        nome_i18n: product.nome_i18n,
         descricao: product.descricao ?? '',
         descricao_i18n: product.descricao_i18n,
         preco: product.preco,

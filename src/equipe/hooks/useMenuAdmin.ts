@@ -4,12 +4,14 @@ import type { Category, MenuItem } from '@shared/types'
 
 export interface CategoryInput {
   nome: string
+  nome_i18n: Record<string, string>
   ordem: number
 }
 
 export interface ProductInput {
   categoria_id: string
   nome: string
+  nome_i18n: Record<string, string>
   descricao: string
   descricao_i18n: Record<string, string>
   preco: number
