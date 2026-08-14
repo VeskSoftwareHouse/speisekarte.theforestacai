@@ -300,20 +300,6 @@
   font-size: 1.4rem;
   margin: 0 0 var(--space-4);
 }
-.dashboard__see-all {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin: 0 auto var(--space-5);
-  background: none;
-  border: none;
-  color: var(--color-primary-dark);
-  font-weight: 700;
-  text-decoration: underline;
-  min-height: auto;
-  padding: var(--space-2);
-}
-
 /* --- Grade de itens (compartilha .item-card com outras telas) --- */
 .menu-grid {
   display: grid;

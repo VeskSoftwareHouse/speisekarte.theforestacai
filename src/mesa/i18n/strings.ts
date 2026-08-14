@@ -14,7 +14,6 @@ export interface StringDict {
   loadingMenu: string
   errorMenuPrefix: string
   noItemsInCategory: string
-  seeFullMenu: string
   modalClose: string
   badgeRequired: string
   badgeOptional: string
@@ -63,7 +62,6 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     loadingMenu: 'Speisekarte wird geladen…',
     errorMenuPrefix: 'Fehler beim Laden der Speisekarte: ',
     noItemsInCategory: 'Keine Artikel in dieser Kategorie.',
-    seeFullMenu: 'Ganze Speisekarte ansehen',
     modalClose: 'Schliessen',
     badgeRequired: 'Erforderlich',
     badgeOptional: 'Optional',
@@ -109,7 +107,6 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     loadingMenu: 'Chargement du menu…',
     errorMenuPrefix: 'Erreur lors du chargement du menu : ',
     noItemsInCategory: 'Aucun article dans cette catégorie.',
-    seeFullMenu: 'Voir tout le menu',
     modalClose: 'Fermer',
     badgeRequired: 'Obligatoire',
     badgeOptional: 'Optionnel',
@@ -155,7 +152,6 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     loadingMenu: 'Caricamento del menu…',
     errorMenuPrefix: 'Errore nel caricamento del menu: ',
     noItemsInCategory: 'Nessun articolo in questa categoria.',
-    seeFullMenu: 'Vedi il menu completo',
     modalClose: 'Chiudi',
     badgeRequired: 'Obbligatorio',
     badgeOptional: 'Facoltativo',
@@ -201,7 +197,6 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     loadingMenu: 'Loading menu…',
     errorMenuPrefix: 'Error loading menu: ',
     noItemsInCategory: 'No items in this category.',
-    seeFullMenu: 'See full menu',
     modalClose: 'Close',
     badgeRequired: 'Required',
     badgeOptional: 'Optional',
@@ -247,7 +242,6 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     loadingMenu: 'Carregando cardápio…',
     errorMenuPrefix: 'Erro ao carregar cardápio: ',
     noItemsInCategory: 'Nenhum item nesta categoria.',
-    seeFullMenu: 'Ver cardápio completo',
     modalClose: 'Fechar',
     badgeRequired: 'Obrigatório',
     badgeOptional: 'Opcional',
@@ -293,7 +287,6 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     loadingMenu: 'Cargando menú…',
     errorMenuPrefix: 'Error al cargar el menú: ',
     noItemsInCategory: 'No hay artículos en esta categoría.',
-    seeFullMenu: 'Ver menú completo',
     modalClose: 'Cerrar',
     badgeRequired: 'Obligatorio',
     badgeOptional: 'Opcional',

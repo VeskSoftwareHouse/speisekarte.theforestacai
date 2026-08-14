@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ChefHat, ChevronDown, Plus, ShoppingBag } from 'lucide-react'
+import { ChefHat, Plus, ShoppingBag } from 'lucide-react'
 import { useMenu } from '@shared/hooks/useMenu'
 import type { MenuItemWithModifiers, RestaurantTable } from '@shared/types'
 import { formatCHF } from '@shared/format'
@@ -144,13 +144,6 @@ export default function DashboardScreen({
                   )
                 })}
               </div>
-
-              {activeCategory === FEATURED_ID && categories[0] && (
-                <button className="dashboard__see-all" onClick={() => setActiveCategory(categories[0].id)}>
-                  {t('seeFullMenu')}
-                  <ChevronDown size={18} strokeWidth={2} aria-hidden />
-                </button>
-              )}
             </>
           )}
         </main>
