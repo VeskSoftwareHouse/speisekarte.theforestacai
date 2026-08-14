@@ -43,6 +43,9 @@ export interface StringDict {
   paymentFailedBody: string
   retryButton: string
   backToMenuButton: string
+  orderSummaryTitle: string
+  orderSummarySubtitle: string
+  confirmAndPayButton: string
 }
 
 export type StringKey = keyof StringDict
@@ -92,6 +95,9 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     paymentFailedBody: 'Wir konnten deine Zahlung nicht bestätigen. Bitte versuche es erneut.',
     retryButton: 'Erneut versuchen',
     backToMenuButton: 'Zurück zur Speisekarte',
+    orderSummaryTitle: 'Bestellübersicht',
+    orderSummarySubtitle: 'Überprüfe deine Bestellung, bevor du bezahlst.',
+    confirmAndPayButton: 'Bestätigen und bezahlen',
   },
   fr: {
     welcomeTitle: 'Bienvenue !',
@@ -137,6 +143,9 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     paymentFailedBody: "Nous n'avons pas pu confirmer votre paiement. Veuillez réessayer.",
     retryButton: 'Réessayer',
     backToMenuButton: 'Retour au menu',
+    orderSummaryTitle: 'Récapitulatif de la commande',
+    orderSummarySubtitle: 'Vérifiez votre commande avant de payer.',
+    confirmAndPayButton: 'Confirmer et payer',
   },
   it: {
     welcomeTitle: 'Benvenuto!',
@@ -182,6 +191,9 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     paymentFailedBody: 'Non siamo riusciti a confermare il tuo pagamento. Riprova.',
     retryButton: 'Riprova',
     backToMenuButton: 'Torna al menu',
+    orderSummaryTitle: "Riepilogo dell'ordine",
+    orderSummarySubtitle: 'Controlla il tuo ordine prima di pagare.',
+    confirmAndPayButton: 'Conferma e paga',
   },
   en: {
     welcomeTitle: 'Welcome!',
@@ -227,6 +239,9 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     paymentFailedBody: "We couldn't confirm your payment. Please try again.",
     retryButton: 'Try again',
     backToMenuButton: 'Back to menu',
+    orderSummaryTitle: 'Order summary',
+    orderSummarySubtitle: 'Double-check your order before paying.',
+    confirmAndPayButton: 'Confirm and pay',
   },
   pt: {
     welcomeTitle: 'Bem-vindo!',
@@ -272,6 +287,9 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     paymentFailedBody: 'Não conseguimos confirmar seu pagamento. Tente novamente.',
     retryButton: 'Tentar novamente',
     backToMenuButton: 'Voltar ao cardápio',
+    orderSummaryTitle: 'Resumo do pedido',
+    orderSummarySubtitle: 'Confira os itens antes de pagar.',
+    confirmAndPayButton: 'Confirmar e pagar',
   },
   es: {
     welcomeTitle: '¡Bienvenido!',
@@ -317,5 +335,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     paymentFailedBody: 'No pudimos confirmar tu pago. Inténtalo de nuevo.',
     retryButton: 'Intentar de nuevo',
     backToMenuButton: 'Volver al menú',
+    orderSummaryTitle: 'Resumen del pedido',
+    orderSummarySubtitle: 'Revisa tu pedido antes de pagar.',
+    confirmAndPayButton: 'Confirmar y pagar',
   },
 }

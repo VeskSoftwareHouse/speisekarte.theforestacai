@@ -15,7 +15,6 @@ import { cartItemTotal } from '../types'
 interface Props {
   table: RestaurantTable
   cart: CartItem[]
-  sending: boolean
   onAddToCart: (item: CartItem) => void
   onChangeQuantity: (cartId: string, delta: number) => void
   onRemove: (cartId: string) => void
@@ -26,7 +25,6 @@ interface Props {
 export default function DashboardScreen({
   table,
   cart,
-  sending,
   onAddToCart,
   onChangeQuantity,
   onRemove,
@@ -150,7 +148,6 @@ export default function DashboardScreen({
 
         <CartPanel
           items={cart}
-          sending={sending}
           isOpen={cartOpen}
           onChangeQuantity={onChangeQuantity}
           onRemove={onRemove}

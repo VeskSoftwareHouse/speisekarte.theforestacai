@@ -1,0 +1,82 @@
+import { ArrowLeft } from 'lucide-react'
+import { formatCHF } from '@shared/format'
+import { FallbackPhotoIcon } from '../categoryIcons'
+import { useLanguage } from '../i18n/LanguageContext'
+import { translatedField } from '../i18n/menuTranslations'
+import type { CartItem } from '../types'
+import { cartItemTotal } from '../types'
+
+interface Props {
+  items: CartItem[]
+  tableNumero: string
+  sending: boolean
+  onConfirm: () => void
+  onBack: () => void
+}
+
+export default function OrderSummaryScreen({ items, tableNumero, sending, onConfirm, onBack }: Props) {
+  const { t, lang } = useLanguage()
+  const total = items.reduce((sum, i) => sum + cartItemTotal(i), 0)
+
+  return (
+    <div className="order-summary">
+      <header className="order-summary__header">
+        <button className="order-summary__back" onClick={onBack} aria-label={t('backToMenuButton')} disabled={sending}>
+          <ArrowLeft size={20} strokeWidth={2} />
+        </button>
+        <div>
+          <h1>{t('orderSummaryTitle')}</h1>
+          <p className="order-summary__subtitle">
+            {t('orderSummarySubtitle')} · {t('tableLabel')} {tableNumero}
+          </p>
+        </div>
+      </header>
+
+      <ul className="order-summary__list">
+        {items.map((item) => (
+          <li key={item.cartId} className="order-summary__item">
+            <div className="cart-panel__thumb">
+              {item.menuItem.foto_url ? (
+                <img src={item.menuItem.foto_url} alt="" />
+              ) : (
+                <FallbackPhotoIcon className="cart-panel__thumb-fallback" size={22} strokeWidth={1.5} aria-hidden />
+              )}
+            </div>
+            <div className="order-summary__item-info">
+              <div className="order-summary__item-title">
+                <span className="order-summary__item-qty">{item.quantidade}×</span>
+                <span className="cart-panel__name">
+                  {translatedField(item.menuItem.nome_i18n, lang, item.menuItem.nome) ?? item.menuItem.nome}
+                </span>
+              </div>
+              {item.selectedOptions.length > 0 && (
+                <p className="cart-panel__mods">
+                  {item.selectedOptions
+                    .map((o) => translatedField(o.option_nome_i18n, lang, o.option_nome))
+                    .join(', ')}
+                </p>
+              )}
+              {item.observacoes && (
+                <p className="cart-panel__obs">
+                  {t('obsPrefix')}
+                  {item.observacoes}
+                </p>
+              )}
+            </div>
+            <span className="cart-panel__price">{formatCHF(cartItemTotal(item))}</span>
+          </li>
+        ))}
+      </ul>
+
+      <footer className="order-summary__footer">
+        <div className="cart-panel__total">
+          <span>{t('totalLabel')}</span>
+          <strong>{formatCHF(total)}</strong>
+        </div>
+        <button className="btn btn-primary btn-block" disabled={items.length === 0 || sending} onClick={onConfirm}>
+          {sending ? t('sending') : t('confirmAndPayButton')}
+        </button>
+      </footer>
+    </div>
+  )
+}

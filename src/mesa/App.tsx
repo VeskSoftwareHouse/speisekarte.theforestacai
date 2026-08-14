@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import type { RestaurantTable } from '@shared/types'
 import TableSelect from './components/TableSelect'
 import DashboardScreen from './components/DashboardScreen'
+import OrderSummaryScreen from './components/OrderSummaryScreen'
 import ConfirmationScreen from './components/ConfirmationScreen'
 import PaymentStatusScreen from './components/PaymentStatusScreen'
 import { useKeepFullscreen } from './useFullscreen'
 import { useLanguage } from './i18n/LanguageContext'
 import type { CartItem } from './types'
 
-type View = 'dashboard' | 'confirming_payment' | 'payment_failed' | 'confirmation'
+type View = 'dashboard' | 'resumo' | 'confirming_payment' | 'payment_failed' | 'confirmation'
 
 const STORAGE_KEY = 'cardapio:table'
 
@@ -149,23 +150,40 @@ export default function App() {
     )
   }
 
+  if (view === 'resumo') {
+    return (
+      <>
+        <OrderSummaryScreen
+          items={cart}
+          tableNumero={table.numero}
+          sending={sending}
+          onConfirm={handleSubmit}
+          onBack={() => {
+            setSendError(null)
+            setView('dashboard')
+          }}
+        />
+        {sendError && (
+          <div className="toast toast--error" role="alert">
+            {sendError}
+          </div>
+        )}
+      </>
+    )
+  }
+
   return (
-    <>
-      <DashboardScreen
-        table={table}
-        cart={cart}
-        sending={sending}
-        onAddToCart={handleAddToCart}
-        onChangeQuantity={handleChangeQuantity}
-        onRemove={handleRemove}
-        onSubmit={handleSubmit}
-        onChangeTable={handleChangeTable}
-      />
-      {sendError && (
-        <div className="toast toast--error" role="alert">
-          {sendError}
-        </div>
-      )}
-    </>
+    <DashboardScreen
+      table={table}
+      cart={cart}
+      onAddToCart={handleAddToCart}
+      onChangeQuantity={handleChangeQuantity}
+      onRemove={handleRemove}
+      onSubmit={() => {
+        setSendError(null)
+        setView('resumo')
+      }}
+      onChangeTable={handleChangeTable}
+    />
   )
 }

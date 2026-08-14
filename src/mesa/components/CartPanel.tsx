@@ -8,7 +8,6 @@ import { cartItemTotal } from '../types'
 
 interface Props {
   items: CartItem[]
-  sending: boolean
   isOpen: boolean
   onChangeQuantity: (cartId: string, delta: number) => void
   onRemove: (cartId: string) => void
@@ -16,7 +15,7 @@ interface Props {
   onClose: () => void
 }
 
-export default function CartPanel({ items, sending, isOpen, onChangeQuantity, onRemove, onSubmit, onClose }: Props) {
+export default function CartPanel({ items, isOpen, onChangeQuantity, onRemove, onSubmit, onClose }: Props) {
   const { t, lang } = useLanguage()
   const total = items.reduce((sum, i) => sum + cartItemTotal(i), 0)
   const count = items.reduce((sum, i) => sum + i.quantidade, 0)
@@ -106,8 +105,8 @@ export default function CartPanel({ items, sending, isOpen, onChangeQuantity, on
           <span>{t('totalLabel')}</span>
           <strong>{formatCHF(total)}</strong>
         </div>
-        <button className="btn btn-primary btn-block" disabled={items.length === 0 || sending} onClick={onSubmit}>
-          {sending ? t('sending') : `${t('checkoutButton')} →`}
+        <button className="btn btn-primary btn-block" disabled={items.length === 0} onClick={onSubmit}>
+          {t('checkoutButton')} →
         </button>
       </footer>
     </aside>
