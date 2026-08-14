@@ -28,6 +28,13 @@
   flex: 0 0 auto;
   transition: transform 0.15s ease;
 }
+.language-selector__flag {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
 
 .language-selector__menu {
   position: fixed;
@@ -65,15 +72,6 @@
   background: #efe7fb;
   color: var(--color-primary-dark);
 }
-.language-selector__option-code {
-  min-width: 28px;
-  font-weight: 800;
-  color: var(--color-text-muted);
-}
-.language-selector__option--active .language-selector__option-code {
-  color: var(--color-primary-dark);
-}
-
 /* ===== Seleção de mesa ===== */
 .table-select {
   position: relative;

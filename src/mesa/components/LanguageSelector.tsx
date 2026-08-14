@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ChevronDown, Globe } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { LANGUAGES } from '../i18n/languages'
 import { useLanguage } from '../i18n/LanguageContext'
 
@@ -74,10 +74,8 @@ export default function LanguageSelector({ variant = 'dark' }: Props) {
         aria-expanded={open}
         aria-label={t('languageLabel')}
       >
-        <Globe size={16} strokeWidth={2} aria-hidden />
-        <span>
-          {active.code.toUpperCase()} — {active.label}
-        </span>
+        <img src={active.flag} alt="" className="language-selector__flag" aria-hidden />
+        <span>{active.label}</span>
         <ChevronDown
           size={14}
           strokeWidth={2}
@@ -108,7 +106,7 @@ export default function LanguageSelector({ variant = 'dark' }: Props) {
                     setOpen(false)
                   }}
                 >
-                  <span className="language-selector__option-code">{l.code.toUpperCase()}</span>
+                  <img src={l.flag} alt="" className="language-selector__flag" aria-hidden />
                   {l.label}
                 </button>
               </li>
