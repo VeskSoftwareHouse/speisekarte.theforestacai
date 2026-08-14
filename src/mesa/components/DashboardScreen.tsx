@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ChefHat, Plus, ShoppingBag } from 'lucide-react'
 import { useMenu } from '@shared/hooks/useMenu'
-import type { MenuItemWithModifiers, RestaurantTable } from '@shared/types'
+import type { MenuItemWithModifiers } from '@shared/types'
 import { formatCHF } from '@shared/format'
 import Sidebar, { FEATURED_ID } from './Sidebar'
 import CartPanel from './CartPanel'
@@ -13,24 +13,14 @@ import type { CartItem } from '../types'
 import { cartItemTotal } from '../types'
 
 interface Props {
-  table: RestaurantTable
   cart: CartItem[]
   onAddToCart: (item: CartItem) => void
   onChangeQuantity: (cartId: string, delta: number) => void
   onRemove: (cartId: string) => void
   onSubmit: () => void
-  onChangeTable: () => void
 }
 
-export default function DashboardScreen({
-  table,
-  cart,
-  onAddToCart,
-  onChangeQuantity,
-  onRemove,
-  onSubmit,
-  onChangeTable,
-}: Props) {
+export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, onRemove, onSubmit }: Props) {
   const { categories, itemsByCategory, loading, error } = useMenu()
   const { lang, t } = useLanguage()
   const [activeCategory, setActiveCategory] = useState<string>(FEATURED_ID)
@@ -75,13 +65,7 @@ export default function DashboardScreen({
   return (
     <div className="dashboard">
       <div className="dashboard__top">
-        <Sidebar
-          categories={categories}
-          activeId={activeCategory}
-          onSelect={setActiveCategory}
-          tableNumero={table.numero}
-          onChangeTable={onChangeTable}
-        />
+        <Sidebar categories={categories} activeId={activeCategory} onSelect={setActiveCategory} />
 
         <main className="dashboard__main">
           <header className="dashboard__header">

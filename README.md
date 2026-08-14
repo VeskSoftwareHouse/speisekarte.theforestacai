@@ -24,7 +24,7 @@ autenticação, pagamento ou modo offline nesta fase.
 
 1. Crie um projeto em [supabase.com](https://supabase.com).
 2. No **SQL Editor**, rode o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) — cria as tabelas, RLS e habilita Realtime em `orders`/`order_items`.
-3. Rode o conteúdo de [`supabase/seed.sql`](supabase/seed.sql) — popula categorias, itens, modifiers e mesas de exemplo.
+3. Rode o conteúdo de [`supabase/seed.sql`](supabase/seed.sql) — popula categorias, itens e modifiers de exemplo.
 4. Em **Settings → API**, copie a **Project URL** e a **anon/publishable key**.
 
 ## 2. Configurar o projeto
@@ -81,13 +81,13 @@ public/equipe/                       apenas ícone de favicon, sem manifest
 public/brand/                        logo e fotos de produto recortadas do cardápio impresso
 public/sw.js                         service worker, registrado só pelo App da Mesa
 supabase/schema.sql                  tabelas, RLS, realtime
-supabase/seed.sql                    cardápio real da Forest Açaí + mesas
+supabase/seed.sql                    cardápio real da Forest Açaí
 ```
 
 ## Modelo de dados
 
 Segue o sugerido no briefing: `categories`, `menu_items`, `modifiers`,
-`modifier_options`, `menu_item_modifiers`, `tables`, `orders`, `order_items`.
+`modifier_options`, `menu_item_modifiers`, `orders`, `order_items`.
 `order_items.modifiers_selecionados` grava um snapshot (JSONB) das opções
 escolhidas — nome e preço no momento do pedido, independente de o cardápio
 mudar depois.

@@ -12,11 +12,9 @@ interface Props {
   categories: Category[]
   activeId: string
   onSelect: (id: string) => void
-  tableNumero: string
-  onChangeTable: () => void
 }
 
-export default function Sidebar({ categories, activeId, onSelect, tableNumero, onChangeTable }: Props) {
+export default function Sidebar({ categories, activeId, onSelect }: Props) {
   const { t, lang } = useLanguage()
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -71,12 +69,6 @@ export default function Sidebar({ categories, activeId, onSelect, tableNumero, o
 
         <div className="sidebar__footer">
           <LanguageSelector variant="dark" />
-          <div className="sidebar__table">
-            <span>
-              {t('tableLabel')} {tableNumero}
-            </span>
-            <button onClick={onChangeTable}>{t('changeTable')}</button>
-          </div>
         </div>
       </div>
 

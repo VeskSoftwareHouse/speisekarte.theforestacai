@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '@shared/supabaseClient'
 import { ORDER_STATUS_FLOW } from '@shared/types'
-import type { OrderItem, OrderWithItems, RestaurantTable } from '@shared/types'
+import type { OrderItem, OrderWithItems } from '@shared/types'
 
 /** aguardando_pagamento/cancelado nunca chegam ao quadro da cozinha. */
 const KITCHEN_STATUSES = ORDER_STATUS_FLOW
@@ -28,8 +28,7 @@ export function useOrders(): UseOrdersResult {
   const hasLoadedOnce = useRef(false)
 
   const fetchAll = useCallback(async () => {
-    const [tablesRes, ordersRes, itemsRes] = await Promise.all([
-      supabase.from('tables').select('*'),
+    const [ordersRes, itemsRes] = await Promise.all([
       supabase
         .from('orders')
         .select('*')
@@ -38,15 +37,12 @@ export function useOrders(): UseOrdersResult {
       supabase.from('order_items').select('*'),
     ])
 
-    const firstError = tablesRes.error ?? ordersRes.error ?? itemsRes.error
+    const firstError = ordersRes.error ?? itemsRes.error
     if (firstError) {
       setError(firstError.message)
       setLoading(false)
       return
     }
-
-    const tablesById: Record<string, RestaurantTable> = {}
-    for (const t of tablesRes.data ?? []) tablesById[t.id] = t
 
     const itemsByOrder: Record<string, OrderItem[]> = {}
     for (const it of itemsRes.data ?? []) {
@@ -55,7 +51,6 @@ export function useOrders(): UseOrdersResult {
 
     const assembled: OrderWithItems[] = (ordersRes.data ?? []).map((o) => ({
       ...o,
-      table: tablesById[o.table_id] ?? null,
       items: itemsByOrder[o.id] ?? [],
     }))
 

@@ -11,13 +11,12 @@ const TIP_OPTIONS = [0, 5, 10, 20]
 
 interface Props {
   items: CartItem[]
-  tableNumero: string
   sending: boolean
   onConfirm: (customerName: string, tip: number) => void
   onBack: () => void
 }
 
-export default function OrderSummaryScreen({ items, tableNumero, sending, onConfirm, onBack }: Props) {
+export default function OrderSummaryScreen({ items, sending, onConfirm, onBack }: Props) {
   const { t, lang } = useLanguage()
   const [customerName, setCustomerName] = useState('')
   const [tip, setTip] = useState(0)
@@ -39,9 +38,7 @@ export default function OrderSummaryScreen({ items, tableNumero, sending, onConf
           </button>
           <div>
             <h1>{t('orderSummaryTitle')}</h1>
-            <p className="order-summary__subtitle">
-              {t('orderSummarySubtitle')} · {t('tableLabel')} {tableNumero}
-            </p>
+            <p className="order-summary__subtitle">{t('orderSummarySubtitle')}</p>
           </div>
         </header>
 

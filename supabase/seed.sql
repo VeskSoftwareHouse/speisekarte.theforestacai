@@ -5,8 +5,8 @@
 -- Idempotente: pode rodar de novo com segurança.
 -- =====================================================================
 
--- order_items/orders precisam sumir primeiro: eles referenciam menu_items e
--- tables, e teriam bloqueado a limpeza abaixo por causa das foreign keys.
+-- order_items/orders precisam sumir primeiro: eles referenciam menu_items,
+-- e teriam bloqueado a limpeza abaixo por causa das foreign keys.
 delete from order_items;
 delete from orders;
 delete from menu_item_modifiers;
@@ -14,7 +14,6 @@ delete from modifier_options;
 delete from modifiers;
 delete from menu_items;
 delete from categories;
-delete from tables;
 
 -- ---------------------------------------------------------------------
 -- categories
@@ -130,9 +129,3 @@ insert into menu_item_modifiers (menu_item_id, modifier_id) values
   ('00000000-0000-0000-0000-0000000000ed', '00000000-0000-0000-0000-0000000000d4'),
   ('00000000-0000-0000-0000-0000000000ee', '00000000-0000-0000-0000-0000000000d4'),
   ('00000000-0000-0000-0000-0000000000ef', '00000000-0000-0000-0000-0000000000d4');
-
--- ---------------------------------------------------------------------
--- tables
--- ---------------------------------------------------------------------
-insert into tables (numero) values
-  ('1'), ('2'), ('3'), ('4'), ('5'), ('6'), ('7'), ('8');

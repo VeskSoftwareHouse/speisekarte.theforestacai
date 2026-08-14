@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react'
-import type { RestaurantTable } from '@shared/types'
-import TableSelect from './components/TableSelect'
 import DashboardScreen from './components/DashboardScreen'
 import OrderSummaryScreen from './components/OrderSummaryScreen'
 import ConfirmationScreen from './components/ConfirmationScreen'
@@ -11,13 +9,7 @@ import type { CartItem } from './types'
 
 type View = 'dashboard' | 'resumo' | 'confirming_payment' | 'payment_failed' | 'confirmation'
 
-const STORAGE_KEY = 'cardapio:table'
-
 export default function App() {
-  const [table, setTable] = useState<RestaurantTable | null>(() => {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as RestaurantTable) : null
-  })
   const [view, setView] = useState<View>('dashboard')
   const [cart, setCart] = useState<CartItem[]>([])
   const [sending, setSending] = useState(false)
@@ -28,10 +20,6 @@ export default function App() {
   useKeepFullscreen()
 
   useEffect(() => {
-    if (table) localStorage.setItem(STORAGE_KEY, JSON.stringify(table))
-  }, [table])
-
-  useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const orderId = params.get('pedido')
     if (!orderId) return
@@ -40,17 +28,6 @@ export default function App() {
     confirmPayment(orderId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  function handleSelectTable(t: RestaurantTable) {
-    setTable(t)
-    setView('dashboard')
-  }
-
-  function handleChangeTable() {
-    localStorage.removeItem(STORAGE_KEY)
-    setTable(null)
-    setCart([])
-  }
 
   function handleAddToCart(item: CartItem) {
     setCart((prev) => [...prev, item])
@@ -89,7 +66,7 @@ export default function App() {
   }
 
   async function handleSubmit(customerName: string, tip: number) {
-    if (!table || cart.length === 0 || !customerName.trim()) return
+    if (cart.length === 0 || !customerName.trim()) return
     setSending(true)
     setSendError(null)
 
@@ -107,8 +84,6 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tableId: table.id,
-          tableNumero: table.numero,
           items: itemsPayload,
           customerName,
           tip,
@@ -125,10 +100,6 @@ export default function App() {
       setSendError(err instanceof Error ? err.message : t('genericOrderError'))
       setSending(false)
     }
-  }
-
-  if (!table) {
-    return <TableSelect onSelect={handleSelectTable} />
   }
 
   if (view === 'confirming_payment') {
@@ -148,7 +119,6 @@ export default function App() {
   if (view === 'confirmation') {
     return (
       <ConfirmationScreen
-        tableNumero={table.numero}
         onNewOrder={() => {
           setView('dashboard')
         }}
@@ -161,7 +131,6 @@ export default function App() {
       <>
         <OrderSummaryScreen
           items={cart}
-          tableNumero={table.numero}
           sending={sending}
           onConfirm={handleSubmit}
           onBack={() => {
@@ -180,7 +149,6 @@ export default function App() {
 
   return (
     <DashboardScreen
-      table={table}
       cart={cart}
       onAddToCart={handleAddToCart}
       onChangeQuantity={handleChangeQuantity}
@@ -189,7 +157,6 @@ export default function App() {
         setSendError(null)
         setView('resumo')
       }}
-      onChangeTable={handleChangeTable}
     />
   )
 }

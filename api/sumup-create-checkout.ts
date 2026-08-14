@@ -25,16 +25,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const { tableId, tableNumero, items, customerName, tip } = req.body ?? {}
-  if (!tableId || !Array.isArray(items) || items.length === 0) {
+  const { items, customerName, tip } = req.body ?? {}
+  if (!Array.isArray(items) || items.length === 0) {
     res.status(400).json({ error: 'Pedido inválido.' })
+    return
+  }
+  if (typeof customerName !== 'string' || !customerName.trim()) {
+    res.status(400).json({ error: 'Nome do pedido é obrigatório.' })
     return
   }
 
   const ALLOWED_TIPS = [0, 5, 10, 20]
   const tipAmount = ALLOWED_TIPS.includes(tip) ? tip : 0
-  const cleanCustomerName =
-    typeof customerName === 'string' && customerName.trim() ? customerName.trim().slice(0, 80) : null
+  const cleanCustomerName = customerName.trim().slice(0, 80)
 
   const cartItems = items as CartItemPayload[]
   const subtotal = cartItems.reduce((sum, it) => sum + it.preco_unitario * it.quantidade, 0)
@@ -49,7 +52,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { data: order, error: orderErr } = await supabase
     .from('orders')
     .insert({
-      table_id: tableId,
       status: 'aguardando_pagamento',
       valor_pago: total,
       gorjeta: tipAmount,
@@ -95,9 +97,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // (ou tornar configurável via env var) antes de ir para produção.
         currency: 'BRL',
         merchant_code: sumupMerchantCode,
-        description: [cleanCustomerName, tableNumero ? `Mesa ${tableNumero}` : null, 'Forest Açaí']
-          .filter(Boolean)
-          .join(' — '),
+        description: [cleanCustomerName, 'Forest Açaí'].filter(Boolean).join(' — '),
         redirect_url: redirectUrl,
         hosted_checkout: { enabled: true },
       }),

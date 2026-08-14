@@ -67,14 +67,8 @@ export interface MenuItemModifier {
   modifier_id: string
 }
 
-export interface RestaurantTable {
-  id: string
-  numero: string
-}
-
 export interface Order {
   id: string
-  table_id: string
   status: OrderStatus
   criado_em: string
   atualizado_em: string
@@ -117,6 +111,5 @@ export interface ModifierGroup extends Modifier {
 
 /** Pedido "achatado" com itens, usado no App da Equipe */
 export interface OrderWithItems extends Order {
-  table: RestaurantTable | null
   items: OrderItem[]
 }

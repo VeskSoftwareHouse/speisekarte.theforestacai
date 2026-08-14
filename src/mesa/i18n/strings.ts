@@ -1,14 +1,9 @@
 import type { LanguageCode } from './languages'
 
 export interface StringDict {
-  welcomeTitle: string
-  welcomeSubtitle: string
-  loadingTables: string
   sidebarTagline: string
   menuLabel: string
   navFeatured: string
-  tableLabel: string
-  changeTable: string
   greetingTitle: string
   greetingSubtitle: string
   kitchenNotice: string
@@ -58,14 +53,9 @@ export type StringKey = keyof StringDict
 
 export const STRINGS: Record<LanguageCode, StringDict> = {
   de: {
-    welcomeTitle: 'Willkommen!',
-    welcomeSubtitle: 'Tippe auf deine Tischnummer, um zu beginnen',
-    loadingTables: 'Tische werden geladen…',
     sidebarTagline: 'Der Geschmack Brasiliens in der Schweiz',
     menuLabel: 'Menü',
     navFeatured: 'Empfehlungen',
-    tableLabel: 'Tisch',
-    changeTable: 'Wechseln',
     greetingTitle: 'Hallo! Worauf hast du heute Lust?',
     greetingSubtitle: 'Stelle es dir selbst zusammen oder wähle eine unserer Optionen',
     kitchenNotice: 'Bestellungen werden direkt an die Küche gesendet',
@@ -92,8 +82,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     sending: 'Wird gesendet…',
     checkoutButton: 'Bestellung abschicken',
     confirmationTitle: 'Bestellung gesendet!',
-    confirmationBody:
-      'Deine Bestellung ist in der Küche von Tisch {numero} angekommen. Unser Team beginnt in Kürze mit der Zubereitung.',
+    confirmationBody: 'Deine Bestellung ist in der Küche angekommen. Unser Team beginnt in Kürze mit der Zubereitung.',
     newOrderButton: 'Weitere Bestellung aufgeben',
     genericOrderError: 'Die Bestellung konnte nicht erstellt werden.',
     languageLabel: 'Sprache',
@@ -112,14 +101,9 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     subtotalLabel: 'Zwischensumme',
   },
   fr: {
-    welcomeTitle: 'Bienvenue !',
-    welcomeSubtitle: 'Touchez le numéro de votre table pour commencer',
-    loadingTables: 'Chargement des tables…',
     sidebarTagline: 'Le goût du Brésil en Suisse',
     menuLabel: 'Menu',
     navFeatured: 'Nos coups de cœur',
-    tableLabel: 'Table',
-    changeTable: 'Changer',
     greetingTitle: "Bonjour ! Qu'est-ce que ce sera aujourd'hui ?",
     greetingSubtitle: "Composez à votre façon ou choisissez l'une de nos options",
     kitchenNotice: 'Les commandes passées ici sont envoyées directement en cuisine',
@@ -146,8 +130,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     sending: 'Envoi…',
     checkoutButton: 'Valider la commande',
     confirmationTitle: 'Commande envoyée !',
-    confirmationBody:
-      'Votre commande est arrivée en cuisine pour la table {numero}. Notre équipe va bientôt commencer la préparation.',
+    confirmationBody: 'Votre commande est arrivée en cuisine. Notre équipe va bientôt commencer la préparation.',
     newOrderButton: 'Passer une autre commande',
     genericOrderError: 'Impossible de créer la commande.',
     languageLabel: 'Langue',
@@ -166,14 +149,9 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     subtotalLabel: 'Sous-total',
   },
   it: {
-    welcomeTitle: 'Benvenuto!',
-    welcomeSubtitle: 'Tocca il numero del tuo tavolo per iniziare',
-    loadingTables: 'Caricamento tavoli…',
     sidebarTagline: 'Il sapore del Brasile in Svizzera',
     menuLabel: 'Menu',
     navFeatured: 'In evidenza',
-    tableLabel: 'Tavolo',
-    changeTable: 'Cambia',
     greetingTitle: 'Ciao! Cosa ti va oggi?',
     greetingSubtitle: 'Componi a modo tuo o scegli una delle nostre proposte',
     kitchenNotice: 'Gli ordini effettuati qui vengono inviati direttamente in cucina',
@@ -200,8 +178,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     sending: 'Invio in corso…',
     checkoutButton: 'Invia ordine',
     confirmationTitle: 'Ordine inviato!',
-    confirmationBody:
-      'Il tuo ordine è arrivato in cucina per il tavolo {numero}. Il nostro team inizierà a breve la preparazione.',
+    confirmationBody: 'Il tuo ordine è arrivato in cucina. Il nostro team inizierà a breve la preparazione.',
     newOrderButton: 'Fai un altro ordine',
     genericOrderError: "Non è stato possibile creare l'ordine.",
     languageLabel: 'Lingua',
@@ -220,14 +197,9 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     subtotalLabel: 'Subtotale',
   },
   en: {
-    welcomeTitle: 'Welcome!',
-    welcomeSubtitle: 'Tap your table number to get started',
-    loadingTables: 'Loading tables…',
     sidebarTagline: 'The taste of Brazil in Switzerland',
     menuLabel: 'Menu',
     navFeatured: 'Highlights',
-    tableLabel: 'Table',
-    changeTable: 'Change',
     greetingTitle: 'Hi! What will it be today?',
     greetingSubtitle: 'Build it your way or pick one of our options',
     kitchenNotice: 'Orders placed here are sent straight to the kitchen',
@@ -254,8 +226,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     sending: 'Sending…',
     checkoutButton: 'Place order',
     confirmationTitle: 'Order sent!',
-    confirmationBody:
-      'Your order has reached the kitchen for table {numero}. Our team will start preparing it shortly.',
+    confirmationBody: 'Your order has reached the kitchen. Our team will start preparing it shortly.',
     newOrderButton: 'Place another order',
     genericOrderError: 'Could not create the order.',
     languageLabel: 'Language',
@@ -274,14 +245,9 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     subtotalLabel: 'Subtotal',
   },
   pt: {
-    welcomeTitle: 'Bem-vindo!',
-    welcomeSubtitle: 'Toque no número da sua mesa para começar',
-    loadingTables: 'Carregando mesas…',
     sidebarTagline: 'O sabor do Brasil na Suíça',
     menuLabel: 'Menu',
     navFeatured: 'Destaques',
-    tableLabel: 'Mesa',
-    changeTable: 'Trocar',
     greetingTitle: 'Olá! O que vai ser hoje?',
     greetingSubtitle: 'Monte do seu jeito ou escolha uma das nossas opções',
     kitchenNotice: 'Pedidos feitos aqui são enviados direto para a cozinha',
@@ -308,8 +274,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     sending: 'Enviando…',
     checkoutButton: 'Finalizar pedido',
     confirmationTitle: 'Pedido enviado!',
-    confirmationBody:
-      'Seu pedido chegou na cozinha da Mesa {numero}. Em breve nossa equipe começa o preparo.',
+    confirmationBody: 'Seu pedido chegou na cozinha. Em breve nossa equipe começa o preparo.',
     newOrderButton: 'Fazer outro pedido',
     genericOrderError: 'Não foi possível criar o pedido.',
     languageLabel: 'Idioma',
@@ -328,14 +293,9 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     subtotalLabel: 'Subtotal',
   },
   es: {
-    welcomeTitle: '¡Bienvenido!',
-    welcomeSubtitle: 'Toca el número de tu mesa para empezar',
-    loadingTables: 'Cargando mesas…',
     sidebarTagline: 'El sabor de Brasil en Suiza',
     menuLabel: 'Menú',
     navFeatured: 'Destacados',
-    tableLabel: 'Mesa',
-    changeTable: 'Cambiar',
     greetingTitle: '¡Hola! ¿Qué va a ser hoy?',
     greetingSubtitle: 'Arma tu pedido a tu manera o elige una de nuestras opciones',
     kitchenNotice: 'Los pedidos hechos aquí se envían directo a la cocina',
@@ -362,8 +322,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     sending: 'Enviando…',
     checkoutButton: 'Finalizar pedido',
     confirmationTitle: '¡Pedido enviado!',
-    confirmationBody:
-      'Tu pedido llegó a la cocina de la mesa {numero}. Nuestro equipo comenzará la preparación en breve.',
+    confirmationBody: 'Tu pedido llegó a la cocina. Nuestro equipo comenzará la preparación en breve.',
     newOrderButton: 'Hacer otro pedido',
     genericOrderError: 'No se pudo crear el pedido.',
     languageLabel: 'Idioma',

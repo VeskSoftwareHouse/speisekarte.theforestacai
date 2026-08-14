@@ -93,19 +93,10 @@ create table if not exists menu_item_modifiers (
 );
 
 -- ---------------------------------------------------------------------
--- tables (mesas/balcão do estabelecimento)
--- ---------------------------------------------------------------------
-create table if not exists tables (
-  id       uuid primary key default gen_random_uuid(),
-  numero   text not null unique
-);
-
--- ---------------------------------------------------------------------
 -- orders (pedidos)
 -- ---------------------------------------------------------------------
 create table if not exists orders (
   id            uuid primary key default gen_random_uuid(),
-  table_id      uuid not null references tables(id),
   status        text not null default 'aguardando_pagamento'
                   check (status in
                     ('aguardando_pagamento', 'recebido', 'em_preparo', 'pronto', 'entregue', 'cancelado')),
@@ -122,6 +113,13 @@ alter table orders add column if not exists sumup_checkout_id text;
 alter table orders add column if not exists valor_pago numeric(10,2);
 alter table orders add column if not exists nome_cliente text;
 alter table orders add column if not exists gorjeta numeric(10,2) not null default 0;
+
+-- removido: seleção de mesa. Pedidos passaram a identificar o cliente só
+-- pelo nome (nome_cliente); dropa a coluna e a tabela de mesas em bancos
+-- que já existiam antes dessa mudança (drop da coluna primeiro, pra tirar
+-- a foreign key antes de derrubar a tabela referenciada).
+alter table orders drop column if exists table_id;
+drop table if exists tables;
 
 create index if not exists idx_orders_status on orders(status);
 create index if not exists idx_orders_criado_em on orders(criado_em);
@@ -168,7 +166,6 @@ alter table menu_items          enable row level security;
 alter table modifiers           enable row level security;
 alter table modifier_options    enable row level security;
 alter table menu_item_modifiers enable row level security;
-alter table tables              enable row level security;
 alter table orders              enable row level security;
 alter table order_items         enable row level security;
 
@@ -197,20 +194,18 @@ drop policy if exists "authenticated delete modifier_options" on modifier_option
 drop policy if exists "public read menu_item_modifiers"          on menu_item_modifiers;
 drop policy if exists "authenticated insert menu_item_modifiers" on menu_item_modifiers;
 drop policy if exists "authenticated delete menu_item_modifiers" on menu_item_modifiers;
-drop policy if exists "public read tables"              on tables;
 drop policy if exists "public read orders"              on orders;
 drop policy if exists "public insert orders"             on orders;
 drop policy if exists "public update orders"             on orders;
 drop policy if exists "public read order_items"          on order_items;
 drop policy if exists "public insert order_items"        on order_items;
 
--- leitura pública do cardápio e das mesas
+-- leitura pública do cardápio
 create policy "public read categories"          on categories          for select using (true);
 create policy "public read menu_items"          on menu_items          for select using (true);
 create policy "public read modifiers"           on modifiers           for select using (true);
 create policy "public read modifier_options"    on modifier_options    for select using (true);
 create policy "public read menu_item_modifiers" on menu_item_modifiers for select using (true);
-create policy "public read tables"              on tables              for select using (true);
 
 -- gestão do cardápio pelo Painel da Equipe: só usuários autenticados
 -- (login da equipe, ver src/equipe/hooks/useAuth.ts) podem escrever.
