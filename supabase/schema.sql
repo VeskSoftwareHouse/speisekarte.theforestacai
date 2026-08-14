@@ -59,6 +59,8 @@ create table if not exists modifiers (
 );
 
 alter table modifiers add column if not exists conta_para_limite boolean not null default false;
+-- traduções manuais do nome por idioma (mesmo formato de menu_items.nome_i18n).
+alter table modifiers add column if not exists nome_i18n jsonb not null default '{}'::jsonb;
 
 -- ---------------------------------------------------------------------
 -- modifier_options (opções dentro de um grupo, ex: "Morango", "+Nutella")
@@ -70,6 +72,9 @@ create table if not exists modifier_options (
   preco_adicional  numeric(10,2) not null default 0,
   ordem            int not null default 0
 );
+
+-- traduções manuais do nome por idioma (mesmo formato de menu_items.nome_i18n).
+alter table modifier_options add column if not exists nome_i18n jsonb not null default '{}'::jsonb;
 
 create index if not exists idx_modifier_options_modifier on modifier_options(modifier_id);
 
@@ -439,3 +444,74 @@ update categories set nome_i18n = '{
   "pt": "Sucos — Premium",
   "es": "Zumos — Premium"
 }'::jsonb where id = '00000000-0000-0000-0000-0000000000c5' and nome_i18n = '{}'::jsonb;
+
+-- =====================================================================
+-- Backfill: traduções de nome dos grupos e opções de adicionais que já
+-- existiam (migradas do antigo src/mesa/i18n/labelTranslations.ts).
+-- Grupos têm ID estável; opções não (são recriadas a cada reseed), então
+-- o match é pelo nome em alemão. Só preenche linhas ainda vazias.
+-- =====================================================================
+
+update modifiers set nome_i18n = '{
+  "fr": "Fruits",
+  "it": "Frutta",
+  "en": "Fruits",
+  "pt": "Frutas",
+  "es": "Frutas"
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000d1' and nome_i18n = '{}'::jsonb;
+
+update modifiers set nome_i18n = '{
+  "fr": "Taille",
+  "it": "Formato",
+  "en": "Size",
+  "pt": "Tamanho",
+  "es": "Tamaño"
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000d4' and nome_i18n = '{}'::jsonb;
+
+update modifier_options set nome_i18n = '{
+  "fr": "Fraise",
+  "it": "Fragola",
+  "en": "Strawberry",
+  "pt": "Morango",
+  "es": "Fresa"
+}'::jsonb where nome = 'Erdbeere' and nome_i18n = '{}'::jsonb;
+
+update modifier_options set nome_i18n = '{
+  "fr": "Myrtille",
+  "it": "Mirtillo",
+  "en": "Blueberry",
+  "pt": "Mirtilo",
+  "es": "Arándano"
+}'::jsonb where nome = 'Blaubeere' and nome_i18n = '{}'::jsonb;
+
+update modifier_options set nome_i18n = '{
+  "fr": "Banane",
+  "it": "Banana",
+  "en": "Banana",
+  "pt": "Banana",
+  "es": "Plátano"
+}'::jsonb where nome = 'Banane' and nome_i18n = '{}'::jsonb;
+
+update modifier_options set nome_i18n = '{
+  "fr": "Poudre de lait",
+  "it": "Latte in polvere",
+  "en": "Milk powder",
+  "pt": "Leite em pó",
+  "es": "Leche en polvo"
+}'::jsonb where nome = 'Milchpulver' and nome_i18n = '{}'::jsonb;
+
+update modifier_options set nome_i18n = '{
+  "fr": "Cacahuètes",
+  "it": "Arachidi",
+  "en": "Peanuts",
+  "pt": "Amendoim",
+  "es": "Cacahuete"
+}'::jsonb where nome = 'Erdnüsse' and nome_i18n = '{}'::jsonb;
+
+update modifier_options set nome_i18n = '{
+  "fr": "Lait concentré",
+  "it": "Latte condensato",
+  "en": "Condensed milk",
+  "pt": "Leite condensado",
+  "es": "Leche condensada"
+}'::jsonb where nome = 'Kondensmilch' and nome_i18n = '{}'::jsonb;

@@ -4,6 +4,7 @@ import type { Modifier, ModifierOption, ModifierSelecao, ModifierTipo } from '@s
 
 export interface ModifierGroupInput {
   nome: string
+  nome_i18n: Record<string, string>
   tipo: ModifierTipo
   selecao: ModifierSelecao
   conta_para_limite: boolean
@@ -12,6 +13,7 @@ export interface ModifierGroupInput {
 export interface ModifierOptionInput {
   modifier_id: string
   nome: string
+  nome_i18n: Record<string, string>
   preco_adicional: number
   ordem: number
 }

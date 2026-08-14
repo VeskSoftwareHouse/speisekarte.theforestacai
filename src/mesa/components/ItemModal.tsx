@@ -4,7 +4,6 @@ import type { MenuItemWithModifiers, SelectedModifierOption } from '@shared/type
 import { formatCHF } from '@shared/format'
 import { useLanguage } from '../i18n/LanguageContext'
 import { translatedField } from '../i18n/menuTranslations'
-import { translateLabel } from '../i18n/labelTranslations'
 import type { CartItem } from '../types'
 
 interface Props {
@@ -34,6 +33,7 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
           modifier_nome: group.nome,
           option_id: option.id,
           option_nome: option.nome,
+          option_nome_i18n: option.nome_i18n,
           preco_adicional: option.preco_adicional,
         })
       }
@@ -97,7 +97,7 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
           {item.modifierGroups.map((group) => (
             <fieldset key={group.id} className="modal__group">
               <legend className="modal__group-title">
-                {translateLabel(group.nome, lang)}
+                {translatedField(group.nome_i18n, lang, group.nome)}
                 <span className={`badge ${group.tipo === 'obrigatorio' ? 'badge--required' : 'badge--optional'}`}>
                   {group.tipo === 'obrigatorio' ? t('badgeRequired') : t('badgeOptional')}
                 </span>
@@ -119,7 +119,7 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
                       disabled={disabledByLimit}
                       onClick={() => toggleOption(group.id, option.id, group.selecao, group.conta_para_limite)}
                     >
-                      {translateLabel(option.nome, lang)}
+                      {translatedField(option.nome_i18n, lang, option.nome)}
                       {option.preco_adicional > 0 && (
                         <span className="option-pill__price">+{formatCHF(option.preco_adicional)}</span>
                       )}
@@ -170,7 +170,7 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
           {!canAdd && (
             <p className="modal__warning">
               {t('selectOptionIn')}
-              {missingRequired.map((g) => translateLabel(g.nome, lang)).join(', ')}
+              {missingRequired.map((g) => translatedField(g.nome_i18n, lang, g.nome)).join(', ')}
             </p>
           )}
           <button className="btn btn-primary btn-block" disabled={!canAdd} onClick={handleAdd}>

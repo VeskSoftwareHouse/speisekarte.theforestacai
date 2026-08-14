@@ -43,6 +43,8 @@ export interface Modifier {
   selecao: ModifierSelecao
   /** Se true, opções escolhidas neste grupo contam para `MenuItem.max_ingredientes`. */
   conta_para_limite: boolean
+  /** Traduções manuais do nome por idioma (chaves: fr, it, en, pt, es). Alemão vem de `nome`. */
+  nome_i18n: Record<string, string>
 }
 
 export interface ModifierOption {
@@ -51,6 +53,8 @@ export interface ModifierOption {
   nome: string
   preco_adicional: number
   ordem: number
+  /** Traduções manuais do nome por idioma (chaves: fr, it, en, pt, es). Alemão vem de `nome`. */
+  nome_i18n: Record<string, string>
 }
 
 export interface MenuItemModifier {
@@ -77,6 +81,8 @@ export interface SelectedModifierOption {
   modifier_nome: string
   option_id: string
   option_nome: string
+  /** Traduções do nome da opção, só para exibição no carrinho — a cozinha sempre vê `option_nome` (alemão). */
+  option_nome_i18n: Record<string, string>
   preco_adicional: number
 }
 

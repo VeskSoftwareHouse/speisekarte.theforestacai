@@ -3,6 +3,14 @@ import { X } from 'lucide-react'
 import type { Modifier } from '@shared/types'
 import type { ModifierGroupInput } from '../hooks/useModifierAdmin'
 
+const TRANSLATION_LANGS: { code: string; label: string }[] = [
+  { code: 'fr', label: 'FR' },
+  { code: 'it', label: 'IT' },
+  { code: 'en', label: 'EN' },
+  { code: 'pt', label: 'PT' },
+  { code: 'es', label: 'ES' },
+]
+
 interface Props {
   group: Modifier | null
   onClose: () => void
@@ -11,6 +19,8 @@ interface Props {
 
 export default function ModifierGroupFormModal({ group, onClose, onSave }: Props) {
   const [nome, setNome] = useState(group?.nome ?? '')
+  const [nomeI18n, setNomeI18n] = useState<Record<string, string>>(group?.nome_i18n ?? {})
+  const [activeLang, setActiveLang] = useState(TRANSLATION_LANGS[0].code)
   const [tipo, setTipo] = useState<Modifier['tipo']>(group?.tipo ?? 'opcional')
   const [selecao, setSelecao] = useState<Modifier['selecao']>(group?.selecao ?? 'multipla')
   const [contaParaLimite, setContaParaLimite] = useState(group?.conta_para_limite ?? false)
@@ -23,7 +33,8 @@ export default function ModifierGroupFormModal({ group, onClose, onSave }: Props
     setSaving(true)
     setError(null)
     try {
-      await onSave({ nome: nome.trim(), tipo, selecao, conta_para_limite: contaParaLimite })
+      const cleanedI18n = Object.fromEntries(Object.entries(nomeI18n).filter(([, v]) => v.trim()))
+      await onSave({ nome: nome.trim(), nome_i18n: cleanedI18n, tipo, selecao, conta_para_limite: contaParaLimite })
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível salvar.')
@@ -43,9 +54,32 @@ export default function ModifierGroupFormModal({ group, onClose, onSave }: Props
 
         <form className="admin-form" onSubmit={handleSubmit}>
           <label className="admin-form__field">
-            <span>Nome</span>
+            <span>Nome (alemão)</span>
             <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Frutas" required />
           </label>
+
+          <div className="admin-form__field">
+            <span>Traduções do nome</span>
+            <div className="admin-lang-tabs">
+              {TRANSLATION_LANGS.map((l) => (
+                <button
+                  key={l.code}
+                  type="button"
+                  className={`admin-lang-tab ${activeLang === l.code ? 'admin-lang-tab--active' : ''} ${
+                    nomeI18n[l.code]?.trim() ? 'admin-lang-tab--filled' : ''
+                  }`}
+                  onClick={() => setActiveLang(l.code)}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+            <input
+              value={nomeI18n[activeLang] ?? ''}
+              onChange={(e) => setNomeI18n((prev) => ({ ...prev, [activeLang]: e.target.value }))}
+              placeholder="Deixe em branco para usar o alemão"
+            />
+          </div>
 
           <div className="admin-form__row">
             <label className="admin-form__field">
