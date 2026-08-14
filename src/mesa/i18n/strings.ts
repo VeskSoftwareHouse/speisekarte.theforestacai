@@ -39,6 +39,11 @@ export interface StringDict {
   newOrderButton: string
   genericOrderError: string
   languageLabel: string
+  confirmingPayment: string
+  paymentFailedTitle: string
+  paymentFailedBody: string
+  retryButton: string
+  backToMenuButton: string
 }
 
 export type StringKey = keyof StringDict
@@ -84,6 +89,11 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     newOrderButton: 'Weitere Bestellung aufgeben',
     genericOrderError: 'Die Bestellung konnte nicht erstellt werden.',
     languageLabel: 'Sprache',
+    confirmingPayment: 'Zahlung wird bestätigt…',
+    paymentFailedTitle: 'Zahlung nicht bestätigt',
+    paymentFailedBody: 'Wir konnten deine Zahlung nicht bestätigen. Bitte versuche es erneut.',
+    retryButton: 'Erneut versuchen',
+    backToMenuButton: 'Zurück zur Speisekarte',
   },
   fr: {
     welcomeTitle: 'Bienvenue !',
@@ -125,6 +135,11 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     newOrderButton: 'Passer une autre commande',
     genericOrderError: 'Impossible de créer la commande.',
     languageLabel: 'Langue',
+    confirmingPayment: 'Confirmation du paiement…',
+    paymentFailedTitle: 'Paiement non confirmé',
+    paymentFailedBody: "Nous n'avons pas pu confirmer votre paiement. Veuillez réessayer.",
+    retryButton: 'Réessayer',
+    backToMenuButton: 'Retour au menu',
   },
   it: {
     welcomeTitle: 'Benvenuto!',
@@ -166,6 +181,11 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     newOrderButton: 'Fai un altro ordine',
     genericOrderError: "Non è stato possibile creare l'ordine.",
     languageLabel: 'Lingua',
+    confirmingPayment: 'Conferma del pagamento…',
+    paymentFailedTitle: 'Pagamento non confermato',
+    paymentFailedBody: 'Non siamo riusciti a confermare il tuo pagamento. Riprova.',
+    retryButton: 'Riprova',
+    backToMenuButton: 'Torna al menu',
   },
   en: {
     welcomeTitle: 'Welcome!',
@@ -207,6 +227,11 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     newOrderButton: 'Place another order',
     genericOrderError: 'Could not create the order.',
     languageLabel: 'Language',
+    confirmingPayment: 'Confirming payment…',
+    paymentFailedTitle: 'Payment not confirmed',
+    paymentFailedBody: "We couldn't confirm your payment. Please try again.",
+    retryButton: 'Try again',
+    backToMenuButton: 'Back to menu',
   },
   pt: {
     welcomeTitle: 'Bem-vindo!',
@@ -248,6 +273,11 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     newOrderButton: 'Fazer outro pedido',
     genericOrderError: 'Não foi possível criar o pedido.',
     languageLabel: 'Idioma',
+    confirmingPayment: 'Confirmando pagamento…',
+    paymentFailedTitle: 'Pagamento não confirmado',
+    paymentFailedBody: 'Não conseguimos confirmar seu pagamento. Tente novamente.',
+    retryButton: 'Tentar novamente',
+    backToMenuButton: 'Voltar ao cardápio',
   },
   es: {
     welcomeTitle: '¡Bienvenido!',
@@ -289,5 +319,10 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     newOrderButton: 'Hacer otro pedido',
     genericOrderError: 'No se pudo crear el pedido.',
     languageLabel: 'Idioma',
+    confirmingPayment: 'Confirmando el pago…',
+    paymentFailedTitle: 'Pago no confirmado',
+    paymentFailedBody: 'No pudimos confirmar tu pago. Inténtalo de nuevo.',
+    retryButton: 'Intentar de nuevo',
+    backToMenuButton: 'Volver al menú',
   },
 }

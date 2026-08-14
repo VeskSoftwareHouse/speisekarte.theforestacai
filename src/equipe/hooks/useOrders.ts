@@ -3,6 +3,9 @@ import { supabase } from '@shared/supabaseClient'
 import { ORDER_STATUS_FLOW } from '@shared/types'
 import type { OrderItem, OrderWithItems, RestaurantTable } from '@shared/types'
 
+/** aguardando_pagamento/cancelado nunca chegam ao quadro da cozinha. */
+const KITCHEN_STATUSES = ORDER_STATUS_FLOW
+
 interface UseOrdersResult {
   orders: OrderWithItems[]
   loading: boolean
@@ -27,7 +30,11 @@ export function useOrders(): UseOrdersResult {
   const fetchAll = useCallback(async () => {
     const [tablesRes, ordersRes, itemsRes] = await Promise.all([
       supabase.from('tables').select('*'),
-      supabase.from('orders').select('*').order('criado_em', { ascending: true }),
+      supabase
+        .from('orders')
+        .select('*')
+        .in('status', KITCHEN_STATUSES)
+        .order('criado_em', { ascending: true }),
       supabase.from('order_items').select('*'),
     ])
 

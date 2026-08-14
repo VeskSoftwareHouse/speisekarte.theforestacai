@@ -101,14 +101,24 @@ create table if not exists tables (
 create table if not exists orders (
   id            uuid primary key default gen_random_uuid(),
   table_id      uuid not null references tables(id),
-  status        text not null default 'recebido'
-                  check (status in ('recebido', 'em_preparo', 'pronto', 'entregue')),
+  status        text not null default 'aguardando_pagamento'
+                  check (status in
+                    ('aguardando_pagamento', 'recebido', 'em_preparo', 'pronto', 'entregue', 'cancelado')),
   criado_em     timestamptz not null default now(),
   atualizado_em timestamptz not null default now()
 );
 
+-- pedido só chega na cozinha depois que o pagamento SumUp é confirmado.
+alter table orders drop constraint if exists orders_status_check;
+alter table orders add constraint orders_status_check check (status in
+  ('aguardando_pagamento', 'recebido', 'em_preparo', 'pronto', 'entregue', 'cancelado'));
+alter table orders alter column status set default 'aguardando_pagamento';
+alter table orders add column if not exists sumup_checkout_id text;
+alter table orders add column if not exists valor_pago numeric(10,2);
+
 create index if not exists idx_orders_status on orders(status);
 create index if not exists idx_orders_criado_em on orders(criado_em);
+create index if not exists idx_orders_sumup_checkout on orders(sumup_checkout_id);
 
 create or replace function set_atualizado_em()
 returns trigger as $$

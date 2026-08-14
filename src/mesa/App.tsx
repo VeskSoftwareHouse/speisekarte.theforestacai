@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@shared/supabaseClient'
 import type { RestaurantTable } from '@shared/types'
 import TableSelect from './components/TableSelect'
 import DashboardScreen from './components/DashboardScreen'
 import ConfirmationScreen from './components/ConfirmationScreen'
+import PaymentStatusScreen from './components/PaymentStatusScreen'
 import { useKeepFullscreen } from './useFullscreen'
 import { useLanguage } from './i18n/LanguageContext'
 import type { CartItem } from './types'
 
-type View = 'dashboard' | 'confirmation'
+type View = 'dashboard' | 'confirming_payment' | 'payment_failed' | 'confirmation'
 
 const STORAGE_KEY = 'cardapio:table'
 
@@ -21,6 +21,7 @@ export default function App() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
+  const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null)
   const { t } = useLanguage()
 
   useKeepFullscreen()
@@ -28,6 +29,16 @@ export default function App() {
   useEffect(() => {
     if (table) localStorage.setItem(STORAGE_KEY, JSON.stringify(table))
   }, [table])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const orderId = params.get('pedido')
+    if (!orderId) return
+    window.history.replaceState(null, '', window.location.pathname)
+    setConfirmingOrderId(orderId)
+    confirmPayment(orderId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function handleSelectTable(t: RestaurantTable) {
     setTable(t)
@@ -56,25 +67,32 @@ export default function App() {
     setCart((prev) => prev.filter((i) => i.cartId !== cartId))
   }
 
+  async function confirmPayment(orderId: string) {
+    setView('confirming_payment')
+    try {
+      const res = await fetch('/api/sumup-confirm-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      })
+      const data = await res.json()
+      if (res.ok && data.status && data.status !== 'aguardando_pagamento' && data.status !== 'cancelado') {
+        setCart([])
+        setView('confirmation')
+      } else {
+        setView('payment_failed')
+      }
+    } catch {
+      setView('payment_failed')
+    }
+  }
+
   async function handleSubmit() {
     if (!table || cart.length === 0) return
     setSending(true)
     setSendError(null)
 
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert({ table_id: table.id, status: 'recebido' })
-      .select()
-      .single()
-
-    if (orderError || !order) {
-      setSendError(orderError?.message ?? t('genericOrderError'))
-      setSending(false)
-      return
-    }
-
-    const orderItemsPayload = cart.map((item) => ({
-      order_id: order.id,
+    const itemsPayload = cart.map((item) => ({
       menu_item_id: item.menuItem.id,
       nome_item: item.menuItem.nome,
       quantidade: item.quantidade,
@@ -83,21 +101,41 @@ export default function App() {
       preco_unitario: item.unitPrice,
     }))
 
-    const { error: itemsError } = await supabase.from('order_items').insert(orderItemsPayload)
-
-    if (itemsError) {
-      setSendError(itemsError.message)
+    try {
+      const res = await fetch('/api/sumup-create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tableId: table.id, tableNumero: table.numero, items: itemsPayload }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.hostedCheckoutUrl) {
+        setSendError(data?.error ?? t('genericOrderError'))
+        setSending(false)
+        return
+      }
+      window.location.href = data.hostedCheckoutUrl
+    } catch (err) {
+      setSendError(err instanceof Error ? err.message : t('genericOrderError'))
       setSending(false)
-      return
     }
-
-    setSending(false)
-    setCart([])
-    setView('confirmation')
   }
 
   if (!table) {
     return <TableSelect onSelect={handleSelectTable} />
+  }
+
+  if (view === 'confirming_payment') {
+    return <PaymentStatusScreen status="confirming" />
+  }
+
+  if (view === 'payment_failed') {
+    return (
+      <PaymentStatusScreen
+        status="failed"
+        onRetry={() => confirmingOrderId && confirmPayment(confirmingOrderId)}
+        onBack={() => setView('dashboard')}
+      />
+    )
   }
 
   if (view === 'confirmation') {

@@ -758,6 +758,29 @@
   justify-content: center;
   margin-bottom: var(--space-2);
 }
+.confirmation-screen__icon--pending {
+  background: var(--color-primary);
+}
+.confirmation-screen__icon--error {
+  background: var(--color-danger);
+}
+.confirmation-screen__actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.spin {
+  animation: mesa-spin 0.9s linear infinite;
+}
+@keyframes mesa-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 .confirmation-screen h1 {
   margin: 0;
   font-size: var(--font-size-xl);

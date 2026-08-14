@@ -1,6 +1,9 @@
 export type ModifierTipo = 'obrigatorio' | 'opcional'
 export type ModifierSelecao = 'unica' | 'multipla'
+/** Status visíveis no quadro da cozinha (Painel da Equipe). */
 export type OrderStatus = 'recebido' | 'em_preparo' | 'pronto' | 'entregue'
+/** Status completo, incluindo os dois estados de pagamento que nunca chegam ao quadro da cozinha. */
+export type FullOrderStatus = 'aguardando_pagamento' | OrderStatus | 'cancelado'
 
 export const ORDER_STATUS_FLOW: OrderStatus[] = ['recebido', 'em_preparo', 'pronto', 'entregue']
 
@@ -73,6 +76,8 @@ export interface Order {
   status: OrderStatus
   criado_em: string
   atualizado_em: string
+  sumup_checkout_id: string | null
+  valor_pago: number | null
 }
 
 /** Snapshot de uma opção de modifier escolhida, gravado dentro de order_items.modifiers_selecionados */
