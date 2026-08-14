@@ -963,6 +963,7 @@ body {
   gap: var(--space-4);
 }
 .admin-form__photo-preview {
+  position: relative;
   width: 84px;
   height: 84px;
   border-radius: 10px;
@@ -978,6 +979,25 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+.admin-form__photo-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  background: rgba(20, 16, 28, 0.72);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.admin-form__photo-remove:active {
+  background: var(--color-danger);
 }
 .admin-form__photo-actions {
   flex: 1;

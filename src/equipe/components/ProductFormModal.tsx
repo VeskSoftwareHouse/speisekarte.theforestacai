@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { X, ImagePlus, Loader2 } from 'lucide-react'
+import { X, ImagePlus, Loader2, Trash2 } from 'lucide-react'
 import type { Category, MenuItem, Modifier } from '@shared/types'
 import CurrencyInput from '@shared/components/CurrencyInput'
 import type { ProductInput } from '../hooks/useMenuAdmin'
@@ -111,6 +111,16 @@ export default function ProductFormModal({
                 <img src={fotoUrl} alt="" />
               ) : (
                 <ImagePlus size={28} strokeWidth={1.5} aria-hidden />
+              )}
+              {fotoUrl && (
+                <button
+                  type="button"
+                  className="admin-form__photo-remove"
+                  onClick={() => setFotoUrl('')}
+                  aria-label="Excluir imagem"
+                >
+                  <Trash2 size={14} strokeWidth={2} />
+                </button>
               )}
             </div>
             <div className="admin-form__photo-actions">
