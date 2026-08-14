@@ -1040,6 +1040,9 @@ body {
   color: var(--color-danger);
   margin-bottom: var(--space-1);
 }
+.confirm-dialog__icon--warning {
+  color: var(--color-warning);
+}
 .confirm-dialog h3 {
   margin: 0;
   font-family: var(--font-display);

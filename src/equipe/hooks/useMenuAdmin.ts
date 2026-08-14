@@ -2,6 +2,14 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@shared/supabaseClient'
 import type { Category, MenuItem } from '@shared/types'
 
+/** Lançado ao tentar excluir uma categoria/produto que já apareceu em algum pedido (viola FK com order_items). */
+export class DeleteBlockedError extends Error {
+  constructor() {
+    super('Não é possível excluir: já existe um pedido que referencia este item.')
+    this.name = 'DeleteBlockedError'
+  }
+}
+
 export interface CategoryInput {
   nome: string
   nome_i18n: Record<string, string>
@@ -62,7 +70,10 @@ export function useMenuAdmin() {
 
   async function deleteCategory(id: string) {
     const { error: err } = await supabase.from('categories').delete().eq('id', id)
-    if (err) throw new Error(err.message)
+    if (err) {
+      if (err.code === '23503') throw new DeleteBlockedError()
+      throw new Error(err.message)
+    }
     await fetchAll()
   }
 
@@ -81,7 +92,10 @@ export function useMenuAdmin() {
 
   async function deleteProduct(id: string) {
     const { error: err } = await supabase.from('menu_items').delete().eq('id', id)
-    if (err) throw new Error(err.message)
+    if (err) {
+      if (err.code === '23503') throw new DeleteBlockedError()
+      throw new Error(err.message)
+    }
     await fetchAll()
   }
 

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Sparkles, UtensilsCrossed, Users } from 'lucide-react'
 import type { Category, MenuItem, Modifier, ModifierOption } from '@shared/types'
-import { useMenuAdmin } from '../hooks/useMenuAdmin'
+import { useMenuAdmin, DeleteBlockedError } from '../hooks/useMenuAdmin'
 import { useUserAdmin, type AdminUser } from '../hooks/useUserAdmin'
 import { useModifierAdmin } from '../hooks/useModifierAdmin'
 import CategoryPanel from './CategoryPanel'
@@ -15,6 +15,7 @@ import ModifierOptionPanel from './ModifierOptionPanel'
 import ModifierGroupFormModal from './ModifierGroupFormModal'
 import ModifierOptionFormModal from './ModifierOptionFormModal'
 import ConfirmDialog from './ConfirmDialog'
+import DeleteBlockedDialog from './DeleteBlockedDialog'
 
 type DeleteTarget =
   | { kind: 'category'; item: Category }
@@ -78,6 +79,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
   const [modifierGroupForm, setModifierGroupForm] = useState<'new' | Modifier | null>(null)
   const [modifierOptionForm, setModifierOptionForm] = useState<'new' | ModifierOption | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
+  const [deleteBlocked, setDeleteBlocked] = useState<DeleteTarget | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
   const categoriesById = useMemo(() => {
@@ -127,7 +129,11 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
       }
       setDeleteTarget(null)
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Não foi possível excluir.')
+      if (err instanceof DeleteBlockedError && (deleteTarget.kind === 'product' || deleteTarget.kind === 'category')) {
+        setDeleteBlocked(deleteTarget)
+      } else {
+        setActionError(err instanceof Error ? err.message : 'Não foi possível excluir.')
+      }
       setDeleteTarget(null)
     }
   }
@@ -333,6 +339,29 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
           }
           onConfirm={handleDeleteConfirmed}
           onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {deleteBlocked && (
+        <DeleteBlockedDialog
+          title="Não é possível excluir"
+          message={
+            deleteBlocked.kind === 'product'
+              ? `"${deleteBlocked.item.nome}" já foi pedido antes, então não pode ser apagado — isso quebraria o histórico de pedidos. Você pode desativá-lo em vez disso: ele some do cardápio da mesa, mas o histórico continua intacto.`
+              : `Um ou mais produtos de "${deleteBlocked.item.nome}" já foram pedidos antes, então a categoria não pode ser apagada — isso quebraria o histórico de pedidos. Desative os produtos dessa categoria individualmente em vez de excluir a categoria.`
+          }
+          actionLabel={
+            deleteBlocked.kind === 'product' && deleteBlocked.item.disponivel ? 'Desativar produto' : undefined
+          }
+          onAction={
+            deleteBlocked.kind === 'product' && deleteBlocked.item.disponivel
+              ? async () => {
+                  await handleToggleAvailable(deleteBlocked.item as MenuItem)
+                  setDeleteBlocked(null)
+                }
+              : undefined
+          }
+          onClose={() => setDeleteBlocked(null)}
         />
       )}
     </main>
