@@ -172,12 +172,27 @@
   padding: max(var(--space-5), env(safe-area-inset-top)) var(--space-4) var(--space-4)
     max(var(--space-4), env(safe-area-inset-left));
   overflow-y: auto;
+  position: relative;
+}
+.sidebar__bar {
+  display: block;
+}
+.sidebar__menu-toggle {
+  display: none;
+}
+.sidebar__drawer {
+  display: contents;
+}
+.sidebar__backdrop {
+  display: none;
 }
 .sidebar__logo {
   text-align: center;
   padding-bottom: var(--space-4);
 }
 .sidebar__logo-img {
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
   object-fit: cover;
   margin: 0 auto var(--space-3);
@@ -1001,52 +1016,99 @@
   .sidebar {
     flex: 0 0 auto;
     width: 100%;
-    flex-wrap: wrap;
-    flex-direction: row;
-    align-items: center;
     padding: var(--space-3) var(--space-4);
-    row-gap: var(--space-2);
+    overflow: visible;
+    position: relative;
+    z-index: 70;
   }
-  .sidebar__logo {
-    padding: 0;
-    margin: 0 var(--space-4) 0 0;
+  .sidebar__bar {
     display: flex;
     align-items: center;
+    gap: var(--space-3);
+    position: relative;
+    z-index: 2;
+  }
+  .sidebar__menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+  .sidebar__menu-toggle:active {
+    background: rgba(255, 255, 255, 0.2);
+  }
+  .sidebar__logo {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    text-align: left;
   }
   .sidebar__logo-img {
-    width: 40px;
-    height: 40px;
+    width: 56px;
+    height: 56px;
     margin: 0 var(--space-2) 0 0;
   }
   .sidebar__logo-name,
   .sidebar__logo-tag {
     display: none;
   }
-  .sidebar__divider {
+
+  /* Categorias, idioma e mesa viram uma gaveta acionada pelo hambúrguer.
+     Fica no fluxo normal (empurra o conteúdo abaixo) para nunca ser
+     cortada por overflow dos containers pais. */
+  .sidebar__drawer {
     display: none;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .sidebar__drawer--open {
+    display: flex;
+    position: relative;
+    z-index: 2;
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
   }
   .sidebar__nav {
-    flex: 1 1 auto;
-    min-width: 0;
-    flex-direction: row;
-    overflow-x: auto;
+    flex-direction: column;
+    gap: var(--space-2);
   }
-  .sidebar__item span {
-    white-space: nowrap;
+  .sidebar__item {
+    width: 100%;
+    white-space: normal;
+    min-height: 48px;
   }
-  /* Idioma e mesa viram uma segunda linha compacta, em vez de sumir */
+  .sidebar__divider {
+    margin-bottom: 0;
+  }
   .sidebar__footer {
-    flex: 1 0 100%;
     margin-top: 0;
-    padding-top: var(--space-2);
-    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    padding-top: 0;
+    border-top: none;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
     gap: var(--space-3);
   }
   .sidebar__table {
     padding: 0;
+    gap: var(--space-2);
+  }
+  .sidebar__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(12, 9, 16, 0.5);
+    z-index: 1;
   }
 
   .dashboard__main {

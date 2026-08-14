@@ -292,19 +292,19 @@ create policy "authenticated delete menu-images" on storage.objects for delete u
 -- =====================================================================
 
 update menu_items set descricao_i18n = '{
-  "fr": "Composez votre açaí — choisissez jusqu''à 4 ingrédients (fruits et garnitures).",
-  "it": "Componi il tuo açaí — scegli fino a 4 ingredienti (frutta e topping).",
-  "en": "Build your own açaí — choose up to 4 ingredients (fruits & toppings).",
-  "pt": "Monte seu açaí — escolha até 4 ingredientes (frutas e coberturas).",
-  "es": "Arma tu açaí — elige hasta 4 ingredientes (frutas y toppings)."
+  "fr": "Composez votre açaí, choisissez jusqu''à 4 ingrédients (fruits et garnitures).",
+  "it": "Componi il tuo açaí, scegli fino a 4 ingredienti (frutta e topping).",
+  "en": "Build your own açaí, choose up to 4 ingredients (fruits & toppings).",
+  "pt": "Monte seu açaí, escolha até 4 ingredientes (frutas e coberturas).",
+  "es": "Arma tu açaí, elige hasta 4 ingredientes (frutas y toppings)."
 }'::jsonb where id = '00000000-0000-0000-0000-0000000000e1' and descricao_i18n = '{}'::jsonb;
 
 update menu_items set descricao_i18n = '{
-  "fr": "Composez votre açaí — choisissez jusqu''à 5 ingrédients (fruits et garnitures).",
-  "it": "Componi il tuo açaí — scegli fino a 5 ingredienti (frutta e topping).",
-  "en": "Build your own açaí — choose up to 5 ingredients (fruits & toppings).",
-  "pt": "Monte seu açaí — escolha até 5 ingredientes (frutas e coberturas).",
-  "es": "Arma tu açaí — elige hasta 5 ingredientes (frutas y toppings)."
+  "fr": "Composez votre açaí, choisissez jusqu''à 5 ingrédients (fruits et garnitures).",
+  "it": "Componi il tuo açaí, scegli fino a 5 ingredienti (frutta e topping).",
+  "en": "Build your own açaí, choose up to 5 ingredients (fruits & toppings).",
+  "pt": "Monte seu açaí, escolha até 5 ingredientes (frutas e coberturas).",
+  "es": "Arma tu açaí, elige hasta 5 ingredientes (frutas y toppings)."
 }'::jsonb where id = '00000000-0000-0000-0000-0000000000e2' and descricao_i18n = '{}'::jsonb;
 
 update menu_items set descricao_i18n = '{
@@ -316,19 +316,19 @@ update menu_items set descricao_i18n = '{
 }'::jsonb where id = '00000000-0000-0000-0000-0000000000e3' and descricao_i18n = '{}'::jsonb;
 
 update menu_items set descricao_i18n = '{
-  "fr": "Deux açaís 500 ml — parfait à partager à deux.",
-  "it": "Due açaí da 500 ml — perfetti da condividere in due.",
-  "en": "Two açaí bowls 500 ml — perfect to share as a couple.",
-  "pt": "2 açaís 500 ml — perfeito para compartilhar a dois.",
-  "es": "Dos açaís 500 ml — perfecto para compartir en pareja."
+  "fr": "Deux açaís 500 ml, parfait à partager à deux.",
+  "it": "Due açaí da 500 ml, perfetti da condividere in due.",
+  "en": "Two açaí bowls 500 ml, perfect to share as a couple.",
+  "pt": "2 açaís 500 ml, perfeito para compartilhar a dois.",
+  "es": "Dos açaís 500 ml, perfecto para compartir en pareja."
 }'::jsonb where id = '00000000-0000-0000-0000-0000000000e4' and descricao_i18n = '{}'::jsonb;
 
 update menu_items set descricao_i18n = '{
-  "fr": "2 açaís 500 ml + 2 jus 500 ml — pour toute la famille.",
-  "it": "2 açaí da 500 ml + 2 succhi da 500 ml — per tutta la famiglia.",
-  "en": "2 açaí bowls 500 ml + 2 juices 500 ml — for the whole family.",
-  "pt": "2 açaís 500 ml + 2 sucos 500 ml — para toda a família.",
-  "es": "2 açaís 500 ml + 2 zumos 500 ml — para toda la familia."
+  "fr": "2 açaís 500 ml + 2 jus 500 ml, pour toute la famille.",
+  "it": "2 açaí da 500 ml + 2 succhi da 500 ml, per tutta la famiglia.",
+  "en": "2 açaí bowls 500 ml + 2 juices 500 ml, for the whole family.",
+  "pt": "2 açaís 500 ml + 2 sucos 500 ml, para toda a família.",
+  "es": "2 açaís 500 ml + 2 zumos 500 ml, para toda la familia."
 }'::jsonb where id = '00000000-0000-0000-0000-0000000000e5' and descricao_i18n = '{}'::jsonb;
 
 update menu_items set descricao_i18n = '{
@@ -434,27 +434,27 @@ update categories set nome_i18n = '{
 }'::jsonb where id = '00000000-0000-0000-0000-0000000000c2' and nome_i18n = '{}'::jsonb;
 
 update categories set nome_i18n = '{
-  "fr": "Jus — Classiques",
-  "it": "Succhi — Classici",
-  "en": "Juices — Classics",
-  "pt": "Sucos — Clássicos",
-  "es": "Zumos — Clásicos"
+  "fr": "Jus Classiques",
+  "it": "Succhi Classici",
+  "en": "Juices Classics",
+  "pt": "Sucos Clássicos",
+  "es": "Zumos Clásicos"
 }'::jsonb where id = '00000000-0000-0000-0000-0000000000c3' and nome_i18n = '{}'::jsonb;
 
 update categories set nome_i18n = '{
-  "fr": "Jus — Exotiques",
-  "it": "Succhi — Esotici",
-  "en": "Juices — Exotic",
-  "pt": "Sucos — Exóticos",
-  "es": "Zumos — Exóticos"
+  "fr": "Jus Exotiques",
+  "it": "Succhi Esotici",
+  "en": "Juices Exotic",
+  "pt": "Sucos Exóticos",
+  "es": "Zumos Exóticos"
 }'::jsonb where id = '00000000-0000-0000-0000-0000000000c4' and nome_i18n = '{}'::jsonb;
 
 update categories set nome_i18n = '{
-  "fr": "Jus — Premium",
-  "it": "Succhi — Premium",
-  "en": "Juices — Premium",
-  "pt": "Sucos — Premium",
-  "es": "Zumos — Premium"
+  "fr": "Jus Premium",
+  "it": "Succhi Premium",
+  "en": "Juices Premium",
+  "pt": "Sucos Premium",
+  "es": "Zumos Premium"
 }'::jsonb where id = '00000000-0000-0000-0000-0000000000c5' and nome_i18n = '{}'::jsonb;
 
 -- =====================================================================
@@ -527,3 +527,26 @@ update modifier_options set nome_i18n = '{
   "pt": "Leite condensado",
   "es": "Leche condensada"
 }'::jsonb where nome = 'Kondensmilch' and nome_i18n = '{}'::jsonb;
+
+-- =====================================================================
+-- Fix: remove o travessão "—" usado como separador em nomes de categoria
+-- e no alemão base, e o troca por vírgula dentro de frases de descrição.
+-- Ao contrário dos backfills acima, roda sempre (não só em linhas vazias),
+-- para corrigir dados que já foram semeados antes desta mudança.
+-- =====================================================================
+
+update categories
+set nome = replace(nome, ' — ', ' ')
+where nome like '%—%';
+
+update categories
+set nome_i18n = replace(nome_i18n::text, ' — ', ' ')::jsonb
+where nome_i18n::text like '%—%';
+
+update menu_items
+set descricao = replace(descricao, ' — ', ', ')
+where descricao like '%—%';
+
+update menu_items
+set descricao_i18n = replace(descricao_i18n::text, ' — ', ', ')::jsonb
+where descricao_i18n::text like '%—%';

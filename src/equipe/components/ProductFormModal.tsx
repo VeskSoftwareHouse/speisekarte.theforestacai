@@ -184,13 +184,13 @@ export default function ProductFormModal({
             <input
               value={nomeI18n[activeLang] ?? ''}
               onChange={(e) => setNomeI18n((prev) => ({ ...prev, [activeLang]: e.target.value }))}
-              placeholder="Nome — deixe em branco para usar o alemão"
+              placeholder="Nome, deixe em branco para usar o alemão"
             />
             <textarea
               value={descricaoI18n[activeLang] ?? ''}
               onChange={(e) => setDescricaoI18n((prev) => ({ ...prev, [activeLang]: e.target.value }))}
               rows={2}
-              placeholder="Descrição — deixe em branco para usar o alemão"
+              placeholder="Descrição, deixe em branco para usar o alemão"
             />
           </div>
 

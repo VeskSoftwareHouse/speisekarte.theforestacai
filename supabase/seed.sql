@@ -22,29 +22,29 @@ delete from tables;
 insert into categories (id, nome, ordem) values
   ('00000000-0000-0000-0000-0000000000c1', 'Açaí im Becher',           1),
   ('00000000-0000-0000-0000-0000000000c2', 'Kombos',                   2),
-  ('00000000-0000-0000-0000-0000000000c3', 'Säfte — Klassiker',        3),
-  ('00000000-0000-0000-0000-0000000000c4', 'Säfte — Exotisch',         4),
-  ('00000000-0000-0000-0000-0000000000c5', 'Säfte — Premium',          5);
+  ('00000000-0000-0000-0000-0000000000c3', 'Säfte Klassiker',        3),
+  ('00000000-0000-0000-0000-0000000000c4', 'Säfte Exotisch',         4),
+  ('00000000-0000-0000-0000-0000000000c5', 'Säfte Premium',          5);
 
 -- ---------------------------------------------------------------------
 -- menu_items
 -- ---------------------------------------------------------------------
 insert into menu_items (id, categoria_id, nome, descricao, preco, foto_url, disponivel, ordem, max_ingredientes) values
   ('00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-0000000000c1', 'Açaí 300 ml',
-    'Stelle deinen Açaí zusammen — wähle bis zu 4 Zutaten (Früchte & Toppings).', 14.90,
+    'Stelle deinen Açaí zusammen, wähle bis zu 4 Zutaten (Früchte & Toppings).', 14.90,
     '/brand/cup-300.png', true, 1, 4),
   ('00000000-0000-0000-0000-0000000000e2', '00000000-0000-0000-0000-0000000000c1', 'Açaí 500 ml',
-    'Stelle deinen Açaí zusammen — wähle bis zu 5 Zutaten (Früchte & Toppings).', 18.90,
+    'Stelle deinen Açaí zusammen, wähle bis zu 5 Zutaten (Früchte & Toppings).', 18.90,
     '/brand/cup-500.png', true, 2, 5),
 
   ('00000000-0000-0000-0000-0000000000e3', '00000000-0000-0000-0000-0000000000c2', 'Forest Individual',
     '1 Açaí 500 ml + 1 Saft 300 ml.', 27.90,
     '/brand/combo-individual.png', true, 1, null),
   ('00000000-0000-0000-0000-0000000000e4', '00000000-0000-0000-0000-0000000000c2', 'Couple',
-    '2 Açaís 500 ml — perfekt zum Teilen zu zweit.', 36.90,
+    '2 Açaís 500 ml, perfekt zum Teilen zu zweit.', 36.90,
     '/brand/combo-couple.png', true, 2, null),
   ('00000000-0000-0000-0000-0000000000e5', '00000000-0000-0000-0000-0000000000c2', 'Family',
-    '2 Açaís 500 ml + 2 Säfte 500 ml — für die ganze Familie.', 59.90,
+    '2 Açaís 500 ml + 2 Säfte 500 ml, für die ganze Familie.', 59.90,
     '/brand/combo-family.png', true, 3, null),
 
   ('00000000-0000-0000-0000-0000000000e6', '00000000-0000-0000-0000-0000000000c3', 'Ananas',

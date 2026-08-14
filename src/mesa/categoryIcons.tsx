@@ -3,9 +3,9 @@ import { Soup, Gift, CupSoda, Citrus, Sparkles, Grape, Flame, type LucideIcon } 
 const CATEGORY_ICON: Record<string, LucideIcon> = {
   'Açaí im Becher': Soup,
   Kombos: Gift,
-  'Säfte — Klassiker': CupSoda,
-  'Säfte — Exotisch': Citrus,
-  'Säfte — Premium': Sparkles,
+  'Säfte Klassiker': CupSoda,
+  'Säfte Exotisch': Citrus,
+  'Säfte Premium': Sparkles,
 }
 
 export function iconFor(nome: string): LucideIcon {
