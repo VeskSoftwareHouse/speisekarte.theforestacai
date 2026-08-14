@@ -338,9 +338,10 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--color-text-muted);
-  font-weight: 600;
-  font-size: 0.9rem;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.98rem;
 }
 .order-card__meta {
   display: flex;

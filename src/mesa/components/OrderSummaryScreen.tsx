@@ -83,12 +83,15 @@ export default function OrderSummaryScreen({ items, tableNumero, sending, onConf
           </ul>
 
           <label className="order-summary__field">
-            <span>{t('orderNameLabel')}</span>
+            <span>
+              {t('orderNameLabel')} <span className="order-summary__required">*</span>
+            </span>
             <input
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               placeholder={t('orderNamePlaceholder')}
               maxLength={80}
+              required
             />
           </label>
 
@@ -128,7 +131,7 @@ export default function OrderSummaryScreen({ items, tableNumero, sending, onConf
           </div>
           <button
             className="btn btn-primary btn-block"
-            disabled={items.length === 0 || sending}
+            disabled={items.length === 0 || sending || !customerName.trim()}
             onClick={() => onConfirm(customerName.trim(), tip)}
           >
             {sending ? t('sending') : t('confirmAndPayButton')}

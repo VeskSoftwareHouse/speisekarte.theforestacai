@@ -89,7 +89,7 @@ export default function App() {
   }
 
   async function handleSubmit(customerName: string, tip: number) {
-    if (!table || cart.length === 0) return
+    if (!table || cart.length === 0 || !customerName.trim()) return
     setSending(true)
     setSendError(null)
 
