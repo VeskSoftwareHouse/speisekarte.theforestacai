@@ -79,7 +79,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({
         checkout_reference: order.id,
         amount: Number(total.toFixed(2)),
-        currency: 'CHF',
+        // TODO: provisório para teste — trocar para a moeda real da conta SumUp
+        // (ou tornar configurável via env var) antes de ir para produção.
+        currency: 'BRL',
         merchant_code: sumupMerchantCode,
         description: tableNumero ? `Forest Açaí — Mesa ${tableNumero}` : 'Forest Açaí',
         redirect_url: redirectUrl,
