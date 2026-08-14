@@ -88,7 +88,7 @@ export default function App() {
     }
   }
 
-  async function handleSubmit(customerName: string, tipPercent: number) {
+  async function handleSubmit(customerName: string, tip: number) {
     if (!table || cart.length === 0) return
     setSending(true)
     setSendError(null)
@@ -111,7 +111,7 @@ export default function App() {
           tableNumero: table.numero,
           items: itemsPayload,
           customerName,
-          tipPercent,
+          tip,
         }),
       })
       const data = await res.json()

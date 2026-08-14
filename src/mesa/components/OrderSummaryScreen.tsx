@@ -13,18 +13,17 @@ interface Props {
   items: CartItem[]
   tableNumero: string
   sending: boolean
-  onConfirm: (customerName: string, tipPercent: number) => void
+  onConfirm: (customerName: string, tip: number) => void
   onBack: () => void
 }
 
 export default function OrderSummaryScreen({ items, tableNumero, sending, onConfirm, onBack }: Props) {
   const { t, lang } = useLanguage()
   const [customerName, setCustomerName] = useState('')
-  const [tipPercent, setTipPercent] = useState(0)
+  const [tip, setTip] = useState(0)
 
   const subtotal = items.reduce((sum, i) => sum + cartItemTotal(i), 0)
-  const tipAmount = subtotal * (tipPercent / 100)
-  const total = subtotal + tipAmount
+  const total = subtotal + tip
 
   return (
     <div className="order-summary">
@@ -96,14 +95,14 @@ export default function OrderSummaryScreen({ items, tableNumero, sending, onConf
           <div className="order-summary__field">
             <span>{t('tipLabel')}</span>
             <div className="order-summary__tip-options">
-              {TIP_OPTIONS.map((p) => (
+              {TIP_OPTIONS.map((v) => (
                 <button
-                  key={p}
+                  key={v}
                   type="button"
-                  className={`option-pill ${tipPercent === p ? 'option-pill--active' : ''}`}
-                  onClick={() => setTipPercent(p)}
+                  className={`option-pill ${tip === v ? 'option-pill--active' : ''}`}
+                  onClick={() => setTip(v)}
                 >
-                  {p === 0 ? t('noTip') : `${p}%`}
+                  {v === 0 ? t('noTip') : formatCHF(v)}
                 </button>
               ))}
             </div>
@@ -116,12 +115,10 @@ export default function OrderSummaryScreen({ items, tableNumero, sending, onConf
               <span>{t('subtotalLabel')}</span>
               <span>{formatCHF(subtotal)}</span>
             </div>
-            {tipAmount > 0 && (
+            {tip > 0 && (
               <div className="order-summary__totals-row">
-                <span>
-                  {t('tipLabel')} ({tipPercent}%)
-                </span>
-                <span>{formatCHF(tipAmount)}</span>
+                <span>{t('tipLabel')}</span>
+                <span>{formatCHF(tip)}</span>
               </div>
             )}
             <div className="cart-panel__total">
@@ -132,7 +129,7 @@ export default function OrderSummaryScreen({ items, tableNumero, sending, onConf
           <button
             className="btn btn-primary btn-block"
             disabled={items.length === 0 || sending}
-            onClick={() => onConfirm(customerName.trim(), tipPercent)}
+            onClick={() => onConfirm(customerName.trim(), tip)}
           >
             {sending ? t('sending') : t('confirmAndPayButton')}
           </button>

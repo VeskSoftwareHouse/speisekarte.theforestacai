@@ -25,14 +25,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const { tableId, tableNumero, items, customerName, tipPercent } = req.body ?? {}
+  const { tableId, tableNumero, items, customerName, tip } = req.body ?? {}
   if (!tableId || !Array.isArray(items) || items.length === 0) {
     res.status(400).json({ error: 'Pedido inválido.' })
     return
   }
 
-  const ALLOWED_TIP_PERCENTAGES = [0, 5, 10, 20]
-  const tipPct = ALLOWED_TIP_PERCENTAGES.includes(tipPercent) ? tipPercent : 0
+  const ALLOWED_TIPS = [0, 5, 10, 20]
+  const tipAmount = ALLOWED_TIPS.includes(tip) ? tip : 0
   const cleanCustomerName =
     typeof customerName === 'string' && customerName.trim() ? customerName.trim().slice(0, 80) : null
 
@@ -42,7 +42,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(400).json({ error: 'Valor do pedido inválido.' })
     return
   }
-  const tipAmount = Number(((subtotal * tipPct) / 100).toFixed(2))
   const total = Number((subtotal + tipAmount).toFixed(2))
 
   const supabase = createClient(supabaseUrl, anonKey)
