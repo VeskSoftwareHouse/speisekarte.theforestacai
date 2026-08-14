@@ -49,19 +49,14 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
   )
   const canAdd = missingRequired.length === 0
 
-  const countingSelected = item.modifierGroups
-    .filter((g) => g.conta_para_limite)
-    .reduce((sum, g) => sum + (selections[g.id] ?? []).length, 0)
-  const atIngredientLimit = item.max_ingredientes != null && countingSelected >= item.max_ingredientes
-
-  function toggleOption(groupId: string, optionId: string, selecao: 'unica' | 'multipla', countsTowardLimit: boolean) {
+  function toggleOption(groupId: string, optionId: string, selecao: 'unica' | 'multipla', groupMaxSelecoes: number | null) {
     setSelections((prev) => {
       const current = prev[groupId] ?? []
       if (selecao === 'unica') {
         return { ...prev, [groupId]: [optionId] }
       }
       const exists = current.includes(optionId)
-      if (!exists && countsTowardLimit && atIngredientLimit) return prev
+      if (!exists && groupMaxSelecoes != null && current.length >= groupMaxSelecoes) return prev
       return {
         ...prev,
         [groupId]: exists ? current.filter((id) => id !== optionId) : [...current, optionId],
@@ -101,23 +96,25 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
                 <span className={`badge ${group.tipo === 'obrigatorio' ? 'badge--required' : 'badge--optional'}`}>
                   {group.tipo === 'obrigatorio' ? t('badgeRequired') : t('badgeOptional')}
                 </span>
-                {group.conta_para_limite && item.max_ingredientes != null && (
+                {group.max_selecoes != null && (
                   <span className="badge badge--counter">
-                    {countingSelected} / {item.max_ingredientes}
+                    {(selections[group.id] ?? []).length} / {group.max_selecoes}
                   </span>
                 )}
               </legend>
               <div className="modal__options">
                 {group.options.map((option) => {
-                  const active = (selections[group.id] ?? []).includes(option.id)
-                  const disabledByLimit = group.conta_para_limite && atIngredientLimit && !active
+                  const groupSelected = selections[group.id] ?? []
+                  const active = groupSelected.includes(option.id)
+                  const disabledByLimit =
+                    !active && group.max_selecoes != null && groupSelected.length >= group.max_selecoes
                   return (
                     <button
                       key={option.id}
                       type="button"
                       className={`option-pill ${active ? 'option-pill--active' : ''}`}
                       disabled={disabledByLimit}
-                      onClick={() => toggleOption(group.id, option.id, group.selecao, group.conta_para_limite)}
+                      onClick={() => toggleOption(group.id, option.id, group.selecao, group.max_selecoes)}
                     >
                       {translatedField(option.nome_i18n, lang, option.nome)}
                       {option.preco_adicional > 0 && (

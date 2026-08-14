@@ -46,6 +46,8 @@ export interface Modifier {
   selecao: ModifierSelecao
   /** Se true, opções escolhidas neste grupo contam para `MenuItem.max_ingredientes`. */
   conta_para_limite: boolean
+  /** Limite de opções selecionáveis dentro deste grupo. null = sem limite. */
+  max_selecoes: number | null
   /** Traduções manuais do nome por idioma (chaves: fr, it, en, pt, es). Alemão vem de `nome`. */
   nome_i18n: Record<string, string>
 }

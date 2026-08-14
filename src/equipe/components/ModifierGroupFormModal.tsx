@@ -23,7 +23,8 @@ export default function ModifierGroupFormModal({ group, onClose, onSave }: Props
   const [activeLang, setActiveLang] = useState(TRANSLATION_LANGS[0].code)
   const [tipo, setTipo] = useState<Modifier['tipo']>(group?.tipo ?? 'opcional')
   const [selecao, setSelecao] = useState<Modifier['selecao']>(group?.selecao ?? 'multipla')
-  const [contaParaLimite, setContaParaLimite] = useState(group?.conta_para_limite ?? false)
+  const contaParaLimite = group?.conta_para_limite ?? false
+  const [maxSelecoes, setMaxSelecoes] = useState(group?.max_selecoes?.toString() ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -34,7 +35,15 @@ export default function ModifierGroupFormModal({ group, onClose, onSave }: Props
     setError(null)
     try {
       const cleanedI18n = Object.fromEntries(Object.entries(nomeI18n).filter(([, v]) => v.trim()))
-      await onSave({ nome: nome.trim(), nome_i18n: cleanedI18n, tipo, selecao, conta_para_limite: contaParaLimite })
+      const parsedMaxSelecoes = maxSelecoes.trim() ? Number(maxSelecoes) : null
+      await onSave({
+        nome: nome.trim(),
+        nome_i18n: cleanedI18n,
+        tipo,
+        selecao,
+        conta_para_limite: contaParaLimite,
+        max_selecoes: parsedMaxSelecoes,
+      })
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível salvar.')
@@ -98,14 +107,20 @@ export default function ModifierGroupFormModal({ group, onClose, onSave }: Props
             </label>
           </div>
 
-          <label className="admin-form__checkbox">
-            <input
-              type="checkbox"
-              checked={contaParaLimite}
-              onChange={(e) => setContaParaLimite(e.target.checked)}
-            />
-            <span>Opções contam para o limite de ingredientes do produto</span>
-          </label>
+          {selecao === 'multipla' && (
+            <label className="admin-form__field">
+              <span>Limite de adicionais da categoria</span>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                value={maxSelecoes}
+                onChange={(e) => setMaxSelecoes(e.target.value)}
+                placeholder="Sem limite"
+              />
+            </label>
+          )}
 
           {error && <p className="admin-form__error">{error}</p>}
 

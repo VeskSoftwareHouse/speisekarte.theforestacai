@@ -8,6 +8,7 @@ export interface ModifierGroupInput {
   tipo: ModifierTipo
   selecao: ModifierSelecao
   conta_para_limite: boolean
+  max_selecoes: number | null
 }
 
 export interface ModifierOptionInput {

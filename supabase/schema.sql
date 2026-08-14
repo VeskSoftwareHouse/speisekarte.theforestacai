@@ -55,12 +55,17 @@ create table if not exists modifiers (
   -- se true, as opções escolhidas neste grupo contam para o
   -- `menu_items.max_ingredientes` do item (ex: frutas e toppings comuns
   -- contam; toppings premium pagos não contam).
-  conta_para_limite  boolean not null default false
+  conta_para_limite  boolean not null default false,
+  -- limite de quantas opções podem ser escolhidas dentro deste grupo
+  -- (independente do `max_ingredientes` do produto). null = sem limite.
+  -- só relevante quando `selecao = 'multipla'`.
+  max_selecoes       int
 );
 
 alter table modifiers add column if not exists conta_para_limite boolean not null default false;
 -- traduções manuais do nome por idioma (mesmo formato de menu_items.nome_i18n).
 alter table modifiers add column if not exists nome_i18n jsonb not null default '{}'::jsonb;
+alter table modifiers add column if not exists max_selecoes int;
 
 -- ---------------------------------------------------------------------
 -- modifier_options (opções dentro de um grupo, ex: "Morango", "+Nutella")
