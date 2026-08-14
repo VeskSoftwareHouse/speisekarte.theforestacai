@@ -245,7 +245,8 @@ create policy "public insert order_items" on order_items for insert with check (
 
 -- =====================================================================
 -- Realtime — habilita a publicação para o App da Equipe escutar inserts/
--- updates sem polling.
+-- updates de pedidos, e para o App da Mesa escutar edições de cardápio,
+-- sem polling.
 -- =====================================================================
 
 do $$
@@ -262,6 +263,43 @@ begin
     where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'order_items'
   ) then
     alter publication supabase_realtime add table order_items;
+  end if;
+
+  -- cardápio: permite que o App da Mesa reflita edições feitas no Painel
+  -- da Equipe (categorias, produtos, adicionais) sem precisar recarregar.
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'categories'
+  ) then
+    alter publication supabase_realtime add table categories;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'menu_items'
+  ) then
+    alter publication supabase_realtime add table menu_items;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'modifiers'
+  ) then
+    alter publication supabase_realtime add table modifiers;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'modifier_options'
+  ) then
+    alter publication supabase_realtime add table modifier_options;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'menu_item_modifiers'
+  ) then
+    alter publication supabase_realtime add table menu_item_modifiers;
   end if;
 end $$;
 
