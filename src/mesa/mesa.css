@@ -13,6 +13,7 @@
   font-weight: 700;
   font-size: 0.82rem;
   white-space: nowrap;
+  width: 100%;
 }
 .language-selector--dark .language-selector__trigger {
   background: rgba(255, 255, 255, 0.08);
