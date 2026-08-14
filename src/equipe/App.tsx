@@ -56,6 +56,18 @@ export default function App() {
 
   const activeCount = ordersForDay.length - byStatus.entregue.length
 
+  if (authLoading) {
+    return (
+      <div className="login-screen">
+        <p className="equipe-app__status">Verificando sessão…</p>
+      </div>
+    )
+  }
+
+  if (!session) {
+    return <LoginScreen onSignIn={signIn} />
+  }
+
   return (
     <div className="equipe-app">
       <header className="brand-banner">
@@ -80,12 +92,10 @@ export default function App() {
           >
             {view === 'history' ? '← Quadro' : `Entregues (${byStatus.entregue.length})`}
           </button>
-          {view === 'menu' && session && (
-            <button className="btn btn-outline btn-outline--dark" onClick={signOut} title={user?.email ?? ''}>
-              <LogOut size={16} strokeWidth={2} aria-hidden />
-              Sair
-            </button>
-          )}
+          <button className="btn btn-outline btn-outline--dark" onClick={signOut} title={user?.email ?? ''}>
+            <LogOut size={16} strokeWidth={2} aria-hidden />
+            Sair
+          </button>
         </nav>
         <span
           className={`realtime-dot ${error ? 'realtime-dot--off' : 'realtime-dot--on'}`}
@@ -97,9 +107,7 @@ export default function App() {
         <DateStrip selectedDateKey={selectedDateKey} onSelect={setSelectedDateKey} orderCountByDate={orderCountByDate} />
       )}
 
-      {view === 'menu' && authLoading && <p className="equipe-app__status">Verificando sessão…</p>}
-      {view === 'menu' && !authLoading && !session && <LoginScreen onSignIn={signIn} />}
-      {view === 'menu' && !authLoading && session && <MenuManager accessToken={session.access_token} currentUserId={user!.id} />}
+      {view === 'menu' && <MenuManager accessToken={session.access_token} currentUserId={user!.id} />}
 
       {view !== 'menu' && error && <p className="equipe-app__error">Erro ao carregar pedidos: {error}</p>}
       {view !== 'menu' && loading && <p className="equipe-app__status">Carregando pedidos…</p>}

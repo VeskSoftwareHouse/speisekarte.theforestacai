@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Lock } from 'lucide-react'
 
 interface Props {
   onSignIn: (email: string, password: string) => Promise<void>
@@ -28,11 +27,9 @@ export default function LoginScreen({ onSignIn }: Props) {
     <main className="login-screen">
       <form className="login-card" onSubmit={handleSubmit}>
         <div className="login-card__intro">
-          <div className="login-card__icon">
-            <Lock size={22} strokeWidth={1.75} aria-hidden />
-          </div>
-          <h2>Acesso ao cardápio</h2>
-          <p className="login-card__hint">Entre com seu usuário da equipe para gerenciar o cardápio.</p>
+          <img src="/brand/logo.png" alt="Forest Açaí" className="login-card__logo" />
+          <h2>Painel da Equipe</h2>
+          <p className="login-card__hint">Entre com seu usuário da equipe para continuar.</p>
         </div>
 
         <label className="admin-form__field">
