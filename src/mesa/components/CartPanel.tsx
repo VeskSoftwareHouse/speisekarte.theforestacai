@@ -9,22 +9,27 @@ import { cartItemTotal } from '../types'
 interface Props {
   items: CartItem[]
   sending: boolean
+  isOpen: boolean
   onChangeQuantity: (cartId: string, delta: number) => void
   onRemove: (cartId: string) => void
   onSubmit: () => void
+  onClose: () => void
 }
 
-export default function CartPanel({ items, sending, onChangeQuantity, onRemove, onSubmit }: Props) {
+export default function CartPanel({ items, sending, isOpen, onChangeQuantity, onRemove, onSubmit, onClose }: Props) {
   const { t, lang } = useLanguage()
   const total = items.reduce((sum, i) => sum + cartItemTotal(i), 0)
   const count = items.reduce((sum, i) => sum + i.quantidade, 0)
 
   return (
-    <aside className="cart-panel">
+    <aside className={`cart-panel ${isOpen ? 'cart-panel--open' : ''}`}>
       <header className="cart-panel__header">
         <ShoppingBag size={20} strokeWidth={2} aria-hidden />
         {t('cartTitle')}
         {count > 0 && <span className="cart-panel__count">{count}</span>}
+        <button className="cart-panel__close" onClick={onClose} aria-label={t('modalClose')}>
+          <X size={20} strokeWidth={2} />
+        </button>
       </header>
 
       {items.length === 0 ? (

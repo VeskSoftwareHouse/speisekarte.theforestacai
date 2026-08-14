@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ChefHat, ChevronDown, Plus } from 'lucide-react'
+import { ChefHat, ChevronDown, Plus, ShoppingBag } from 'lucide-react'
 import { useMenu } from '@shared/hooks/useMenu'
 import type { MenuItemWithModifiers, RestaurantTable } from '@shared/types'
 import { formatCHF } from '@shared/format'
@@ -10,6 +10,7 @@ import { iconFor, FeaturedIcon, FallbackPhotoIcon } from '../categoryIcons'
 import { useLanguage } from '../i18n/LanguageContext'
 import { translatedField } from '../i18n/menuTranslations'
 import type { CartItem } from '../types'
+import { cartItemTotal } from '../types'
 
 interface Props {
   table: RestaurantTable
@@ -36,6 +37,10 @@ export default function DashboardScreen({
   const { lang, t } = useLanguage()
   const [activeCategory, setActiveCategory] = useState<string>(FEATURED_ID)
   const [selectedItem, setSelectedItem] = useState<MenuItemWithModifiers | null>(null)
+  const [cartOpen, setCartOpen] = useState(false)
+
+  const cartCount = cart.reduce((sum, i) => sum + i.quantidade, 0)
+  const cartTotal = cart.reduce((sum, i) => sum + cartItemTotal(i), 0)
 
   const featuredItems = useMemo(
     () => categories.flatMap((c) => (itemsByCategory[c.id] ?? []).slice(0, 2)).slice(0, 6),
@@ -153,11 +158,24 @@ export default function DashboardScreen({
         <CartPanel
           items={cart}
           sending={sending}
+          isOpen={cartOpen}
           onChangeQuantity={onChangeQuantity}
           onRemove={onRemove}
           onSubmit={onSubmit}
+          onClose={() => setCartOpen(false)}
         />
       </div>
+
+      {cartOpen && <div className="cart-backdrop" onClick={() => setCartOpen(false)} />}
+
+      {!cartOpen && cartCount > 0 && (
+        <button className="cart-fab" onClick={() => setCartOpen(true)}>
+          <ShoppingBag size={18} strokeWidth={2} aria-hidden />
+          <span className="cart-fab__count">{cartCount}</span>
+          {t('viewCartButton')}
+          <span className="cart-fab__total">{formatCHF(cartTotal)}</span>
+        </button>
+      )}
 
       {selectedItem && (
         <ItemModal

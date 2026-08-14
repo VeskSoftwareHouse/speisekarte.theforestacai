@@ -28,6 +28,7 @@ export interface StringDict {
   cartTitle: string
   cartEmptyLine1: string
   cartEmptyLine2: string
+  viewCartButton: string
   obsPrefix: string
   removeItem: string
   totalLabel: string
@@ -71,6 +72,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     cartTitle: 'Meine Bestellung',
     cartEmptyLine1: 'Dein Warenkorb ist leer.',
     cartEmptyLine2: 'Tippe auf einen Artikel, um ihn hinzuzufügen.',
+    viewCartButton: 'Warenkorb ansehen',
     obsPrefix: 'Anm.: ',
     removeItem: 'Artikel entfernen',
     totalLabel: 'Total',
@@ -111,6 +113,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     cartTitle: 'Ma commande',
     cartEmptyLine1: 'Votre panier est vide.',
     cartEmptyLine2: "Touchez un article pour l'ajouter.",
+    viewCartButton: 'Voir le panier',
     obsPrefix: 'Remarque : ',
     removeItem: "Retirer l'article",
     totalLabel: 'Total',
@@ -151,6 +154,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     cartTitle: 'Il mio ordine',
     cartEmptyLine1: 'Il tuo carrello è vuoto.',
     cartEmptyLine2: 'Tocca un articolo per aggiungerlo.',
+    viewCartButton: 'Vedi il carrello',
     obsPrefix: 'Nota: ',
     removeItem: 'Rimuovi articolo',
     totalLabel: 'Totale',
@@ -191,6 +195,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     cartTitle: 'My order',
     cartEmptyLine1: 'Your cart is empty.',
     cartEmptyLine2: 'Tap an item to add it.',
+    viewCartButton: 'View cart',
     obsPrefix: 'Note: ',
     removeItem: 'Remove item',
     totalLabel: 'Total',
@@ -231,6 +236,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     cartTitle: 'Meu pedido',
     cartEmptyLine1: 'Seu carrinho está vazio.',
     cartEmptyLine2: 'Toque em um item para adicionar.',
+    viewCartButton: 'Ver carrinho',
     obsPrefix: 'Obs: ',
     removeItem: 'Remover item',
     totalLabel: 'Total',
@@ -271,6 +277,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     cartTitle: 'Mi pedido',
     cartEmptyLine1: 'Tu carrito está vacío.',
     cartEmptyLine2: 'Toca un artículo para añadirlo.',
+    viewCartButton: 'Ver carrito',
     obsPrefix: 'Nota: ',
     removeItem: 'Quitar artículo',
     totalLabel: 'Total',
