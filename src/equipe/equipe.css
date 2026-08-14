@@ -983,21 +983,6 @@ body {
   font-size: 0.82rem;
   font-weight: 600;
 }
-.admin-form__photo-url {
-  border: none;
-  border-bottom: 1px solid var(--color-border);
-  border-radius: 0;
-  padding: var(--space-2) var(--space-1);
-  min-height: 36px;
-  background: none;
-  font-family: var(--font-ui);
-  font-size: 0.85rem;
-}
-.admin-form__photo-url:focus {
-  outline: none;
-  border-bottom-color: var(--color-primary);
-}
-
 .admin-spin {
   animation: admin-spin 0.8s linear infinite;
 }

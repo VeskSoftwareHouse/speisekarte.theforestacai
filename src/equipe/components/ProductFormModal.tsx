@@ -135,12 +135,6 @@ export default function ProductFormModal({
                 onChange={handleFileChange}
                 className="visually-hidden"
               />
-              <input
-                className="admin-form__photo-url"
-                value={fotoUrl}
-                onChange={(e) => setFotoUrl(e.target.value)}
-                placeholder="ou cole a URL de uma imagem"
-              />
             </div>
           </div>
 
