@@ -93,9 +93,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({
         checkout_reference: order.id,
         amount: total,
-        // TODO: provisório para teste — trocar para a moeda real da conta SumUp
-        // (ou tornar configurável via env var) antes de ir para produção.
-        currency: 'BRL',
+        currency: 'CHF',
         merchant_code: sumupMerchantCode,
         description: [cleanCustomerName, 'Forest Açaí'].filter(Boolean).join(' — '),
         redirect_url: redirectUrl,
