@@ -28,6 +28,8 @@ export interface MenuItem {
   ordem: number
   /** Limite combinado de seleções nos grupos com `conta_para_limite`, ex: "escolha até 4". null = sem limite. */
   max_ingredientes: number | null
+  /** Traduções manuais da descrição por idioma (chaves: fr, it, en, pt, es). Alemão vem de `descricao`. */
+  descricao_i18n: Record<string, string>
 }
 
 export interface Modifier {

@@ -108,7 +108,7 @@ export default function DashboardScreen({
               <div className="menu-grid menu-grid--dashboard">
                 {items.length === 0 && <p className="menu-screen__status">{t('noItemsInCategory')}</p>}
                 {items.map((item) => {
-                  const desc = translatedDescription(item.id, lang, item.descricao)
+                  const desc = translatedDescription(item.descricao_i18n, lang, item.descricao)
                   return (
                     <button key={item.id} className="item-card" onClick={() => handleCardClick(item)}>
                       <div className="item-card__photo-wrap">

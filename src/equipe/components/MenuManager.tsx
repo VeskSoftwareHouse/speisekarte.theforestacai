@@ -95,6 +95,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
         categoria_id: product.categoria_id,
         nome: product.nome,
         descricao: product.descricao ?? '',
+        descricao_i18n: product.descricao_i18n,
         preco: product.preco,
         foto_url: product.foto_url,
         disponivel: !product.disponivel,

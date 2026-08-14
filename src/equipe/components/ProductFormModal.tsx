@@ -4,6 +4,14 @@ import type { Category, MenuItem } from '@shared/types'
 import CurrencyInput from '@shared/components/CurrencyInput'
 import type { ProductInput } from '../hooks/useMenuAdmin'
 
+const DESCRIPTION_LANGS: { code: string; label: string }[] = [
+  { code: 'fr', label: 'FR' },
+  { code: 'it', label: 'IT' },
+  { code: 'en', label: 'EN' },
+  { code: 'pt', label: 'PT' },
+  { code: 'es', label: 'ES' },
+]
+
 interface Props {
   product: MenuItem | null
   categories: Category[]
@@ -24,6 +32,8 @@ export default function ProductFormModal({
   const [nome, setNome] = useState(product?.nome ?? '')
   const [categoriaId, setCategoriaId] = useState(product?.categoria_id ?? defaultCategoryId ?? categories[0]?.id ?? '')
   const [descricao, setDescricao] = useState(product?.descricao ?? '')
+  const [descricaoI18n, setDescricaoI18n] = useState<Record<string, string>>(product?.descricao_i18n ?? {})
+  const [activeLang, setActiveLang] = useState(DESCRIPTION_LANGS[0].code)
   const [preco, setPreco] = useState(product?.preco ?? 0)
   const [disponivel, setDisponivel] = useState(product?.disponivel ?? true)
   const [ordem, setOrdem] = useState(product?.ordem ?? 0)
@@ -55,10 +65,14 @@ export default function ProductFormModal({
     setSaving(true)
     setError(null)
     try {
+      const cleanedI18n = Object.fromEntries(
+        Object.entries(descricaoI18n).filter(([, v]) => v.trim()),
+      )
       await onSave({
         nome: nome.trim(),
         categoria_id: categoriaId,
         descricao: descricao.trim(),
+        descricao_i18n: cleanedI18n,
         preco,
         foto_url: fotoUrl.trim() || null,
         disponivel,
@@ -139,7 +153,7 @@ export default function ProductFormModal({
           </label>
 
           <label className="admin-form__field">
-            <span>Descrição</span>
+            <span>Descrição (alemão)</span>
             <textarea
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
@@ -147,6 +161,30 @@ export default function ProductFormModal({
               placeholder="Descrição que aparece no cardápio"
             />
           </label>
+
+          <div className="admin-form__field">
+            <span>Tradução da descrição</span>
+            <div className="admin-lang-tabs">
+              {DESCRIPTION_LANGS.map((l) => (
+                <button
+                  key={l.code}
+                  type="button"
+                  className={`admin-lang-tab ${activeLang === l.code ? 'admin-lang-tab--active' : ''} ${
+                    descricaoI18n[l.code]?.trim() ? 'admin-lang-tab--filled' : ''
+                  }`}
+                  onClick={() => setActiveLang(l.code)}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={descricaoI18n[activeLang] ?? ''}
+              onChange={(e) => setDescricaoI18n((prev) => ({ ...prev, [activeLang]: e.target.value }))}
+              rows={2}
+              placeholder="Deixe em branco para usar a descrição em alemão"
+            />
+          </div>
 
           <div className="admin-form__row">
             <label className="admin-form__field">

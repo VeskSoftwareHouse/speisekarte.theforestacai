@@ -11,6 +11,7 @@ export interface ProductInput {
   categoria_id: string
   nome: string
   descricao: string
+  descricao_i18n: Record<string, string>
   preco: number
   foto_url: string | null
   disponivel: boolean

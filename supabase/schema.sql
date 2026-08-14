@@ -34,6 +34,9 @@ create table if not exists menu_items (
 );
 
 alter table menu_items add column if not exists max_ingredientes int;
+-- traduções manuais da descrição por idioma, ex: {"fr": "...", "it": "...", "en": "...", "pt": "...", "es": "..."}.
+-- alemão continua vindo da coluna `descricao` acima; idiomas ausentes aqui caem no alemão.
+alter table menu_items add column if not exists descricao_i18n jsonb not null default '{}'::jsonb;
 
 create index if not exists idx_menu_items_categoria on menu_items(categoria_id);
 
@@ -239,3 +242,130 @@ create policy "public read menu-images"          on storage.objects for select u
 create policy "authenticated upload menu-images" on storage.objects for insert with check (bucket_id = 'menu-images' and auth.uid() is not null);
 create policy "authenticated update menu-images" on storage.objects for update using (bucket_id = 'menu-images' and auth.uid() is not null) with check (bucket_id = 'menu-images' and auth.uid() is not null);
 create policy "authenticated delete menu-images" on storage.objects for delete using (bucket_id = 'menu-images' and auth.uid() is not null);
+
+-- =====================================================================
+-- Backfill: traduções de descrição dos 15 itens originais do cardápio
+-- impresso (migradas do antigo src/mesa/i18n/menuTranslations.ts para a
+-- coluna menu_items.descricao_i18n). Só preenche linhas ainda vazias,
+-- então não sobrescreve edições feitas depois pelo Painel da Equipe.
+-- =====================================================================
+
+update menu_items set descricao_i18n = '{
+  "fr": "Composez votre açaí — choisissez jusqu''à 4 ingrédients (fruits et garnitures).",
+  "it": "Componi il tuo açaí — scegli fino a 4 ingredienti (frutta e topping).",
+  "en": "Build your own açaí — choose up to 4 ingredients (fruits & toppings).",
+  "pt": "Monte seu açaí — escolha até 4 ingredientes (frutas e coberturas).",
+  "es": "Arma tu açaí — elige hasta 4 ingredientes (frutas y toppings)."
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000e1' and descricao_i18n = '{}'::jsonb;
+
+update menu_items set descricao_i18n = '{
+  "fr": "Composez votre açaí — choisissez jusqu''à 5 ingrédients (fruits et garnitures).",
+  "it": "Componi il tuo açaí — scegli fino a 5 ingredienti (frutta e topping).",
+  "en": "Build your own açaí — choose up to 5 ingredients (fruits & toppings).",
+  "pt": "Monte seu açaí — escolha até 5 ingredientes (frutas e coberturas).",
+  "es": "Arma tu açaí — elige hasta 5 ingredientes (frutas y toppings)."
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000e2' and descricao_i18n = '{}'::jsonb;
+
+update menu_items set descricao_i18n = '{
+  "fr": "1 açaí 500 ml + 1 jus 300 ml.",
+  "it": "1 açaí 500 ml + 1 succo 300 ml.",
+  "en": "1 açaí 500 ml + 1 juice 300 ml.",
+  "pt": "1 açaí 500 ml + 1 suco 300 ml.",
+  "es": "1 açaí 500 ml + 1 zumo 300 ml."
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000e3' and descricao_i18n = '{}'::jsonb;
+
+update menu_items set descricao_i18n = '{
+  "fr": "Deux açaís 500 ml — parfait à partager à deux.",
+  "it": "Due açaí da 500 ml — perfetti da condividere in due.",
+  "en": "Two açaí bowls 500 ml — perfect to share as a couple.",
+  "pt": "2 açaís 500 ml — perfeito para compartilhar a dois.",
+  "es": "Dos açaís 500 ml — perfecto para compartir en pareja."
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000e4' and descricao_i18n = '{}'::jsonb;
+
+update menu_items set descricao_i18n = '{
+  "fr": "2 açaís 500 ml + 2 jus 500 ml — pour toute la famille.",
+  "it": "2 açaí da 500 ml + 2 succhi da 500 ml — per tutta la famiglia.",
+  "en": "2 açaí bowls 500 ml + 2 juices 500 ml — for the whole family.",
+  "pt": "2 açaís 500 ml + 2 sucos 500 ml — para toda a família.",
+  "es": "2 açaís 500 ml + 2 zumos 500 ml — para toda la familia."
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000e5' and descricao_i18n = '{}'::jsonb;
+
+update menu_items set descricao_i18n = '{
+  "fr": "Jus d''ananas fraîchement pressé.",
+  "it": "Succo di ananas appena spremuto.",
+  "en": "Freshly squeezed pineapple juice.",
+  "pt": "Suco de abacaxi espremido na hora.",
+  "es": "Zumo de piña recién exprimido."
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000e6' and descricao_i18n = '{}'::jsonb;
+
+update menu_items set descricao_i18n = '{
+  "fr": "Jus de mangue crémeux, 100% fruit.",
+  "it": "Succo di mango cremoso, 100% frutta.",
+  "en": "Creamy mango juice, 100% fruit.",
+  "pt": "Suco cremoso de manga, 100% fruta.",
+  "es": "Zumo cremoso de mango, 100% fruta."
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000e7' and descricao_i18n = '{}'::jsonb;
+
+update menu_items set descricao_i18n = '{
+  "fr": "Jus de goyave rafraîchissant.",
+  "it": "Succo di guava rinfrescante.",
+  "en": "Refreshing guava juice.",
+  "pt": "Suco refrescante de goiaba.",
+  "es": "Zumo refrescante de guayaba."
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000e8' and descricao_i18n = '{}'::jsonb;
+
+update menu_items set descricao_i18n = '{
+  "fr": "Jus d''acérola riche en vitamine C.",
+  "it": "Succo di acerola ricco di vitamina C.",
+  "en": "Vitamin C-rich acerola juice.",
+  "pt": "Suco de acerola rico em vitamina C.",
+  "es": "Zumo de acerola rico en vitamina C."
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000e9' and descricao_i18n = '{}'::jsonb;
+
+update menu_items set descricao_i18n = '{
+  "fr": "Jus crémeux de cupuaçu amazonien.",
+  "it": "Succo cremoso di cupuaçu amazzonico.",
+  "en": "Creamy Amazonian cupuaçu juice.",
+  "pt": "Suco cremoso de cupuaçu amazônico.",
+  "es": "Zumo cremoso de cupuaçu amazónico."
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000ea' and descricao_i18n = '{}'::jsonb;
+
+update menu_items set descricao_i18n = '{
+  "fr": "Jus de cajou brésilien fruité.",
+  "it": "Succo di anacardio brasiliano fruttato.",
+  "en": "Fruity Brazilian cashew juice.",
+  "pt": "Suco frutado de caju brasileiro.",
+  "es": "Zumo afrutado de anacardo brasileño."
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000eb' and descricao_i18n = '{}'::jsonb;
+
+update menu_items set descricao_i18n = '{
+  "fr": "Jus exotique de cajá.",
+  "it": "Succo esotico di cajá.",
+  "en": "Exotic cajá fruit juice.",
+  "pt": "Suco exótico de cajá.",
+  "es": "Zumo exótico de cajá."
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000ec' and descricao_i18n = '{}'::jsonb;
+
+update menu_items set descricao_i18n = '{
+  "fr": "Jus crémeux de graviola (corossol).",
+  "it": "Succo cremoso di graviola (guanabana).",
+  "en": "Creamy soursop (graviola) juice.",
+  "pt": "Suco cremoso de graviola.",
+  "es": "Zumo cremoso de graviola (guanábana)."
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000ed' and descricao_i18n = '{}'::jsonb;
+
+update menu_items set descricao_i18n = '{
+  "fr": "Jus de fruit de la passion aigre-doux.",
+  "it": "Succo di frutto della passione agrodolce.",
+  "en": "Sweet and tangy passion fruit juice.",
+  "pt": "Suco agridoce de maracujá.",
+  "es": "Zumo agridulce de maracuyá."
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000ee' and descricao_i18n = '{}'::jsonb;
+
+update menu_items set descricao_i18n = '{
+  "fr": "Jus de baies sauvages riche en antioxydants.",
+  "it": "Succo di frutti di bosco ricco di antiossidanti.",
+  "en": "Antioxidant-rich wild berry juice.",
+  "pt": "Suco de frutas silvestres rico em antioxidantes.",
+  "es": "Zumo de frutos del bosque rico en antioxidantes."
+}'::jsonb where id = '00000000-0000-0000-0000-0000000000ef' and descricao_i18n = '{}'::jsonb;

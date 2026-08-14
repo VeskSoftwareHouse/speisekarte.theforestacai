@@ -15,7 +15,7 @@ interface Props {
 
 export default function ItemModal({ item, onClose, onAdd }: Props) {
   const { lang, t } = useLanguage()
-  const desc = translatedDescription(item.id, lang, item.descricao)
+  const desc = translatedDescription(item.descricao_i18n, lang, item.descricao)
   const [quantidade, setQuantidade] = useState(1)
   const [observacoes, setObservacoes] = useState('')
   // groupId -> Set de optionIds selecionados
