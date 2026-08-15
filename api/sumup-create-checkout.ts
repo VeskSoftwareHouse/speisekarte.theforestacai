@@ -5,11 +5,19 @@ const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY
 const sumupApiKey = process.env.SUMUP_API_KEY
 const sumupMerchantCode = process.env.SUMUP_MERCHANT_CODE
+// Id da maquininha Solo pareada (ver scripts/sumup-pair-reader.md). Definido =
+// o totem cobra na maquininha; ausente = cai no checkout hospedado.
+const sumupReaderId = process.env.SUMUP_READER_ID
+const sumupAffiliateKey = process.env.SUMUP_AFFILIATE_KEY
 
 // TEMPORÁRIO (testes): cobrando em BRL. A conta e os preços do cardápio são
 // suíços, então antes de abrir para o público isto volta para 'CHF'.
-// O mesmo valor está em src/mesa/sumupTapToPay.ts — trocar os dois juntos.
 const CURRENCY = 'BRL'
+
+// Só o Brasil e o Chile exigem dizer se o cartão é crédito ou débito; nos demais
+// países o próprio cartão define e este campo é ignorado. Enquanto os testes
+// rodam em BRL, a escolha está fixa aqui.
+const CARD_TYPE = 'debit'
 
 interface CartItemPayload {
   menu_item_id: string
@@ -30,14 +38,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const { items, customerName, tip, paymentMethod } = req.body ?? {}
+  const { items, customerName, tip } = req.body ?? {}
   if (!Array.isArray(items) || items.length === 0) {
     res.status(400).json({ error: 'Pedido inválido.' })
     return
   }
-  // 'tap' = pagamento por aproximação no próprio tablet (app da SumUp assume a
-  // tela via Payment Switch); 'online' = checkout hospedado da SumUp no navegador.
-  const isTapToPay = paymentMethod === 'tap'
+  // Quem decide a forma de cobrança é o servidor, não o app: com uma maquininha
+  // pareada o pedido vai para ela; sem maquininha, cai no checkout hospedado.
+  const useReader = Boolean(sumupReaderId && sumupAffiliateKey)
   if (typeof customerName !== 'string' || !customerName.trim()) {
     res.status(400).json({ error: 'Nome do pedido é obrigatório.' })
     return
@@ -88,13 +96,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  // No Tap to Pay quem cobra é o app da SumUp no tablet, então não existe
-  // checkout hospedado a criar: devolvemos só o pedido e o app da mesa monta
-  // a URL `sumupmerchant://`. A confirmação continua sendo server-side, em
-  // /api/sumup-confirm-payment, consultando a transação por foreign_transaction_id.
-  if (isTapToPay) {
-    res.status(200).json({ orderId: order.id, total })
-    return
+  // Maquininha Solo: manda a cobrança para o aparelho, que acende sozinho
+  // pedindo a aproximação do cartão. O cliente não escolhe forma de pagamento
+  // e não sai do cardápio — o app só fica aguardando e perguntando ao servidor
+  // se já pagou (/api/sumup-confirm-payment).
+  if (useReader) {
+    try {
+      const readerRes = await fetch(
+        `https://api.sumup.com/v0.1/merchants/${encodeURIComponent(sumupMerchantCode)}` +
+          `/readers/${encodeURIComponent(sumupReaderId as string)}/checkout`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${sumupApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            total_amount: {
+              currency: CURRENCY,
+              // `value` vai em unidades menores: 29.80 -> 2980 centavos.
+              minor_unit: 2,
+              value: Math.round(total * 100),
+            },
+            description: [cleanCustomerName, 'Forest Açaí'].join(' — '),
+            card_type: CARD_TYPE,
+            affiliate: {
+              app_id: 'ch.forestacai.totem',
+              key: sumupAffiliateKey,
+              // É por aqui que /api/sumup-confirm-payment reencontra a transação.
+              foreign_transaction_id: order.id,
+            },
+          }),
+        },
+      )
+      const readerData = await readerRes.json()
+      if (!readerRes.ok) {
+        await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id)
+        res.status(400).json({
+          error: readerData?.message ?? 'Não foi possível iniciar o pagamento na maquininha.',
+        })
+        return
+      }
+      res.status(200).json({ orderId: order.id, mode: 'reader' })
+      return
+    } catch (err) {
+      await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id)
+      res.status(502).json({ error: err instanceof Error ? err.message : 'Erro ao contatar o SumUp.' })
+      return
+    }
   }
 
   const origin = `https://${req.headers.host}`
@@ -127,7 +176,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     await supabase.from('orders').update({ sumup_checkout_id: checkoutData.id }).eq('id', order.id)
 
-    res.status(200).json({ orderId: order.id, hostedCheckoutUrl: checkoutData.hosted_checkout_url })
+    res.status(200).json({
+      orderId: order.id,
+      mode: 'hosted',
+      hostedCheckoutUrl: checkoutData.hosted_checkout_url,
+    })
   } catch (err) {
     await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id)
     res.status(502).json({ error: err instanceof Error ? err.message : 'Erro ao contatar o SumUp.' })

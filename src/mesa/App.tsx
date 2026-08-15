@@ -5,15 +5,19 @@ import ConfirmationScreen from './components/ConfirmationScreen'
 import PaymentStatusScreen from './components/PaymentStatusScreen'
 import { useKeepFullscreen } from './useFullscreen'
 import { useLanguage } from './i18n/LanguageContext'
-import {
-  buildPaymentSwitchUrl,
-  isCardPresentEnabled,
-  isNativeTapToPayAvailable,
-  startNativeTapToPay,
-} from './sumupTapToPay'
 import type { CartItem } from './types'
 
-type View = 'dashboard' | 'resumo' | 'confirming_payment' | 'payment_failed' | 'confirmation'
+type View =
+  | 'dashboard'
+  | 'resumo'
+  | 'awaiting_tap'
+  | 'confirming_payment'
+  | 'payment_failed'
+  | 'confirmation'
+
+/** Quanto tempo o totem espera o cliente aproximar o cartão antes de desistir. */
+const TAP_TIMEOUT_MS = 120_000
+const TAP_POLL_INTERVAL_MS = 2_000
 
 export default function App() {
   const [view, setView] = useState<View>('dashboard')
@@ -51,16 +55,25 @@ export default function App() {
     setCart((prev) => prev.filter((i) => i.cartId !== cartId))
   }
 
+  /** Pergunta ao servidor em que pé está o pagamento. Só ele decide. */
+  async function fetchPaymentStatus(orderId: string): Promise<string | null> {
+    const res = await fetch('/api/sumup-confirm-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId }),
+    })
+    const data = await res.json()
+    return res.ok && typeof data.status === 'string' ? data.status : null
+  }
+
+  function isPaid(status: string | null): boolean {
+    return status !== null && status !== 'aguardando_pagamento' && status !== 'cancelado'
+  }
+
   async function confirmPayment(orderId: string) {
     setView('confirming_payment')
     try {
-      const res = await fetch('/api/sumup-confirm-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId }),
-      })
-      const data = await res.json()
-      if (res.ok && data.status && data.status !== 'aguardando_pagamento' && data.status !== 'cancelado') {
+      if (isPaid(await fetchPaymentStatus(orderId))) {
         setCart([])
         setView('confirmation')
       } else {
@@ -69,6 +82,38 @@ export default function App() {
     } catch {
       setView('payment_failed')
     }
+  }
+
+  /**
+   * Maquininha: a cobrança já está na tela do aparelho, então aqui só ficamos
+   * perguntando ao servidor até o cliente aproximar o cartão (ou desistir).
+   */
+  async function waitForTap(orderId: string) {
+    setConfirmingOrderId(orderId)
+    setView('awaiting_tap')
+    // Libera o botão do resumo: se o cliente voltar para lá depois, ele não
+    // pode estar travado em "Enviando…".
+    setSending(false)
+    const deadline = Date.now() + TAP_TIMEOUT_MS
+
+    while (Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, TAP_POLL_INTERVAL_MS))
+      let status: string | null = null
+      try {
+        status = await fetchPaymentStatus(orderId)
+      } catch {
+        // Falha de rede momentânea não encerra a espera: o cliente pode estar
+        // com o cartão na mão. Tenta de novo no próximo ciclo.
+        continue
+      }
+      if (isPaid(status)) {
+        setCart([])
+        setView('confirmation')
+        return
+      }
+      if (status === 'cancelado') break
+    }
+    setView('payment_failed')
   }
 
   async function handleSubmit(customerName: string, tip: number) {
@@ -85,18 +130,11 @@ export default function App() {
       preco_unitario: item.unitPrice,
     }))
 
-    const cardPresent = isCardPresentEnabled()
-
     try {
       const res = await fetch('/api/sumup-create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: itemsPayload,
-          customerName,
-          tip,
-          paymentMethod: cardPresent ? 'tap' : 'online',
-        }),
+        body: JSON.stringify({ items: itemsPayload, customerName, tip }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -105,52 +143,9 @@ export default function App() {
         return
       }
 
-      if (cardPresent) {
-        if (!data.orderId) {
-          setSendError(data?.error ?? t('genericOrderError'))
-          setSending(false)
-          return
-        }
-
-        // Dentro da casca nativa: o SDK cobra por aproximação sem sair da tela.
-        if (isNativeTapToPayAvailable()) {
-          const result = await startNativeTapToPay({
-            orderId: data.orderId,
-            total: data.total,
-            customerName,
-          })
-          if (result.status === 'canceled') {
-            // Cliente desistiu: volta para o resumo em vez de mandá-lo para a
-            // tela de "pagamento não confirmado".
-            setSending(false)
-            return
-          }
-          // Sucesso, falha ou resultado desconhecido: quem decide é o servidor.
-          window.location.href = `/mesa/?pedido=${data.orderId}`
-          return
-        }
-
-        // Fora dela: entrega ao app da SumUp instalado (maquininha Bluetooth),
-        // que volta para /mesa/?pedido=<id> quando terminar.
-        // Se o app não estiver instalado (ou recusar o link), abrir a URL não
-        // dispara erro nenhum: a página simplesmente continua aberta e o cliente
-        // ficaria preso no "Enviando…". Como o totem não tem atendente,
-        // detectamos isso pelo fato de a aba continuar visível e liberamos a
-        // tela de novo com uma mensagem.
-        const handoff = window.setTimeout(() => {
-          if (document.visibilityState === 'visible') {
-            setSendError(t('tapToPayUnavailable'))
-            setSending(false)
-          }
-        }, 3000)
-        document.addEventListener('visibilitychange', () => window.clearTimeout(handoff), {
-          once: true,
-        })
-        window.location.href = buildPaymentSwitchUrl({
-          orderId: data.orderId,
-          total: data.total,
-          customerName,
-        })
+      // A cobrança já está na tela da maquininha: é só esperar a aproximação.
+      if (data.mode === 'reader' && data.orderId) {
+        await waitForTap(data.orderId)
         return
       }
 
@@ -164,6 +159,10 @@ export default function App() {
       setSendError(err instanceof Error ? err.message : t('genericOrderError'))
       setSending(false)
     }
+  }
+
+  if (view === 'awaiting_tap') {
+    return <PaymentStatusScreen status="awaiting_tap" />
   }
 
   if (view === 'confirming_payment') {

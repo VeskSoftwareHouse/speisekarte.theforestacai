@@ -33,7 +33,8 @@ export interface StringDict {
   confirmationBody: string
   newOrderButton: string
   genericOrderError: string
-  tapToPayUnavailable: string
+  awaitingTapTitle: string
+  awaitingTapBody: string
   languageLabel: string
   confirmingPayment: string
   paymentFailedTitle: string
@@ -86,7 +87,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Deine Bestellung ist in der Küche angekommen. Unser Team beginnt in Kürze mit der Zubereitung.',
     newOrderButton: 'Weitere Bestellung aufgeben',
     genericOrderError: 'Die Bestellung konnte nicht erstellt werden.',
-    tapToPayUnavailable: 'Kartenzahlung konnte nicht gestartet werden. Bitte wende dich an unser Team.',
+    awaitingTapTitle: 'Karte ans Terminal halten',
+    awaitingTapBody: 'Der Betrag steht bereits auf dem Kartenlesegerät neben dir.',
     languageLabel: 'Sprache',
     confirmingPayment: 'Zahlung wird bestätigt…',
     paymentFailedTitle: 'Zahlung nicht bestätigt',
@@ -135,7 +137,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Votre commande est arrivée en cuisine. Notre équipe va bientôt commencer la préparation.',
     newOrderButton: 'Passer une autre commande',
     genericOrderError: 'Impossible de créer la commande.',
-    tapToPayUnavailable: 'Impossible de démarrer le paiement par carte. Merci de vous adresser à notre équipe.',
+    awaitingTapTitle: 'Approchez votre carte du terminal',
+    awaitingTapBody: 'Le montant est déjà affiché sur le terminal à côté de vous.',
     languageLabel: 'Langue',
     confirmingPayment: 'Confirmation du paiement…',
     paymentFailedTitle: 'Paiement non confirmé',
@@ -184,7 +187,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Il tuo ordine è arrivato in cucina. Il nostro team inizierà a breve la preparazione.',
     newOrderButton: 'Fai un altro ordine',
     genericOrderError: "Non è stato possibile creare l'ordine.",
-    tapToPayUnavailable: 'Non è stato possibile avviare il pagamento con carta. Rivolgiti al nostro team.',
+    awaitingTapTitle: 'Avvicina la carta al terminale',
+    awaitingTapBody: "L'importo è già sul lettore di carte accanto a te.",
     languageLabel: 'Lingua',
     confirmingPayment: 'Conferma del pagamento…',
     paymentFailedTitle: 'Pagamento non confermato',
@@ -233,7 +237,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Your order has reached the kitchen. Our team will start preparing it shortly.',
     newOrderButton: 'Place another order',
     genericOrderError: 'Could not create the order.',
-    tapToPayUnavailable: "Couldn't start the card payment. Please ask our team for help.",
+    awaitingTapTitle: 'Tap your card on the terminal',
+    awaitingTapBody: 'The amount is already showing on the card reader next to you.',
     languageLabel: 'Language',
     confirmingPayment: 'Confirming payment…',
     paymentFailedTitle: 'Payment not confirmed',
@@ -282,7 +287,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Seu pedido chegou na cozinha. Em breve nossa equipe começa o preparo.',
     newOrderButton: 'Fazer outro pedido',
     genericOrderError: 'Não foi possível criar o pedido.',
-    tapToPayUnavailable: 'Não foi possível iniciar o pagamento por cartão. Fale com nossa equipe.',
+    awaitingTapTitle: 'Aproxime o cartão da maquininha',
+    awaitingTapBody: 'O valor já está na tela da maquininha ao seu lado.',
     languageLabel: 'Idioma',
     confirmingPayment: 'Confirmando pagamento…',
     paymentFailedTitle: 'Pagamento não confirmado',
@@ -331,7 +337,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Tu pedido llegó a la cocina. Nuestro equipo comenzará la preparación en breve.',
     newOrderButton: 'Hacer otro pedido',
     genericOrderError: 'No se pudo crear el pedido.',
-    tapToPayUnavailable: 'No se pudo iniciar el pago con tarjeta. Habla con nuestro equipo.',
+    awaitingTapTitle: 'Acerca tu tarjeta al terminal',
+    awaitingTapBody: 'El importe ya aparece en el datáfono que está a tu lado.',
     languageLabel: 'Idioma',
     confirmingPayment: 'Confirmando el pago…',
     paymentFailedTitle: 'Pago no confirmado',
