@@ -58,6 +58,8 @@ export interface ModifierOption {
   nome: string
   preco_adicional: number
   ordem: number
+  /** Foto da opção, mostrada ao cliente ao montar o pedido. null = só o nome. */
+  foto_url: string | null
   /** Traduções manuais do nome por idioma (chaves: fr, it, en, pt, es). Alemão vem de `nome`. */
   nome_i18n: Record<string, string>
 }

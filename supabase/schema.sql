@@ -75,11 +75,15 @@ create table if not exists modifier_options (
   modifier_id      uuid not null references modifiers(id) on delete cascade,
   nome             text not null,
   preco_adicional  numeric(10,2) not null default 0,
-  ordem            int not null default 0
+  ordem            int not null default 0,
+  -- foto da opção (morango, Nutella...), mostrada ao cliente na hora de montar
+  -- o pedido. Mesmo bucket das fotos de produto. null = só o nome.
+  foto_url         text
 );
 
 -- traduções manuais do nome por idioma (mesmo formato de menu_items.nome_i18n).
 alter table modifier_options add column if not exists nome_i18n jsonb not null default '{}'::jsonb;
+alter table modifier_options add column if not exists foto_url text;
 
 create index if not exists idx_modifier_options_modifier on modifier_options(modifier_id);
 

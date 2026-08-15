@@ -17,6 +17,7 @@ export interface ModifierOptionInput {
   nome_i18n: Record<string, string>
   preco_adicional: number
   ordem: number
+  foto_url: string | null
 }
 
 export function useModifierAdmin() {

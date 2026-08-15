@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, ImageOff } from 'lucide-react'
 import type { Modifier, ModifierOption } from '@shared/types'
 import AdminSearchInput from './AdminSearchInput'
 
@@ -42,6 +42,9 @@ export default function ModifierOptionPanel({ options, groupsById, onAdd, onEdit
         )}
         {filteredOptions.map((o) => (
           <article key={o.id} className="admin-product-row">
+            <div className="admin-product-row__thumb">
+              {o.foto_url ? <img src={o.foto_url} alt="" /> : <ImageOff size={20} strokeWidth={1.5} aria-hidden />}
+            </div>
             <div className="admin-product-row__info">
               <div className="admin-product-row__title">
                 <strong>{o.nome}</strong>

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { X } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { X, ImagePlus, Loader2, Trash2 } from 'lucide-react'
 import type { Modifier, ModifierOption } from '@shared/types'
 import CurrencyInput from '@shared/components/CurrencyInput'
 import { translationsFor } from '../autoTranslate'
@@ -11,15 +11,41 @@ interface Props {
   defaultGroupId: string | null
   onClose: () => void
   onSave: (input: ModifierOptionInput) => Promise<void>
+  onUploadImage: (file: File) => Promise<string>
 }
 
-export default function ModifierOptionFormModal({ option, groups, defaultGroupId, onClose, onSave }: Props) {
+export default function ModifierOptionFormModal({
+  option,
+  groups,
+  defaultGroupId,
+  onClose,
+  onSave,
+  onUploadImage,
+}: Props) {
   const [nome, setNome] = useState(option?.nome ?? '')
   const [modifierId, setModifierId] = useState(option?.modifier_id ?? defaultGroupId ?? groups[0]?.id ?? '')
   const [precoAdicional, setPrecoAdicional] = useState(option?.preco_adicional ?? 0)
   const [ordem, setOrdem] = useState(option?.ordem ?? 0)
+  const [fotoUrl, setFotoUrl] = useState(option?.foto_url ?? '')
+  const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setError(null)
+    try {
+      setFotoUrl(await onUploadImage(file))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível enviar a imagem.')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -34,6 +60,7 @@ export default function ModifierOptionFormModal({ option, groups, defaultGroupId
         modifier_id: modifierId,
         preco_adicional: precoAdicional,
         ordem,
+        foto_url: fotoUrl.trim() || null,
       })
       onClose()
     } catch (err) {
@@ -53,6 +80,45 @@ export default function ModifierOptionFormModal({ option, groups, defaultGroupId
         </header>
 
         <form className="admin-form" onSubmit={handleSubmit}>
+          <div className="admin-form__photo">
+            <div className="admin-form__photo-preview">
+              {fotoUrl ? <img src={fotoUrl} alt="" /> : <ImagePlus size={28} strokeWidth={1.5} aria-hidden />}
+              {fotoUrl && (
+                <button
+                  type="button"
+                  className="admin-form__photo-remove"
+                  onClick={() => setFotoUrl('')}
+                  aria-label="Excluir imagem"
+                >
+                  <Trash2 size={14} strokeWidth={2} />
+                </button>
+              )}
+            </div>
+            <div className="admin-form__photo-actions">
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 size={16} className="admin-spin" aria-hidden /> Enviando…
+                  </>
+                ) : (
+                  'Enviar imagem'
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="visually-hidden"
+              />
+            </div>
+          </div>
+
           <label className="admin-form__field">
             <span>Nome (alemão)</span>
             <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Morango" required />
@@ -87,7 +153,7 @@ export default function ModifierOptionFormModal({ option, groups, defaultGroupId
 
           {error && <p className="admin-form__error">{error}</p>}
 
-          <button className="btn btn-primary btn-block" type="submit" disabled={saving}>
+          <button className="btn btn-primary btn-block" type="submit" disabled={saving || uploading}>
             {saving ? 'Salvando…' : 'Salvar adicional'}
           </button>
         </form>

@@ -634,6 +634,19 @@
   color: var(--color-primary-dark);
   font-weight: 700;
 }
+/* Foto da opção (morango, Nutella...). Opcional: sem ela a pílula fica só com
+   o nome, como antes — por isso o padding esquerdo encolhe só quando há foto. */
+.option-pill:has(.option-pill__photo) {
+  padding-left: var(--space-2);
+}
+.option-pill__photo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+  background: var(--color-bg);
+}
 .option-pill__price {
   color: var(--color-text-muted);
   font-size: 0.88rem;

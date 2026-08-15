@@ -99,7 +99,8 @@ export function useMenuAdmin() {
     await fetchAll()
   }
 
-  async function uploadProductImage(file: File): Promise<string> {
+  /** Sobe uma imagem do cardápio (produto ou adicional) e devolve a URL pública. */
+  async function uploadImage(file: File): Promise<string> {
     const ext = file.name.split('.').pop() || 'jpg'
     const path = `${crypto.randomUUID()}.${ext}`
     const { error: err } = await supabase.storage
@@ -121,6 +122,6 @@ export function useMenuAdmin() {
     createProduct,
     updateProduct,
     deleteProduct,
-    uploadProductImage,
+    uploadImage,
   }
 }

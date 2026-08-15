@@ -43,7 +43,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
     createProduct,
     updateProduct,
     deleteProduct,
-    uploadProductImage,
+    uploadImage,
   } = useMenuAdmin()
 
   const {
@@ -274,7 +274,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
             if (productForm !== 'new') await updateProduct(productForm.id, input)
             await setProductModifiers(id, modifierIds)
           }}
-          onUploadImage={uploadProductImage}
+          onUploadImage={uploadImage}
         />
       )}
 
@@ -310,6 +310,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
             if (modifierOptionForm === 'new') await createOption(input)
             else await updateOption(modifierOptionForm.id, input)
           }}
+          onUploadImage={uploadImage}
         />
       )}
 
