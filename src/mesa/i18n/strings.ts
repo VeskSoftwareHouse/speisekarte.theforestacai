@@ -33,6 +33,7 @@ export interface StringDict {
   confirmationBody: string
   newOrderButton: string
   genericOrderError: string
+  tapToPayUnavailable: string
   languageLabel: string
   confirmingPayment: string
   paymentFailedTitle: string
@@ -85,6 +86,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Deine Bestellung ist in der Küche angekommen. Unser Team beginnt in Kürze mit der Zubereitung.',
     newOrderButton: 'Weitere Bestellung aufgeben',
     genericOrderError: 'Die Bestellung konnte nicht erstellt werden.',
+    tapToPayUnavailable: 'Kartenzahlung konnte nicht gestartet werden. Bitte wende dich an unser Team.',
     languageLabel: 'Sprache',
     confirmingPayment: 'Zahlung wird bestätigt…',
     paymentFailedTitle: 'Zahlung nicht bestätigt',
@@ -133,6 +135,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Votre commande est arrivée en cuisine. Notre équipe va bientôt commencer la préparation.',
     newOrderButton: 'Passer une autre commande',
     genericOrderError: 'Impossible de créer la commande.',
+    tapToPayUnavailable: 'Impossible de démarrer le paiement par carte. Merci de vous adresser à notre équipe.',
     languageLabel: 'Langue',
     confirmingPayment: 'Confirmation du paiement…',
     paymentFailedTitle: 'Paiement non confirmé',
@@ -181,6 +184,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Il tuo ordine è arrivato in cucina. Il nostro team inizierà a breve la preparazione.',
     newOrderButton: 'Fai un altro ordine',
     genericOrderError: "Non è stato possibile creare l'ordine.",
+    tapToPayUnavailable: 'Non è stato possibile avviare il pagamento con carta. Rivolgiti al nostro team.',
     languageLabel: 'Lingua',
     confirmingPayment: 'Conferma del pagamento…',
     paymentFailedTitle: 'Pagamento non confermato',
@@ -229,6 +233,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Your order has reached the kitchen. Our team will start preparing it shortly.',
     newOrderButton: 'Place another order',
     genericOrderError: 'Could not create the order.',
+    tapToPayUnavailable: "Couldn't start the card payment. Please ask our team for help.",
     languageLabel: 'Language',
     confirmingPayment: 'Confirming payment…',
     paymentFailedTitle: 'Payment not confirmed',
@@ -277,6 +282,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Seu pedido chegou na cozinha. Em breve nossa equipe começa o preparo.',
     newOrderButton: 'Fazer outro pedido',
     genericOrderError: 'Não foi possível criar o pedido.',
+    tapToPayUnavailable: 'Não foi possível iniciar o pagamento por cartão. Fale com nossa equipe.',
     languageLabel: 'Idioma',
     confirmingPayment: 'Confirmando pagamento…',
     paymentFailedTitle: 'Pagamento não confirmado',
@@ -325,6 +331,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Tu pedido llegó a la cocina. Nuestro equipo comenzará la preparación en breve.',
     newOrderButton: 'Hacer otro pedido',
     genericOrderError: 'No se pudo crear el pedido.',
+    tapToPayUnavailable: 'No se pudo iniciar el pago con tarjeta. Habla con nuestro equipo.',
     languageLabel: 'Idioma',
     confirmingPayment: 'Confirmando el pago…',
     paymentFailedTitle: 'Pago no confirmado',

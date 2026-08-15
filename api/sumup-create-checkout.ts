@@ -25,11 +25,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const { items, customerName, tip } = req.body ?? {}
+  const { items, customerName, tip, paymentMethod } = req.body ?? {}
   if (!Array.isArray(items) || items.length === 0) {
     res.status(400).json({ error: 'Pedido inválido.' })
     return
   }
+  // 'tap' = pagamento por aproximação no próprio tablet (app da SumUp assume a
+  // tela via Payment Switch); 'online' = checkout hospedado da SumUp no navegador.
+  const isTapToPay = paymentMethod === 'tap'
   if (typeof customerName !== 'string' || !customerName.trim()) {
     res.status(400).json({ error: 'Nome do pedido é obrigatório.' })
     return
@@ -77,6 +80,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (itemsErr) {
     await supabase.from('orders').delete().eq('id', order.id)
     res.status(400).json({ error: itemsErr.message })
+    return
+  }
+
+  // No Tap to Pay quem cobra é o app da SumUp no tablet, então não existe
+  // checkout hospedado a criar: devolvemos só o pedido e o app da mesa monta
+  // a URL `sumupmerchant://`. A confirmação continua sendo server-side, em
+  // /api/sumup-confirm-payment, consultando a transação por foreign_transaction_id.
+  if (isTapToPay) {
+    res.status(200).json({ orderId: order.id, total })
     return
   }
 

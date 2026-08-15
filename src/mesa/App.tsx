@@ -5,6 +5,7 @@ import ConfirmationScreen from './components/ConfirmationScreen'
 import PaymentStatusScreen from './components/PaymentStatusScreen'
 import { useKeepFullscreen } from './useFullscreen'
 import { useLanguage } from './i18n/LanguageContext'
+import { buildTapToPayUrl, isTapToPayEnabled } from './sumupTapToPay'
 import type { CartItem } from './types'
 
 type View = 'dashboard' | 'resumo' | 'confirming_payment' | 'payment_failed' | 'confirmation'
@@ -79,6 +80,8 @@ export default function App() {
       preco_unitario: item.unitPrice,
     }))
 
+    const tapToPay = isTapToPayEnabled()
+
     try {
       const res = await fetch('/api/sumup-create-checkout', {
         method: 'POST',
@@ -87,10 +90,49 @@ export default function App() {
           items: itemsPayload,
           customerName,
           tip,
+          paymentMethod: tapToPay ? 'tap' : 'online',
         }),
       })
       const data = await res.json()
-      if (!res.ok || !data.hostedCheckoutUrl) {
+      if (!res.ok) {
+        setSendError(data?.error ?? t('genericOrderError'))
+        setSending(false)
+        return
+      }
+
+      if (tapToPay) {
+        // Entrega a cobrança ao app da SumUp, que pede a aproximação do cartão
+        // e volta para /mesa/?pedido=<id> quando terminar.
+        if (!data.orderId) {
+          setSendError(data?.error ?? t('genericOrderError'))
+          setSending(false)
+          return
+        }
+        // Se o app da SumUp não estiver instalado (ou recusar o link), abrir a
+        // URL não dispara erro nenhum: a página simplesmente continua aberta e
+        // o cliente ficaria preso no "Enviando…". Como o totem não tem atendente,
+        // detectamos isso pelo fato de a aba continuar visível e liberamos a
+        // tela de novo com uma mensagem.
+        const handoff = window.setTimeout(() => {
+          if (document.visibilityState === 'visible') {
+            setSendError(t('tapToPayUnavailable'))
+            setSending(false)
+          }
+        }, 3000)
+        document.addEventListener(
+          'visibilitychange',
+          () => window.clearTimeout(handoff),
+          { once: true },
+        )
+        window.location.href = buildTapToPayUrl({
+          orderId: data.orderId,
+          total: data.total,
+          customerName,
+        })
+        return
+      }
+
+      if (!data.hostedCheckoutUrl) {
         setSendError(data?.error ?? t('genericOrderError'))
         setSending(false)
         return
