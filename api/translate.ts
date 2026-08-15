@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import Anthropic from '@anthropic-ai/sdk'
+import { GoogleGenAI } from '@google/genai'
 
-const anthropicApiKey = process.env.ANTHROPIC_API_KEY
+const geminiApiKey = process.env.GEMINI_API_KEY
 
 /** Idiomas do cardápio, fora o alemão — que é a fonte, não um destino. */
 const TARGET_LANGS = ['fr', 'it', 'en', 'pt', 'es'] as const
@@ -17,7 +17,7 @@ const LANG_NAMES: Record<string, string> = {
 const TRANSLATABLE_FIELDS = ['nome', 'descricao'] as const
 type Field = (typeof TRANSLATABLE_FIELDS)[number]
 
-const SYSTEM_PROMPT = `You translate menu content for Forest Açaí, a Brazilian açaí shop in Switzerland. The source language is German.
+const SYSTEM_INSTRUCTION = `You translate menu content for Forest Açaí, a Brazilian açaí shop in Switzerland. The source language is German.
 
 Translate for a printed menu, not prose: keep the same register, length, and punctuation style as the German. A two-word item name stays a two-word item name.
 
@@ -34,13 +34,11 @@ function buildSchema(fields: Field[]) {
     type: 'object',
     properties: Object.fromEntries(fields.map((f) => [f, { type: 'string' }])),
     required: fields,
-    additionalProperties: false,
   }
   return {
     type: 'object',
     properties: Object.fromEntries(TARGET_LANGS.map((l) => [l, perLanguage])),
     required: [...TARGET_LANGS],
-    additionalProperties: false,
   }
 }
 
@@ -49,8 +47,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(405).json({ error: 'Método não permitido.' })
     return
   }
-  if (!anthropicApiKey) {
-    res.status(500).json({ error: 'Servidor não configurado (ANTHROPIC_API_KEY ausente).' })
+  if (!geminiApiKey) {
+    res.status(500).json({ error: 'Servidor não configurado (GEMINI_API_KEY ausente).' })
     return
   }
 
@@ -71,42 +69,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const source = Object.fromEntries(fields.map((f) => [f, (texts[f] as string).trim()]))
-  const client = new Anthropic({ apiKey: anthropicApiKey })
+  const client = new GoogleGenAI({ apiKey: geminiApiKey })
 
   try {
-    const message = await client.messages.create({
-      model: 'claude-opus-5',
-      max_tokens: 16000,
-      system: SYSTEM_PROMPT,
-      // Tradução de item de cardápio é tarefa curta e direta: esforço baixo
-      // entrega o mesmo resultado gastando menos tempo e tokens.
-      output_config: {
-        effort: 'low',
-        format: {
-          type: 'json_schema',
-          schema: buildSchema(fields),
-        },
+    const interaction = await client.interactions.create({
+      model: 'gemini-3.6-flash',
+      system_instruction: SYSTEM_INSTRUCTION,
+      input: `Translate into ${TARGET_LANGS.map((l) => LANG_NAMES[l]).join(', ')}:\n\n${JSON.stringify(source, null, 2)}`,
+      response_format: {
+        type: 'text',
+        mime_type: 'application/json',
+        schema: buildSchema(fields),
       },
-      messages: [
-        {
-          role: 'user',
-          content: `Translate into ${TARGET_LANGS.map((l) => LANG_NAMES[l]).join(', ')}:\n\n${JSON.stringify(source, null, 2)}`,
-        },
-      ],
     })
 
-    if (message.stop_reason === 'refusal') {
-      res.status(422).json({ error: 'Não foi possível traduzir este conteúdo.' })
-      return
-    }
-
-    const text = message.content.find((b) => b.type === 'text')
-    if (!text || text.type !== 'text') {
+    const output = interaction.output_text
+    if (!output) {
       res.status(502).json({ error: 'Resposta de tradução vazia.' })
       return
     }
 
-    res.status(200).json({ translations: JSON.parse(text.text) })
+    res.status(200).json({ translations: JSON.parse(output) })
   } catch (err) {
     res.status(502).json({ error: err instanceof Error ? err.message : 'Erro ao traduzir.' })
   }
