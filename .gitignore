@@ -10,12 +10,3 @@ brand-assets/
 
 .vercel
 .env*
-
-# Casca nativa Android (totem). local.properties guarda a chave de API da SumUp
-# e as credenciais do Maven privado — nunca versionar.
-android/local.properties
-android/.gradle/
-android/build/
-android/app/build/
-*.keystore
-*.jks
