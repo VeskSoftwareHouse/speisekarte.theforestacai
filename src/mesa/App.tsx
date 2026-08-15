@@ -5,7 +5,12 @@ import ConfirmationScreen from './components/ConfirmationScreen'
 import PaymentStatusScreen from './components/PaymentStatusScreen'
 import { useKeepFullscreen } from './useFullscreen'
 import { useLanguage } from './i18n/LanguageContext'
-import { buildTapToPayUrl, isTapToPayEnabled } from './sumupTapToPay'
+import {
+  buildPaymentSwitchUrl,
+  isCardPresentEnabled,
+  isNativeTapToPayAvailable,
+  startNativeTapToPay,
+} from './sumupTapToPay'
 import type { CartItem } from './types'
 
 type View = 'dashboard' | 'resumo' | 'confirming_payment' | 'payment_failed' | 'confirmation'
@@ -80,7 +85,7 @@ export default function App() {
       preco_unitario: item.unitPrice,
     }))
 
-    const tapToPay = isTapToPayEnabled()
+    const cardPresent = isCardPresentEnabled()
 
     try {
       const res = await fetch('/api/sumup-create-checkout', {
@@ -90,7 +95,7 @@ export default function App() {
           items: itemsPayload,
           customerName,
           tip,
-          paymentMethod: tapToPay ? 'tap' : 'online',
+          paymentMethod: cardPresent ? 'tap' : 'online',
         }),
       })
       const data = await res.json()
@@ -100,17 +105,36 @@ export default function App() {
         return
       }
 
-      if (tapToPay) {
-        // Entrega a cobrança ao app da SumUp, que pede a aproximação do cartão
-        // e volta para /mesa/?pedido=<id> quando terminar.
+      if (cardPresent) {
         if (!data.orderId) {
           setSendError(data?.error ?? t('genericOrderError'))
           setSending(false)
           return
         }
-        // Se o app da SumUp não estiver instalado (ou recusar o link), abrir a
-        // URL não dispara erro nenhum: a página simplesmente continua aberta e
-        // o cliente ficaria preso no "Enviando…". Como o totem não tem atendente,
+
+        // Dentro da casca nativa: o SDK cobra por aproximação sem sair da tela.
+        if (isNativeTapToPayAvailable()) {
+          const result = await startNativeTapToPay({
+            orderId: data.orderId,
+            total: data.total,
+            customerName,
+          })
+          if (result.status === 'canceled') {
+            // Cliente desistiu: volta para o resumo em vez de mandá-lo para a
+            // tela de "pagamento não confirmado".
+            setSending(false)
+            return
+          }
+          // Sucesso, falha ou resultado desconhecido: quem decide é o servidor.
+          window.location.href = `/mesa/?pedido=${data.orderId}`
+          return
+        }
+
+        // Fora dela: entrega ao app da SumUp instalado (maquininha Bluetooth),
+        // que volta para /mesa/?pedido=<id> quando terminar.
+        // Se o app não estiver instalado (ou recusar o link), abrir a URL não
+        // dispara erro nenhum: a página simplesmente continua aberta e o cliente
+        // ficaria preso no "Enviando…". Como o totem não tem atendente,
         // detectamos isso pelo fato de a aba continuar visível e liberamos a
         // tela de novo com uma mensagem.
         const handoff = window.setTimeout(() => {
@@ -119,12 +143,10 @@ export default function App() {
             setSending(false)
           }
         }, 3000)
-        document.addEventListener(
-          'visibilitychange',
-          () => window.clearTimeout(handoff),
-          { once: true },
-        )
-        window.location.href = buildTapToPayUrl({
+        document.addEventListener('visibilitychange', () => window.clearTimeout(handoff), {
+          once: true,
+        })
+        window.location.href = buildPaymentSwitchUrl({
           orderId: data.orderId,
           total: data.total,
           customerName,

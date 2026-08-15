@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Mesmo roxo da sidebar do cardápio e do ícone do app. -->
+  <color name="brand_purple">#340261</color>
+</resources>
