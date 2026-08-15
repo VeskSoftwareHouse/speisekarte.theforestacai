@@ -17,6 +17,11 @@
 
 const AFFILIATE_KEY = import.meta.env.VITE_SUMUP_AFFILIATE_KEY as string | undefined
 
+// TEMPORÁRIO (testes): cobrando em BRL. A conta e os preços do cardápio são
+// suíços, então antes de abrir para o público isto volta para 'CHF'.
+// O mesmo valor está em api/sumup-create-checkout.ts — trocar os dois juntos.
+const CURRENCY = 'BRL'
+
 /**
  * Sem a affiliate key o app cai no checkout hospedado (cliente digita o cartão
  * no navegador), que é o comportamento anterior.
@@ -35,7 +40,7 @@ export function buildTapToPayUrl({ orderId, total, customerName }: TapToPayParam
   const params = new URLSearchParams({
     'affiliate-key': AFFILIATE_KEY as string,
     total: total.toFixed(2),
-    currency: 'CHF',
+    currency: CURRENCY,
     title: `${customerName} — Forest Açaí`.slice(0, 80),
     // Amarra a transação da SumUp ao nosso pedido, para o servidor conseguir
     // confirmar o pagamento depois sem depender do que voltou na URL.

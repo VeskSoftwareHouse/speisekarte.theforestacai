@@ -6,6 +6,11 @@ const anonKey = process.env.VITE_SUPABASE_ANON_KEY
 const sumupApiKey = process.env.SUMUP_API_KEY
 const sumupMerchantCode = process.env.SUMUP_MERCHANT_CODE
 
+// TEMPORÁRIO (testes): cobrando em BRL. A conta e os preços do cardápio são
+// suíços, então antes de abrir para o público isto volta para 'CHF'.
+// O mesmo valor está em src/mesa/sumupTapToPay.ts — trocar os dois juntos.
+const CURRENCY = 'BRL'
+
 interface CartItemPayload {
   menu_item_id: string
   nome_item: string
@@ -105,7 +110,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: JSON.stringify({
         checkout_reference: order.id,
         amount: total,
-        currency: 'CHF',
+        currency: CURRENCY,
         merchant_code: sumupMerchantCode,
         description: [cleanCustomerName, 'Forest Açaí'].filter(Boolean).join(' — '),
         redirect_url: redirectUrl,
