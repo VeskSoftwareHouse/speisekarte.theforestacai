@@ -2,15 +2,8 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import type { Modifier, ModifierOption } from '@shared/types'
 import CurrencyInput from '@shared/components/CurrencyInput'
+import { translationsFor } from '../autoTranslate'
 import type { ModifierOptionInput } from '../hooks/useModifierAdmin'
-
-const TRANSLATION_LANGS: { code: string; label: string }[] = [
-  { code: 'fr', label: 'FR' },
-  { code: 'it', label: 'IT' },
-  { code: 'en', label: 'EN' },
-  { code: 'pt', label: 'PT' },
-  { code: 'es', label: 'ES' },
-]
 
 interface Props {
   option: ModifierOption | null
@@ -22,8 +15,6 @@ interface Props {
 
 export default function ModifierOptionFormModal({ option, groups, defaultGroupId, onClose, onSave }: Props) {
   const [nome, setNome] = useState(option?.nome ?? '')
-  const [nomeI18n, setNomeI18n] = useState<Record<string, string>>(option?.nome_i18n ?? {})
-  const [activeLang, setActiveLang] = useState(TRANSLATION_LANGS[0].code)
   const [modifierId, setModifierId] = useState(option?.modifier_id ?? defaultGroupId ?? groups[0]?.id ?? '')
   const [precoAdicional, setPrecoAdicional] = useState(option?.preco_adicional ?? 0)
   const [ordem, setOrdem] = useState(option?.ordem ?? 0)
@@ -36,10 +27,10 @@ export default function ModifierOptionFormModal({ option, groups, defaultGroupId
     setSaving(true)
     setError(null)
     try {
-      const cleanedI18n = Object.fromEntries(Object.entries(nomeI18n).filter(([, v]) => v.trim()))
+      const { nome_i18n } = await translationsFor({ nome }, option)
       await onSave({
         nome: nome.trim(),
-        nome_i18n: cleanedI18n,
+        nome_i18n,
         modifier_id: modifierId,
         preco_adicional: precoAdicional,
         ordem,
@@ -67,28 +58,9 @@ export default function ModifierOptionFormModal({ option, groups, defaultGroupId
             <input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Morango" required />
           </label>
 
-          <div className="admin-form__field">
-            <span>Traduções do nome</span>
-            <div className="admin-lang-tabs">
-              {TRANSLATION_LANGS.map((l) => (
-                <button
-                  key={l.code}
-                  type="button"
-                  className={`admin-lang-tab ${activeLang === l.code ? 'admin-lang-tab--active' : ''} ${
-                    nomeI18n[l.code]?.trim() ? 'admin-lang-tab--filled' : ''
-                  }`}
-                  onClick={() => setActiveLang(l.code)}
-                >
-                  {l.label}
-                </button>
-              ))}
-            </div>
-            <input
-              value={nomeI18n[activeLang] ?? ''}
-              onChange={(e) => setNomeI18n((prev) => ({ ...prev, [activeLang]: e.target.value }))}
-              placeholder="Deixe em branco para usar o alemão"
-            />
-          </div>
+          <p className="admin-form__hint">
+            As traduções do nome são geradas automaticamente ao salvar.
+          </p>
 
           <label className="admin-form__field">
             <span>Categoria de adicionais</span>

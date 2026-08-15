@@ -2,15 +2,8 @@ import { useRef, useState } from 'react'
 import { X, ImagePlus, Loader2, Trash2 } from 'lucide-react'
 import type { Category, MenuItem, Modifier } from '@shared/types'
 import CurrencyInput from '@shared/components/CurrencyInput'
+import { translationsFor } from '../autoTranslate'
 import type { ProductInput } from '../hooks/useMenuAdmin'
-
-const TRANSLATION_LANGS: { code: string; label: string }[] = [
-  { code: 'fr', label: 'FR' },
-  { code: 'it', label: 'IT' },
-  { code: 'en', label: 'EN' },
-  { code: 'pt', label: 'PT' },
-  { code: 'es', label: 'ES' },
-]
 
 interface Props {
   product: MenuItem | null
@@ -34,11 +27,8 @@ export default function ProductFormModal({
   onUploadImage,
 }: Props) {
   const [nome, setNome] = useState(product?.nome ?? '')
-  const [nomeI18n, setNomeI18n] = useState<Record<string, string>>(product?.nome_i18n ?? {})
   const [categoriaId, setCategoriaId] = useState(product?.categoria_id ?? defaultCategoryId ?? categories[0]?.id ?? '')
   const [descricao, setDescricao] = useState(product?.descricao ?? '')
-  const [descricaoI18n, setDescricaoI18n] = useState<Record<string, string>>(product?.descricao_i18n ?? {})
-  const [activeLang, setActiveLang] = useState(TRANSLATION_LANGS[0].code)
   const [preco, setPreco] = useState(product?.preco ?? 0)
   const [disponivel, setDisponivel] = useState(product?.disponivel ?? true)
   const [ordem, setOrdem] = useState(product?.ordem ?? 0)
@@ -71,15 +61,17 @@ export default function ProductFormModal({
     setSaving(true)
     setError(null)
     try {
-      const cleanI18n = (obj: Record<string, string>) =>
-        Object.fromEntries(Object.entries(obj).filter(([, v]) => v.trim()))
+      const { nome_i18n, descricao_i18n } = await translationsFor(
+        { nome, descricao },
+        product,
+      )
       await onSave(
         {
           nome: nome.trim(),
-          nome_i18n: cleanI18n(nomeI18n),
+          nome_i18n,
           categoria_id: categoriaId,
           descricao: descricao.trim(),
-          descricao_i18n: cleanI18n(descricaoI18n),
+          descricao_i18n,
           preco,
           foto_url: fotoUrl.trim() || null,
           disponivel,
@@ -175,34 +167,10 @@ export default function ProductFormModal({
             />
           </label>
 
-          <div className="admin-form__field">
-            <span>Traduções</span>
-            <div className="admin-lang-tabs">
-              {TRANSLATION_LANGS.map((l) => (
-                <button
-                  key={l.code}
-                  type="button"
-                  className={`admin-lang-tab ${activeLang === l.code ? 'admin-lang-tab--active' : ''} ${
-                    nomeI18n[l.code]?.trim() || descricaoI18n[l.code]?.trim() ? 'admin-lang-tab--filled' : ''
-                  }`}
-                  onClick={() => setActiveLang(l.code)}
-                >
-                  {l.label}
-                </button>
-              ))}
-            </div>
-            <input
-              value={nomeI18n[activeLang] ?? ''}
-              onChange={(e) => setNomeI18n((prev) => ({ ...prev, [activeLang]: e.target.value }))}
-              placeholder="Nome, deixe em branco para usar o alemão"
-            />
-            <textarea
-              value={descricaoI18n[activeLang] ?? ''}
-              onChange={(e) => setDescricaoI18n((prev) => ({ ...prev, [activeLang]: e.target.value }))}
-              rows={2}
-              placeholder="Descrição, deixe em branco para usar o alemão"
-            />
-          </div>
+          <p className="admin-form__hint">
+            As traduções para francês, italiano, inglês, português e espanhol são geradas
+            automaticamente ao salvar.
+          </p>
 
           <div className="admin-form__row">
             <label className="admin-form__field">
