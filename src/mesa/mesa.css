@@ -635,13 +635,18 @@
   font-weight: 700;
 }
 /* Foto da opção (morango, Nutella...). Opcional: sem ela a pílula fica só com
-   o nome, como antes — por isso o padding esquerdo encolhe só quando há foto. */
+   o nome — por isso o padding esquerdo encolhe só quando há foto.
+   A altura é fixada para todas as opções do modal, e não só para as que têm
+   foto, senão um grupo com fotos pela metade fica com a linha desalinhada. */
+.modal__options .option-pill {
+  min-height: 64px;
+}
 .option-pill:has(.option-pill__photo) {
   padding-left: var(--space-2);
 }
 .option-pill__photo {
-  width: 36px;
-  height: 36px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   object-fit: cover;
   flex: 0 0 auto;
