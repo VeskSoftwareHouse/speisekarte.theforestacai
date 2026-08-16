@@ -13,7 +13,7 @@ export default function PaymentStatusScreen({ status, onRetry, onBack }: Props) 
   if (status === 'awaiting_tap') {
     return (
       <div className="confirmation-screen">
-        <div className="confirmation-screen__icon confirmation-screen__icon--pending">
+        <div className="confirmation-screen__icon confirmation-screen__icon--pending confirmation-screen__icon--waves">
           <Nfc size={44} strokeWidth={2.5} />
         </div>
         <h1>{t('awaitingTapTitle')}</h1>

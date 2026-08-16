@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { ChefHat, Plus, ShoppingBag } from 'lucide-react'
+import { Check, ChefHat, Plus, ShoppingBag } from 'lucide-react'
 import { useMenu } from '@shared/hooks/useMenu'
 import type { MenuItemWithModifiers } from '@shared/types'
 import { formatCHF } from '@shared/format'
@@ -11,9 +11,11 @@ import { useLanguage } from '../i18n/LanguageContext'
 import { translatedField } from '../i18n/menuTranslations'
 import type { CartItem } from '../types'
 import { cartItemTotal } from '../types'
+import { useFlyToCart } from './useFlyToCart'
 
 // Precisa bater com a duração de .catalog--leaving no mesa.css.
 const CATEGORY_EXIT_MS = 180
+const ADDED_BADGE_MS = 900
 
 interface Props {
   cart: CartItem[]
@@ -29,6 +31,8 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
   const [activeCategory, setActiveCategory] = useState<string>(FEATURED_ID)
   const [selectedItem, setSelectedItem] = useState<MenuItemWithModifiers | null>(null)
   const [cartOpen, setCartOpen] = useState(false)
+  const [justAdded, setJustAdded] = useState<Set<string>>(new Set())
+  const { launch, layer: flyLayer } = useFlyToCart()
 
   const cartCount = cart.reduce((sum, i) => sum + i.quantidade, 0)
   const cartTotal = cart.reduce((sum, i) => sum + cartItemTotal(i), 0)
@@ -61,7 +65,9 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
       : translatedField(shownCategoryObj?.nome_i18n, lang, shownCategoryObj?.nome ?? '')
   const SectionIcon = shownCategory === FEATURED_ID ? FeaturedIcon : iconFor(shownCategoryObj?.nome ?? '')
 
-  function handleAddDirect(item: MenuItemWithModifiers) {
+  function handleAddDirect(item: MenuItemWithModifiers, card: HTMLElement) {
+    launch(card.querySelector('.item-card__photo-wrap'), item.foto_url)
+    markAdded(item.id)
     onAddToCart({
       cartId: crypto.randomUUID(),
       menuItem: item,
@@ -72,12 +78,26 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
     })
   }
 
-  function handleCardClick(item: MenuItemWithModifiers) {
+  function handleCardClick(item: MenuItemWithModifiers, card: HTMLElement) {
     if (item.modifierGroups.length > 0) {
       setSelectedItem(item)
     } else {
-      handleAddDirect(item)
+      handleAddDirect(item, card)
     }
+  }
+
+  // O "+" do card vira ✓ por um instante, como recibo do toque.
+  function markAdded(id: string) {
+    setJustAdded((prev) => new Set(prev).add(id))
+    window.setTimeout(
+      () =>
+        setJustAdded((prev) => {
+          const next = new Set(prev)
+          next.delete(id)
+          return next
+        }),
+      ADDED_BADGE_MS,
+    )
   }
 
   return (
@@ -124,7 +144,7 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
                       key={item.id}
                       className="item-card"
                       style={{ '--i': i } as CSSProperties}
-                      onClick={() => handleCardClick(item)}
+                      onClick={(e) => handleCardClick(item, e.currentTarget)}
                     >
                       <div className="item-card__photo-wrap">
                         {item.foto_url ? (
@@ -143,8 +163,17 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
                         {desc && <p className="item-card__desc">{desc}</p>}
                         <div className="item-card__footer">
                           <span className="item-card__price">{formatCHF(item.preco)}</span>
-                          <span className="item-card__add" aria-hidden>
-                            <Plus size={18} strokeWidth={2.5} />
+                          <span
+                            className={`item-card__add ${
+                              justAdded.has(item.id) ? 'item-card__add--done' : ''
+                            }`}
+                            aria-hidden
+                          >
+                            {justAdded.has(item.id) ? (
+                              <Check size={18} strokeWidth={3} />
+                            ) : (
+                              <Plus size={18} strokeWidth={2.5} />
+                            )}
                           </span>
                         </div>
                       </div>
@@ -171,7 +200,11 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
       {!cartOpen && cartCount > 0 && (
         <button className="cart-fab" onClick={() => setCartOpen(true)}>
           <ShoppingBag size={18} strokeWidth={2} aria-hidden />
-          <span className="cart-fab__count">{cartCount}</span>
+          {/* A key remonta o contador a cada mudança, e é isso que rearma a
+              batida — sem ela o número trocaria sem ninguém perceber. */}
+          <span key={cartCount} className="cart-fab__count">
+            {cartCount}
+          </span>
           {t('viewCartButton')}
           <span className="cart-fab__total">{formatCHF(cartTotal)}</span>
         </button>
@@ -182,11 +215,21 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
           item={selectedItem}
           onClose={() => setSelectedItem(null)}
           onAdd={(cartItem) => {
+            // A foto do modal ainda está montada aqui; depois de fechar não teria
+            // de onde partir o voo. Produto sem foto não tem .modal__photo, então
+            // o voo parte do título — senão esses itens não teriam animação.
+            launch(
+              document.querySelector('.modal__photo') ?? document.querySelector('.modal__title'),
+              cartItem.menuItem.foto_url,
+            )
+            markAdded(cartItem.menuItem.id)
             onAddToCart(cartItem)
             setSelectedItem(null)
           }}
         />
       )}
+
+      {flyLayer}
     </div>
   )
 }
