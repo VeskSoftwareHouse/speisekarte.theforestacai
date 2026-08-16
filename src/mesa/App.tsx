@@ -3,6 +3,7 @@ import DashboardScreen from './components/DashboardScreen'
 import OrderSummaryScreen from './components/OrderSummaryScreen'
 import ConfirmationScreen from './components/ConfirmationScreen'
 import PaymentStatusScreen from './components/PaymentStatusScreen'
+import Screensaver from './components/Screensaver'
 import { useKeepFullscreen } from './useFullscreen'
 import { useLanguage } from './i18n/LanguageContext'
 import type { CartItem } from './types'
@@ -161,65 +162,89 @@ export default function App() {
     }
   }
 
-  if (view === 'awaiting_tap') {
-    return <PaymentStatusScreen status="awaiting_tap" />
-  }
+  function currentScreen() {
+    if (view === 'awaiting_tap') {
+      return <PaymentStatusScreen status="awaiting_tap" />
+    }
 
-  if (view === 'confirming_payment') {
-    return <PaymentStatusScreen status="confirming" />
-  }
+    if (view === 'confirming_payment') {
+      return <PaymentStatusScreen status="confirming" />
+    }
 
-  if (view === 'payment_failed') {
+    if (view === 'payment_failed') {
+      return (
+        <PaymentStatusScreen
+          status="failed"
+          onRetry={() => confirmingOrderId && confirmPayment(confirmingOrderId)}
+          onBack={() => setView('dashboard')}
+        />
+      )
+    }
+
+    if (view === 'confirmation') {
+      return (
+        <ConfirmationScreen
+          onNewOrder={() => {
+            setView('dashboard')
+          }}
+        />
+      )
+    }
+
+    if (view === 'resumo') {
+      return (
+        <>
+          <OrderSummaryScreen
+            items={cart}
+            sending={sending}
+            onConfirm={handleSubmit}
+            onBack={() => {
+              setSendError(null)
+              setView('dashboard')
+            }}
+          />
+          {sendError && (
+            <div className="toast toast--error" role="alert">
+              {sendError}
+            </div>
+          )}
+        </>
+      )
+    }
+
     return (
-      <PaymentStatusScreen
-        status="failed"
-        onRetry={() => confirmingOrderId && confirmPayment(confirmingOrderId)}
-        onBack={() => setView('dashboard')}
-      />
-    )
-  }
-
-  if (view === 'confirmation') {
-    return (
-      <ConfirmationScreen
-        onNewOrder={() => {
-          setView('dashboard')
+      <DashboardScreen
+        cart={cart}
+        onAddToCart={handleAddToCart}
+        onChangeQuantity={handleChangeQuantity}
+        onRemove={handleRemove}
+        onSubmit={() => {
+          setSendError(null)
+          setView('resumo')
         }}
       />
     )
   }
 
-  if (view === 'resumo') {
-    return (
-      <>
-        <OrderSummaryScreen
-          items={cart}
-          sending={sending}
-          onConfirm={handleSubmit}
-          onBack={() => {
-            setSendError(null)
-            setView('dashboard')
-          }}
-        />
-        {sendError && (
-          <div className="toast toast--error" role="alert">
-            {sendError}
-          </div>
-        )}
-      </>
-    )
-  }
+  // Nada de descanso de tela durante o pagamento: cobrir a tela enquanto o
+  // cliente aproxima o cartão, ou enquanto ele lê por que a cobrança falhou,
+  // seria péssimo.
+  const PAYMENT_VIEWS: View[] = ['awaiting_tap', 'confirming_payment', 'payment_failed']
 
   return (
-    <DashboardScreen
-      cart={cart}
-      onAddToCart={handleAddToCart}
-      onChangeQuantity={handleChangeQuantity}
-      onRemove={handleRemove}
-      onSubmit={() => {
-        setSendError(null)
-        setView('resumo')
-      }}
-    />
+    <>
+      {currentScreen()}
+      <Screensaver
+        enabled={!PAYMENT_VIEWS.includes(view)}
+        onAbandoned={() => {
+          // Ninguém voltou: a mesa está livre para o próximo. Volta ao cardápio
+          // junto porque esvaziar sozinho poderia deixar alguém parado num
+          // resumo de pedido sem nenhum item.
+          setCart([])
+          setSendError(null)
+          setView('dashboard')
+        }}
+      />
+    </>
   )
 }

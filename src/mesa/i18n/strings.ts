@@ -2,6 +2,7 @@ import type { LanguageCode } from './languages'
 
 export interface StringDict {
   sidebarTagline: string
+  screensaverHint: string
   menuLabel: string
   navFeatured: string
   greetingTitle: string
@@ -56,6 +57,7 @@ export type StringKey = keyof StringDict
 export const STRINGS: Record<LanguageCode, StringDict> = {
   de: {
     sidebarTagline: 'Der Geschmack Brasiliens in der Schweiz',
+    screensaverHint: 'Zum Bestellen tippen',
     menuLabel: 'Menü',
     navFeatured: 'Empfehlungen',
     greetingTitle: 'Hallo! Worauf hast du heute Lust?',
@@ -106,6 +108,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
   },
   fr: {
     sidebarTagline: 'Le goût du Brésil en Suisse',
+    screensaverHint: 'Touchez pour commander',
     menuLabel: 'Menu',
     navFeatured: 'Nos coups de cœur',
     greetingTitle: "Bonjour ! Qu'est-ce que ce sera aujourd'hui ?",
@@ -156,6 +159,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
   },
   it: {
     sidebarTagline: 'Il sapore del Brasile in Svizzera',
+    screensaverHint: 'Tocca per ordinare',
     menuLabel: 'Menu',
     navFeatured: 'In evidenza',
     greetingTitle: 'Ciao! Cosa ti va oggi?',
@@ -206,6 +210,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
   },
   en: {
     sidebarTagline: 'The taste of Brazil in Switzerland',
+    screensaverHint: 'Tap to order',
     menuLabel: 'Menu',
     navFeatured: 'Highlights',
     greetingTitle: 'Hi! What will it be today?',
@@ -256,6 +261,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
   },
   pt: {
     sidebarTagline: 'O sabor do Brasil na Suíça',
+    screensaverHint: 'Toque para pedir',
     menuLabel: 'Menu',
     navFeatured: 'Destaques',
     greetingTitle: 'Olá! O que vai ser hoje?',
@@ -306,6 +312,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
   },
   es: {
     sidebarTagline: 'El sabor de Brasil en Suiza',
+    screensaverHint: 'Toca para pedir',
     menuLabel: 'Menú',
     navFeatured: 'Destacados',
     greetingTitle: '¡Hola! ¿Qué va a ser hoy?',
