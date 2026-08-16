@@ -1987,3 +1987,153 @@
     animation: cart-row-out 0.26s linear forwards;
   }
 }
+
+/* ===== Troca de idioma: o texto se apaga e se reescreve =====
+   A varredura é feita com clip-path em vez de opacidade: a borda dura corta as
+   letras da esquerda para a direita, que é o que faz parecer alguém apagando e
+   escrevendo de volta, e não apenas um esmaecer.
+
+   A lista de alvos está num :is() só, de propósito — é o lugar único onde se
+   registra "isto é texto traduzido". Se uma tela nova aparecer, é aqui que ela
+   entra. As durações estão espelhadas no LanguageContext, que segura a troca do
+   idioma até o texto já ter saído da tela.
+
+   O atraso por zona faz a onda atravessar a tela em vez de tudo piscar junto:
+   sidebar primeiro, depois o cabeçalho, os cards e por fim o carrinho. */
+.lang-erasing :is(.dashboard__header h1, .dashboard__header p),
+.lang-writing :is(.dashboard__header h1, .dashboard__header p),
+.lang-erasing :is(.dashboard__notice, .dashboard__section-title),
+.lang-writing :is(.dashboard__notice, .dashboard__section-title),
+.lang-erasing
+  :is(.item-card__name, .item-card__desc, .item-card__price, .menu-screen__status),
+.lang-writing
+  :is(.item-card__name, .item-card__desc, .item-card__price, .menu-screen__status),
+.lang-erasing :is(.sidebar__item-label, .sidebar__logo-tag),
+.lang-writing :is(.sidebar__item-label, .sidebar__logo-tag),
+.lang-erasing
+  :is(
+    .cart-panel__header,
+    .cart-panel__empty,
+    .cart-panel__name,
+    .cart-panel__mods,
+    .cart-panel__obs,
+    .cart-panel__price,
+    .cart-panel__total,
+    .cart-panel__footer .btn,
+    .cart-fab
+  ),
+.lang-writing
+  :is(
+    .cart-panel__header,
+    .cart-panel__empty,
+    .cart-panel__name,
+    .cart-panel__mods,
+    .cart-panel__obs,
+    .cart-panel__price,
+    .cart-panel__total,
+    .cart-panel__footer .btn,
+    .cart-fab
+  ),
+.lang-erasing
+  :is(
+    .modal__title,
+    .modal__desc,
+    .modal__price,
+    .modal__group-title,
+    .modal__warning,
+    .option-pill,
+    .modal__footer .btn
+  ),
+.lang-writing
+  :is(
+    .modal__title,
+    .modal__desc,
+    .modal__price,
+    .modal__group-title,
+    .modal__warning,
+    .option-pill,
+    .modal__footer .btn
+  ) {
+  animation-duration: 260ms;
+  animation-timing-function: ease-in;
+  animation-fill-mode: both;
+  animation-name: text-erase;
+}
+.lang-writing :is(
+    .dashboard__header h1,
+    .dashboard__header p,
+    .dashboard__notice,
+    .dashboard__section-title,
+    .item-card__name,
+    .item-card__desc,
+    .item-card__price,
+    .menu-screen__status,
+    .sidebar__item-label,
+    .sidebar__logo-tag,
+    .cart-panel__header,
+    .cart-panel__empty,
+    .cart-panel__name,
+    .cart-panel__mods,
+    .cart-panel__obs,
+    .cart-panel__price,
+    .cart-panel__total,
+    .cart-panel__footer .btn,
+    .cart-fab,
+    .modal__title,
+    .modal__desc,
+    .modal__price,
+    .modal__group-title,
+    .modal__warning,
+    .option-pill,
+    .modal__footer .btn
+  ) {
+  animation-duration: 340ms;
+  animation-timing-function: ease-out;
+  animation-name: text-write;
+}
+/* Onda atravessando a tela, da sidebar até o carrinho. */
+.lang-erasing :is(.sidebar__item-label, .sidebar__logo-tag),
+.lang-writing :is(.sidebar__item-label, .sidebar__logo-tag) {
+  animation-delay: 0ms;
+}
+.lang-erasing :is(.dashboard__header h1, .dashboard__header p, .dashboard__notice),
+.lang-writing :is(.dashboard__header h1, .dashboard__header p, .dashboard__notice) {
+  animation-delay: 40ms;
+}
+.lang-erasing
+  :is(.dashboard__section-title, .item-card__name, .item-card__desc, .item-card__price),
+.lang-writing
+  :is(.dashboard__section-title, .item-card__name, .item-card__desc, .item-card__price) {
+  animation-delay: 80ms;
+}
+.lang-erasing :is(.cart-panel__header, .cart-panel__empty, .cart-panel__total, .cart-fab),
+.lang-writing :is(.cart-panel__header, .cart-panel__empty, .cart-panel__total, .cart-fab) {
+  animation-delay: 120ms;
+}
+@keyframes text-erase {
+  from {
+    clip-path: inset(-20% -20% -20% 0);
+    opacity: 1;
+  }
+  to {
+    clip-path: inset(-20% -20% -20% 100%);
+    opacity: 0.6;
+  }
+}
+@keyframes text-write {
+  from {
+    clip-path: inset(-20% 100% -20% 0);
+    opacity: 0.6;
+  }
+  to {
+    clip-path: inset(-20% -20% -20% 0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lang-erasing *,
+  .lang-writing * {
+    animation-name: none;
+  }
+}
