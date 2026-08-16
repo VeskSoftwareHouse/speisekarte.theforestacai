@@ -110,6 +110,11 @@
   padding: max(var(--space-5), env(safe-area-inset-top)) var(--space-4) var(--space-4)
     max(var(--space-4), env(safe-area-inset-left));
   overflow-y: auto;
+  /* Sem isto o eixo X herda "auto" do overflow-y e ganha barra de rolagem: o
+     bico e a asa giram em torno de pivôs fora do centro, então a caixa
+     delimitadora deles escapa ~7px da lateral. Não há nada visível ali para
+     cortar — a arte da logo termina bem antes da borda do PNG. */
+  overflow-x: hidden;
   position: relative;
 }
 .sidebar__bar {
@@ -128,12 +133,217 @@
   text-align: center;
   padding-bottom: var(--space-4);
 }
+/* O tucano fica vivo: flutua sem parar, pisca de vez em quando, leva um
+   brilho de luz atravessando a arte e dá um pulo quando alguém toca nele.
+   As camadas de brilho/pálpebra são posicionadas em % da própria imagem,
+   então acompanham qualquer tamanho que a logo assuma. */
+.sidebar__logo-bird {
+  position: relative;
+  display: block;
+  width: 100%;
+  /* Margem negativa: o PNG carrega ~27px de área transparente abaixo do "AÇAÍ"
+     que já conta como respiro para quem olha. Sem descontar um pedaço dela, a
+     frase parece solta mesmo com margem zero. */
+  margin: 0 auto -4px;
+  cursor: pointer;
+  animation: toucan-float 6.5s ease-in-out infinite;
+}
+.sidebar__logo-bird--hop {
+  animation: toucan-hop 0.75s cubic-bezier(0.34, 1.4, 0.6, 1);
+}
 .sidebar__logo-img {
-  /* width: 96px;
-  height: 96px; */
+  width: 100%;
   border-radius: 50%;
   object-fit: cover;
-  margin: 0 auto var(--space-3);
+}
+/* Peças móveis: mesma caixa da base, cada uma girando no próprio pivô.
+   Os pivôs são as juntas reais da arte, medidas em pixels do PNG de 1254px —
+   ombro (735, 395) e canto da boca (676, 292) — convertidos para %. */
+.sidebar__logo-wing,
+.sidebar__logo-beak {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.sidebar__logo-wing {
+  transform-origin: 58.6% 31.5%;
+  animation: toucan-wing 6.5s ease-in-out infinite;
+}
+.sidebar__logo-beak {
+  transform-origin: 53.9% 23.3%;
+  animation: toucan-beak 7.5s ease-in-out infinite;
+}
+/* A asa só sobe a partir do repouso: descendo ela abriria uma fresta contra o
+   rosto branco, que é desenhado por cima dela na arte original. */
+@keyframes toucan-wing {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  32% {
+    transform: rotate(1.5deg);
+  }
+  64% {
+    transform: rotate(0.4deg);
+  }
+}
+/* Piado: dois estalos rápidos do bico, e o resto do ciclo fechado. */
+@keyframes toucan-beak {
+  0%,
+  60%,
+  88%,
+  100% {
+    transform: rotate(0deg);
+  }
+  66% {
+    transform: rotate(-7deg);
+  }
+  72% {
+    transform: rotate(-1.5deg);
+  }
+  78% {
+    transform: rotate(-6deg);
+  }
+}
+.sidebar__logo-glint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background-image: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0) 42%,
+    rgba(255, 255, 255, 0.85) 50%,
+    rgba(255, 255, 255, 0) 58%
+  );
+  background-repeat: no-repeat;
+  background-size: 250% 100%;
+  /* Máscara na camada base, que tem exatamente o mesmo alfa da logo inteira:
+     assim a sidebar não precisa baixar também o PNG original. */
+  -webkit-mask-image: url('/brand/logo-base.png');
+  mask-image: url('/brand/logo-base.png');
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  animation: toucan-glint 7s ease-in-out infinite;
+}
+/* Pálpebra: elipse branca alinhada ao olho do PNG (centro 57.8% x 19.4%). */
+.sidebar__logo-eyelid {
+  position: absolute;
+  left: 55.5%;
+  top: 17.1%;
+  width: 4.6%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: linear-gradient(#ffffff, #ece7f0);
+  transform: scaleY(0);
+  transform-origin: 50% 0;
+  pointer-events: none;
+  animation: toucan-blink 5.5s ease-in-out infinite;
+}
+@keyframes toucan-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  30% {
+    transform: translateY(-5px) rotate(-1.2deg);
+  }
+  60% {
+    transform: translateY(2px) rotate(0.9deg);
+  }
+}
+@keyframes toucan-hop {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  25% {
+    transform: translateY(-14px) rotate(-6deg) scale(1.06);
+  }
+  45% {
+    transform: translateY(0) rotate(3deg) scale(0.98);
+  }
+  65% {
+    transform: translateY(-6px) rotate(-2deg) scale(1.02);
+  }
+  100% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+}
+/* No toque as três peças agem juntas: o corpo pula, a asa bate de verdade e o
+   bico escancara. Duração igual à do pulo (0,75s) para tudo pousar junto. */
+.sidebar__logo-bird--hop .sidebar__logo-wing {
+  animation: toucan-wing-hop 0.75s cubic-bezier(0.34, 1.4, 0.6, 1);
+}
+.sidebar__logo-bird--hop .sidebar__logo-beak {
+  animation: toucan-beak-hop 0.75s cubic-bezier(0.34, 1.4, 0.6, 1);
+}
+@keyframes toucan-wing-hop {
+  0% {
+    transform: rotate(0deg);
+  }
+  30% {
+    transform: rotate(4.5deg);
+  }
+  55% {
+    transform: rotate(-0.8deg);
+  }
+  75% {
+    transform: rotate(2deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+@keyframes toucan-beak-hop {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-9deg);
+  }
+  60% {
+    transform: rotate(-2deg);
+  }
+  80% {
+    transform: rotate(-5deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+@keyframes toucan-glint {
+  0%,
+  62% {
+    background-position: 160% 0;
+    opacity: 0;
+  }
+  66% {
+    opacity: 0.9;
+  }
+  88% {
+    background-position: -60% 0;
+    opacity: 0.9;
+  }
+  94%,
+  100% {
+    background-position: -60% 0;
+    opacity: 0;
+  }
+}
+@keyframes toucan-blink {
+  0%,
+  90%,
+  100% {
+    transform: scaleY(0);
+  }
+  93%,
+  96% {
+    transform: scaleY(1);
+  }
 }
 .sidebar__logo-name {
   margin: 0;
@@ -143,9 +353,27 @@
   font-size: 0.95rem;
 }
 .sidebar__logo-tag {
-  margin: 4px 0 0;
-  font-size: 0.75rem;
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.35;
   color: #cbb2f0;
+  animation: sidebar-fade-up 0.5s ease 0.15s backwards;
+  /* Duas linhas reservadas: a frase é reescrita letra a letra em seis idiomas
+     de comprimentos diferentes, e sem isso a quebra de linha iria e viria
+     empurrando o menu inteiro para baixo. */
+  min-height: 38px;
+  display: flex;
+  /* Ancorado no topo, e não centralizado: assim a frase começa sempre na mesma
+     altura, tenha uma ou duas linhas, e a folga reservada fica toda embaixo em
+     vez de virar espaço morto entre a logo e o texto. */
+  align-items: flex-start;
+  justify-content: center;
+}
+.sidebar__logo-tag-text {
+  /* Altura de linha em px, não em em: cada idioma escreve num corpo diferente,
+     e se a linha acompanhasse a fonte o bloco mudaria de altura na troca (a
+     Caveat, a maior delas, sozinha empurrava o menu 15px para baixo). */
+  line-height: 19px;
 }
 .sidebar__divider {
   height: 1px;
@@ -159,6 +387,8 @@
   flex: 1;
 }
 .sidebar__item {
+  position: relative;
+  isolation: isolate;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -171,18 +401,97 @@
   font-size: 0.98rem;
   text-align: left;
   min-height: 52px;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition: color 0.16s ease, transform 0.1s ease;
+  /* Entram em cascata, de cima para baixo, quando o cardápio abre. */
+  animation: sidebar-item-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+/* A pílula roxa é uma camada própria, então pode crescer/encolher sozinha
+   sem brigar com as animações de entrada e de toque do botão. */
+.sidebar__item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: var(--color-primary);
+  box-shadow: var(--shadow-glow-primary);
+  opacity: 0;
+  transform: scale(0.86);
+  transition: opacity 0.18s ease, transform 0.32s cubic-bezier(0.34, 1.45, 0.64, 1);
+}
+.sidebar__item:active {
+  transform: scale(0.965);
+}
+.sidebar__item-icon,
+.sidebar__item-label {
+  position: relative;
+  z-index: 1;
 }
 .sidebar__item-icon {
   flex: 0 0 auto;
   opacity: 0.85;
+  transition: transform 0.24s cubic-bezier(0.34, 1.45, 0.64, 1), opacity 0.16s ease;
 }
 .sidebar__item--active {
-  background: var(--color-primary);
   color: #fff;
+}
+.sidebar__item--active::before {
+  opacity: 1;
+  transform: scale(1);
 }
 .sidebar__item--active .sidebar__item-icon {
   opacity: 1;
+  animation: sidebar-icon-pop 0.5s cubic-bezier(0.34, 1.5, 0.64, 1);
+}
+@media (hover: hover) {
+  .sidebar__item:hover {
+    color: #fff;
+  }
+  .sidebar__item:hover::before {
+    opacity: 0.24;
+    transform: scale(1);
+  }
+  .sidebar__item--active:hover::before {
+    opacity: 1;
+  }
+  .sidebar__item:hover .sidebar__item-icon {
+    transform: scale(1.14) rotate(-7deg);
+  }
+}
+@keyframes sidebar-item-in {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes sidebar-icon-pop {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  35% {
+    transform: scale(1.28) rotate(-10deg);
+  }
+  65% {
+    transform: scale(1.06) rotate(6deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+@keyframes sidebar-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .sidebar__footer {
   margin-top: var(--space-4);
@@ -234,7 +543,63 @@
   font-size: 1.4rem;
   margin: 0 0 var(--space-4);
 }
-/* --- Grade de itens (compartilha .item-card com outras telas) --- */
+/* --- Entrada e saída do catálogo ao trocar de categoria ---
+   Os cards entram em cascata, de cima para baixo. Na saída todos vão juntos e
+   rápido: escalonar a saída também faria a troca de categoria parecer lenta.
+   A duração de .catalog--leaving está espelhada em CATEGORY_EXIT_MS no
+   DashboardScreen, que é quem segura os cards antigos no DOM. */
+.catalog {
+  animation: catalog-in 0.3s ease backwards;
+}
+.catalog--leaving {
+  animation: catalog-out 0.18s ease-in forwards;
+}
+.catalog--leaving .item-card {
+  animation: card-out 0.18s ease-in forwards;
+}
+.item-card {
+  animation: card-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+@keyframes catalog-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes catalog-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* Só o deslocamento: quem apaga é o .catalog--leaving por cima. Se os dois
+   mexessem na opacidade, as duas curvas se multiplicariam e a saída sumiria
+   antes da hora. */
+@keyframes card-out {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateY(-10px) scale(0.97);
+  }
+}
+
+/* --- Grade de itens --- */
 .menu-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
@@ -978,8 +1343,18 @@
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
   }
+  .sidebar__menu-toggle {
+    transition: background 0.16s ease, transform 0.18s cubic-bezier(0.34, 1.45, 0.64, 1);
+  }
   .sidebar__menu-toggle:active {
     background: rgba(255, 255, 255, 0.2);
+    transform: scale(0.9);
+  }
+  .sidebar__menu-toggle[aria-expanded='true'] {
+    background: rgba(255, 255, 255, 0.2);
+  }
+  .sidebar__menu-toggle svg {
+    animation: sidebar-icon-pop 0.4s cubic-bezier(0.34, 1.5, 0.64, 1);
   }
   .sidebar__logo {
     flex: 1 1 auto;
@@ -990,10 +1365,14 @@
     text-align: left;
     justify-content: end;
   }
-  .sidebar__logo-img {
+  .sidebar__logo-bird {
     width: 90px;
     height: 90px;
     margin: 0 var(--space-2) 0 0;
+  }
+  .sidebar__logo-img {
+    width: 90px;
+    height: 90px;
   }
   .sidebar__logo-name,
   .sidebar__logo-tag {
@@ -1015,6 +1394,18 @@
     margin-top: var(--space-3);
     padding-top: var(--space-3);
     border-top: 1px solid rgba(255, 255, 255, 0.16);
+    animation: sidebar-drawer-in 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    transform-origin: top center;
+  }
+  @keyframes sidebar-drawer-in {
+    from {
+      opacity: 0;
+      transform: translateY(-12px) scaleY(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scaleY(1);
+    }
   }
   .sidebar__nav {
     flex-direction: column;
@@ -1039,6 +1430,15 @@
     inset: 0;
     background: rgba(12, 9, 16, 0.5);
     z-index: 1;
+    animation: sidebar-backdrop-in 0.25s ease;
+  }
+  @keyframes sidebar-backdrop-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .dashboard__main {
@@ -1097,5 +1497,36 @@
     width: 100%;
     max-height: 92vh;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  }
+}
+
+/* ===== Quem prefere menos movimento vê a sidebar parada ===== */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar__logo-bird,
+  .sidebar__logo-bird--hop,
+  .sidebar__logo-wing,
+  .sidebar__logo-beak,
+  .sidebar__logo-bird--hop .sidebar__logo-wing,
+  .sidebar__logo-bird--hop .sidebar__logo-beak,
+  .sidebar__logo-eyelid,
+  .sidebar__logo-tag,
+  .sidebar__item,
+  .sidebar__item--active .sidebar__item-icon,
+  .sidebar__menu-toggle svg,
+  .sidebar__drawer--open,
+  .sidebar__backdrop,
+  .catalog,
+  .item-card,
+  .catalog--leaving .item-card {
+    animation: none;
+  }
+  /* A saída continua existindo, só que como um apagar simples: sem ela o
+     DashboardScreen seguraria os cards antigos parados na tela. */
+  .catalog--leaving {
+    animation: catalog-out 0.18s linear forwards;
+  }
+  .sidebar__logo-glint {
+    animation: none;
+    opacity: 0;
   }
 }

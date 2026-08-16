@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { ChefHat, Plus, ShoppingBag } from 'lucide-react'
 import { useMenu } from '@shared/hooks/useMenu'
 import type { MenuItemWithModifiers } from '@shared/types'
@@ -11,6 +11,9 @@ import { useLanguage } from '../i18n/LanguageContext'
 import { translatedField } from '../i18n/menuTranslations'
 import type { CartItem } from '../types'
 import { cartItemTotal } from '../types'
+
+// Precisa bater com a duração de .catalog--leaving no mesa.css.
+const CATEGORY_EXIT_MS = 180
 
 interface Props {
   cart: CartItem[]
@@ -35,13 +38,28 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
     [categories, itemsByCategory],
   )
 
-  const items = activeCategory === FEATURED_ID ? featuredItems : itemsByCategory[activeCategory] ?? []
-  const activeCategoryObj = categories.find((c) => c.id === activeCategory)
+  // A categoria exibida fica um passo atrás da escolhida: no intervalo os cards
+  // antigos continuam montados para poderem animar a saída. A sidebar já marca
+  // a nova categoria na hora, então o toque não parece travado.
+  const [shownCategory, setShownCategory] = useState<string>(FEATURED_ID)
+  const [leaving, setLeaving] = useState(false)
+  useEffect(() => {
+    if (activeCategory === shownCategory) return
+    setLeaving(true)
+    const id = window.setTimeout(() => {
+      setShownCategory(activeCategory)
+      setLeaving(false)
+    }, CATEGORY_EXIT_MS)
+    return () => window.clearTimeout(id)
+  }, [activeCategory, shownCategory])
+
+  const items = shownCategory === FEATURED_ID ? featuredItems : itemsByCategory[shownCategory] ?? []
+  const shownCategoryObj = categories.find((c) => c.id === shownCategory)
   const sectionTitle =
-    activeCategory === FEATURED_ID
+    shownCategory === FEATURED_ID
       ? t('navFeatured')
-      : translatedField(activeCategoryObj?.nome_i18n, lang, activeCategoryObj?.nome ?? '')
-  const SectionIcon = activeCategory === FEATURED_ID ? FeaturedIcon : iconFor(activeCategoryObj?.nome ?? '')
+      : translatedField(shownCategoryObj?.nome_i18n, lang, shownCategoryObj?.nome ?? '')
+  const SectionIcon = shownCategory === FEATURED_ID ? FeaturedIcon : iconFor(shownCategoryObj?.nome ?? '')
 
   function handleAddDirect(item: MenuItemWithModifiers) {
     onAddToCart({
@@ -88,18 +106,26 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
           {loading && <p className="menu-screen__status">{t('loadingMenu')}</p>}
 
           {!loading && (
-            <>
+            // A key remonta o bloco a cada troca de categoria, o que rearma as
+            // animações de entrada mesmo quando um produto aparece nas duas
+            // listas (os destaques repetem itens das categorias).
+            <div key={shownCategory} className={`catalog ${leaving ? 'catalog--leaving' : ''}`}>
               <h2 className="dashboard__section-title">
                 <SectionIcon size={22} strokeWidth={2} aria-hidden /> {sectionTitle}
               </h2>
 
               <div className="menu-grid menu-grid--dashboard">
                 {items.length === 0 && <p className="menu-screen__status">{t('noItemsInCategory')}</p>}
-                {items.map((item) => {
+                {items.map((item, i) => {
                   const desc = translatedField(item.descricao_i18n, lang, item.descricao)
                   const nome = translatedField(item.nome_i18n, lang, item.nome) ?? item.nome
                   return (
-                    <button key={item.id} className="item-card" onClick={() => handleCardClick(item)}>
+                    <button
+                      key={item.id}
+                      className="item-card"
+                      style={{ '--i': i } as CSSProperties}
+                      onClick={() => handleCardClick(item)}
+                    >
                       <div className="item-card__photo-wrap">
                         {item.foto_url ? (
                           <img className="item-card__photo" src={item.foto_url} alt={nome} loading="lazy" />
@@ -126,7 +152,7 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
                   )
                 })}
               </div>
-            </>
+            </div>
           )}
         </main>
 
