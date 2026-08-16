@@ -137,21 +137,25 @@
    brilho de luz atravessando a arte e dá um pulo quando alguém toca nele.
    As camadas de brilho/pálpebra são posicionadas em % da própria imagem,
    então acompanham qualquer tamanho que a logo assuma. */
-.sidebar__logo-bird {
+.logo-bird {
   position: relative;
   display: block;
   width: 100%;
-  /* Margem negativa: o PNG carrega ~27px de área transparente abaixo do "AÇAÍ"
-     que já conta como respiro para quem olha. Sem descontar um pedaço dela, a
-     frase parece solta mesmo com margem zero. */
-  margin: 0 auto -4px;
+  margin: 0 auto;
   cursor: pointer;
   animation: toucan-float 6.5s ease-in-out infinite;
 }
-.sidebar__logo-bird--hop {
+/* Só na sidebar: o PNG carrega ~27px de área transparente abaixo do "AÇAÍ" que
+   já conta como respiro, e sem descontar um pedaço dela a frase de baixo parece
+   solta mesmo com margem zero. Fica escopado aqui porque o descanso de tela usa
+   o mesmo pássaro e não tem texto embaixo. */
+.sidebar__logo .logo-bird {
+  margin-bottom: -4px;
+}
+.logo-bird--hop {
   animation: toucan-hop 0.75s cubic-bezier(0.34, 1.4, 0.6, 1);
 }
-.sidebar__logo-img {
+.logo-bird__base {
   width: 100%;
   border-radius: 50%;
   object-fit: cover;
@@ -159,19 +163,19 @@
 /* Peças móveis: mesma caixa da base, cada uma girando no próprio pivô.
    Os pivôs são as juntas reais da arte, medidas em pixels do PNG de 1254px —
    ombro (735, 395) e canto da boca (676, 292) — convertidos para %. */
-.sidebar__logo-wing,
-.sidebar__logo-beak {
+.logo-bird__wing,
+.logo-bird__beak {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
 }
-.sidebar__logo-wing {
+.logo-bird__wing {
   transform-origin: 58.6% 31.5%;
   animation: toucan-wing 6.5s ease-in-out infinite;
 }
-.sidebar__logo-beak {
+.logo-bird__beak {
   transform-origin: 53.9% 23.3%;
   animation: toucan-beak 7.5s ease-in-out infinite;
 }
@@ -207,7 +211,7 @@
     transform: rotate(-6deg);
   }
 }
-.sidebar__logo-glint {
+.logo-bird__glint {
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -231,7 +235,7 @@
   animation: toucan-glint 7s ease-in-out infinite;
 }
 /* Pálpebra: elipse branca alinhada ao olho do PNG (centro 57.8% x 19.4%). */
-.sidebar__logo-eyelid {
+.logo-bird__eyelid {
   position: absolute;
   left: 55.5%;
   top: 17.1%;
@@ -275,10 +279,10 @@
 }
 /* No toque as três peças agem juntas: o corpo pula, a asa bate de verdade e o
    bico escancara. Duração igual à do pulo (0,75s) para tudo pousar junto. */
-.sidebar__logo-bird--hop .sidebar__logo-wing {
+.logo-bird--hop .logo-bird__wing {
   animation: toucan-wing-hop 0.75s cubic-bezier(0.34, 1.4, 0.6, 1);
 }
-.sidebar__logo-bird--hop .sidebar__logo-beak {
+.logo-bird--hop .logo-bird__beak {
   animation: toucan-beak-hop 0.75s cubic-bezier(0.34, 1.4, 0.6, 1);
 }
 @keyframes toucan-wing-hop {
@@ -1496,12 +1500,14 @@
     text-align: left;
     justify-content: end;
   }
-  .sidebar__logo-bird {
+  /* Escopado na sidebar: no celular a logo encolhe e vai para o lado do
+     hambúrguer, mas o pássaro do descanso de tela continua grande. */
+  .sidebar__logo .logo-bird {
     width: 90px;
     height: 90px;
     margin: 0 var(--space-2) 0 0;
   }
-  .sidebar__logo-img {
+  .sidebar__logo .logo-bird__base {
     width: 90px;
     height: 90px;
   }
@@ -1632,13 +1638,13 @@
 
 /* ===== Quem prefere menos movimento vê a sidebar parada ===== */
 @media (prefers-reduced-motion: reduce) {
-  .sidebar__logo-bird,
-  .sidebar__logo-bird--hop,
-  .sidebar__logo-wing,
-  .sidebar__logo-beak,
-  .sidebar__logo-bird--hop .sidebar__logo-wing,
-  .sidebar__logo-bird--hop .sidebar__logo-beak,
-  .sidebar__logo-eyelid,
+  .logo-bird,
+  .logo-bird--hop,
+  .logo-bird__wing,
+  .logo-bird__beak,
+  .logo-bird--hop .logo-bird__wing,
+  .logo-bird--hop .logo-bird__beak,
+  .logo-bird__eyelid,
   .sidebar__logo-tag,
   .sidebar__item,
   .sidebar__item-icon,
@@ -1656,7 +1662,7 @@
   .catalog--leaving {
     animation: catalog-out 0.18s linear forwards;
   }
-  .sidebar__logo-glint {
+  .logo-bird__glint {
     animation: none;
     opacity: 0;
   }
