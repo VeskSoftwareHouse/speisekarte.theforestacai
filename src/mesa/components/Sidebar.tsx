@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { Menu, X } from 'lucide-react'
 import type { Category } from '@shared/types'
-import { iconFor, FeaturedIcon } from '../categoryIcons'
+import { iconFor, motionFor, FeaturedIcon, FEATURED_MOTION } from '../categoryIcons'
 import { useLanguage } from '../i18n/LanguageContext'
 import { translatedField } from '../i18n/menuTranslations'
 import LanguageSelector from './LanguageSelector'
@@ -71,11 +71,22 @@ export default function Sidebar({ categories, activeId, onSelect }: Props) {
             onClick={() => handleSelect(FEATURED_ID)}
             style={{ '--i': 0 } as CSSProperties}
           >
-            <FeaturedIcon className="sidebar__item-icon" size={20} strokeWidth={2} />
+            {/* O invólucro cuida do toque e do hover; o próprio ícone fica com o
+                movimento constante. São duas camadas porque as duas animações
+                disputariam a mesma propriedade, e o ícone da categoria ativa
+                congelaria assim que o "pop" terminasse. */}
+            <span className="sidebar__item-icon-wrap">
+              <FeaturedIcon
+                className={`sidebar__item-icon sidebar__item-icon--${FEATURED_MOTION}`}
+                size={20}
+                strokeWidth={2}
+              />
+            </span>
             <span className="sidebar__item-label">{t('navFeatured')}</span>
           </button>
           {categories.map((c, i) => {
             const Icon = iconFor(c.nome)
+            const motion = motionFor(c.nome)
             return (
               <button
                 key={c.id}
@@ -83,7 +94,13 @@ export default function Sidebar({ categories, activeId, onSelect }: Props) {
                 onClick={() => handleSelect(c.id)}
                 style={{ '--i': i + 1 } as CSSProperties}
               >
-                <Icon className="sidebar__item-icon" size={20} strokeWidth={2} />
+                <span className="sidebar__item-icon-wrap">
+                  <Icon
+                    className={`sidebar__item-icon sidebar__item-icon--${motion}`}
+                    size={20}
+                    strokeWidth={2}
+                  />
+                </span>
                 <span className="sidebar__item-label">
                   {translatedField(c.nome_i18n, lang, c.nome)}
                 </span>

@@ -423,13 +423,18 @@
 .sidebar__item:active {
   transform: scale(0.965);
 }
-.sidebar__item-icon,
+.sidebar__item-icon-wrap,
 .sidebar__item-label {
   position: relative;
   z-index: 1;
 }
-.sidebar__item-icon {
+/* O invólucro responde ao toque e ao hover; o SVG de dentro fica com o
+   movimento constante. Separados assim os dois transforms se compõem em vez de
+   um sobrescrever o outro — no mesmo elemento, o ícone da categoria ativa
+   ficaria parado assim que o "pop" acabasse. */
+.sidebar__item-icon-wrap {
   flex: 0 0 auto;
+  display: flex;
   opacity: 0.85;
   transition: transform 0.24s cubic-bezier(0.34, 1.45, 0.64, 1), opacity 0.16s ease;
 }
@@ -440,7 +445,7 @@
   opacity: 1;
   transform: scale(1);
 }
-.sidebar__item--active .sidebar__item-icon {
+.sidebar__item--active .sidebar__item-icon-wrap {
   opacity: 1;
   animation: sidebar-icon-pop 0.5s cubic-bezier(0.34, 1.5, 0.64, 1);
 }
@@ -455,8 +460,132 @@
   .sidebar__item--active:hover::before {
     opacity: 1;
   }
-  .sidebar__item:hover .sidebar__item-icon {
+  .sidebar__item:hover .sidebar__item-icon-wrap {
     transform: scale(1.14) rotate(-7deg);
+  }
+}
+
+/* --- Vidinha própria de cada ícone ---
+   Amplitudes pequenas e períodos propositalmente desencontrados: se os seis
+   compartilhassem a mesma duração eles bateriam juntos e o menu viraria um
+   pisca-pisca. Do jeito que está, cada um tem seu tempo e o conjunto só
+   respira. */
+.sidebar__item-icon {
+  transform-origin: 50% 60%;
+}
+.sidebar__item-icon--flame {
+  animation: icon-flame 2.2s ease-in-out infinite;
+  transform-origin: 50% 85%; /* a chama treme a partir da base */
+}
+.sidebar__item-icon--bowl {
+  animation: icon-bowl 3.4s ease-in-out infinite;
+}
+.sidebar__item-icon--gift {
+  animation: icon-gift 5.5s ease-in-out infinite;
+}
+.sidebar__item-icon--cup {
+  animation: icon-cup 3.8s ease-in-out infinite;
+  transform-origin: 50% 90%; /* o copo balança apoiado na base */
+}
+.sidebar__item-icon--citrus {
+  animation: icon-citrus 6s ease-in-out infinite;
+}
+.sidebar__item-icon--sparkle {
+  animation: icon-sparkle 2.8s ease-in-out infinite;
+}
+.sidebar__item-icon--grape {
+  animation: icon-grape 4.2s ease-in-out infinite;
+}
+@keyframes icon-flame {
+  0%,
+  100% {
+    transform: scale(1, 1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.07, 0.95) rotate(-4deg);
+  }
+  50% {
+    transform: scale(0.96, 1.06) rotate(3deg);
+  }
+  75% {
+    transform: scale(1.04, 0.98) rotate(-2deg);
+  }
+}
+/* Tigela: o vapor sobe, então ela sobe junto, devagar. */
+@keyframes icon-bowl {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+/* Presente: fica quieto quase o ciclo todo e dá uma chacoalhada no fim. */
+@keyframes icon-gift {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0deg);
+  }
+  66% {
+    transform: rotate(-9deg);
+  }
+  72% {
+    transform: rotate(7deg);
+  }
+  78% {
+    transform: rotate(-5deg);
+  }
+  84% {
+    transform: rotate(3deg);
+  }
+}
+@keyframes icon-cup {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  30% {
+    transform: rotate(-7deg);
+  }
+  65% {
+    transform: rotate(5deg);
+  }
+}
+@keyframes icon-citrus {
+  0%,
+  100% {
+    transform: rotate(-9deg);
+  }
+  50% {
+    transform: rotate(9deg);
+  }
+}
+/* Brilhos: cintilam. A opacidade some junto com a do invólucro, então o ícone
+   ativo cintila mais forte que os apagados — que é o que se espera. */
+@keyframes icon-sparkle {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1.16) rotate(8deg);
+    opacity: 0.75;
+  }
+  70% {
+    transform: scale(0.94) rotate(-3deg);
+    opacity: 1;
+  }
+}
+@keyframes icon-grape {
+  0%,
+  100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  50% {
+    transform: rotate(4deg) translateY(-1px);
   }
 }
 @keyframes sidebar-item-in {
@@ -493,10 +622,12 @@
     transform: translateY(0);
   }
 }
+/* A segunda linha fecha embaixo do seletor, e não em cima: assim ele fica
+   emoldurado entre as duas réguas em vez de sobrar solto depois delas. Os 16px
+   da margem do divisor e do padding daqui deixam o espaço igual dos dois lados. */
 .sidebar__footer {
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
-  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -1420,9 +1551,8 @@
     margin-bottom: 0;
   }
   .sidebar__footer {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: none;
+    padding-bottom: 0;
+    border-bottom: none;
   }
   .sidebar__backdrop {
     display: block;
@@ -1511,7 +1641,8 @@
   .sidebar__logo-eyelid,
   .sidebar__logo-tag,
   .sidebar__item,
-  .sidebar__item--active .sidebar__item-icon,
+  .sidebar__item-icon,
+  .sidebar__item--active .sidebar__item-icon-wrap,
   .sidebar__menu-toggle svg,
   .sidebar__drawer--open,
   .sidebar__backdrop,
