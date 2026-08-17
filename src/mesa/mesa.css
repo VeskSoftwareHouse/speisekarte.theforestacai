@@ -2173,6 +2173,31 @@
     opacity: 1;
   }
 }
+/* A saída continua capturando toques enquanto some — é ela que engole o clique
+   que vem depois do toque que a acordou. Nada de pointer-events: none aqui. */
+.screensaver--leaving {
+  animation: screensaver-out 380ms ease forwards;
+}
+.screensaver--leaving .screensaver__logo {
+  animation: screensaver-logo-out 380ms cubic-bezier(0.4, 0, 0.7, 1) forwards;
+}
+.screensaver--leaving .screensaver__hint {
+  animation: screensaver-out 180ms ease forwards;
+}
+@keyframes screensaver-out {
+  to {
+    opacity: 0;
+  }
+}
+/* A logo recua um pouco ao sair, como se o cardápio viesse à frente dela. */
+@keyframes screensaver-logo-out {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(0.88);
+  }
+}
 .screensaver__logo {
   width: min(58vw, 60vh, 460px);
 }
@@ -2198,7 +2223,14 @@
 
 @media (prefers-reduced-motion: reduce) {
   .screensaver,
-  .screensaver__hint {
+  .screensaver__hint,
+  .screensaver--leaving .screensaver__logo,
+  .screensaver--leaving .screensaver__hint {
     animation: none;
+  }
+  /* A saída em si continua: é ela que segura a tela no ar para engolir o
+     clique. Só perde o esmaecer e vira um corte seco. */
+  .screensaver--leaving {
+    animation: screensaver-out 380ms steps(1, end) forwards;
   }
 }
