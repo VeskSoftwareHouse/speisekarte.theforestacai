@@ -761,14 +761,21 @@
   border-color: var(--color-primary);
   box-shadow: var(--shadow-md);
 }
+/* Mesmo fundo da tela de descanso: o roxo da marca com um brilho branco
+   discreto no centro, atras da foto. Fica numa variavel porque o quadro do
+   card e o do modal precisam continuar iguais. */
+:root {
+  --photo-frame: radial-gradient(circle at 50% 46%, rgba(255, 255, 255, 0.17) 0%, rgba(255, 255, 255, 0) 58%),
+    radial-gradient(circle at 50% 42%, #4a1080 0%, #340261 45%, #240145 100%);
+}
 .item-card__photo-wrap {
   position: relative;
   width: 100%;
-  height: 160px;
+  height: 331px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f3eefb;
+  background: var(--photo-frame);
   overflow: hidden;
   padding: var(--space-2);
 }
@@ -779,9 +786,12 @@
   height: 100%;
   object-fit: contain;
 }
+/* Claro, e não roxo: o fundo do quadro agora é escuro. A opacidade é alta de
+   propósito — a 0.65 o contraste contra o roxo caía para 2.7:1, abaixo do
+   mínimo de 3:1 para elementos gráficos, e o ícone sumia. */
 .item-card__photo-fallback {
-  color: var(--color-primary);
-  opacity: 0.5;
+  color: #cbb2f0;
+  opacity: 0.85;
 }
 .item-card__body {
   padding: var(--space-3) var(--space-4) var(--space-4);
@@ -1064,7 +1074,7 @@
   width: 100%;
   height: 200px;
   object-fit: contain;
-  background: #f3eefb;
+  background: var(--photo-frame);
   border-radius: var(--radius-lg);
   margin-bottom: var(--space-4);
   box-shadow: var(--shadow-sm);
