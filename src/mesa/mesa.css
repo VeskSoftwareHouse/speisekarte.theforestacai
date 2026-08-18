@@ -764,17 +764,20 @@
 .item-card__photo-wrap {
   position: relative;
   width: 100%;
-  height: 140px;
+  height: 160px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #f3eefb;
   overflow: hidden;
+  padding: var(--space-2);
 }
+/* contain, não cover: a foto do produto precisa aparecer inteira. A sobra
+   fica com o fundo lilás do wrap. */
 .item-card__photo {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 .item-card__photo-fallback {
   color: var(--color-primary);
@@ -1060,7 +1063,8 @@
 .modal__photo {
   width: 100%;
   height: 200px;
-  object-fit: cover;
+  object-fit: contain;
+  background: #f3eefb;
   border-radius: var(--radius-lg);
   margin-bottom: var(--space-4);
   box-shadow: var(--shadow-sm);
@@ -1833,17 +1837,18 @@
 }
 
 /* ===== Vida nos cards ===== */
-/* Zoom lento e contínuo nas fotos. Só nas fotos de verdade: o ícone de reserva
-   é vetorial e centralizado, e crescer faria ele parecer defeito. */
+/* Respiro lento nas fotos. O quadro maior é scale(1), nunca acima, para a
+   foto não ser cortada. Só nas fotos de verdade: o ícone de reserva é vetorial
+   e centralizado, e animar faria ele parecer defeito. */
 .item-card__photo {
   animation: photo-drift 18s ease-in-out infinite alternate;
 }
 @keyframes photo-drift {
   from {
-    transform: scale(1);
+    transform: scale(0.94);
   }
   to {
-    transform: scale(1.09);
+    transform: scale(1);
   }
 }
 .item-card__add {
