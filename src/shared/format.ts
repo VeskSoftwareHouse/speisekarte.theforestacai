@@ -1,6 +1,16 @@
-/** Formata como o cardápio impresso da loja: "CHF 14,90" (vírgula decimal). */
+/**
+ * Formata como o cardápio impresso da loja: "CHF 14,90" (vírgula decimal).
+ * O separador de milhar não aparece em preço de produto — nenhum passa de
+ * CHF 60 — mas os totais dos relatórios passam, e "CHF 11.652,20" se lê de
+ * relance enquanto "CHF 11652,20" obriga a contar as casas.
+ */
+const CHF_FORMAT = new Intl.NumberFormat('pt-BR', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+
 export function formatCHF(value: number): string {
-  return `CHF ${value.toFixed(2).replace('.', ',')}`
+  return `CHF ${CHF_FORMAT.format(value)}`
 }
 
 /** "há 3 min" / "há 1h 12min" a partir de um timestamp ISO */

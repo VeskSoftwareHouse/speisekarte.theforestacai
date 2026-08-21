@@ -9,9 +9,13 @@ interface Props {
 }
 
 /**
- * Mapa de calor de pedidos por hora e dia da semana. Só as horas em que a loja
- * de fato vendeu entram no eixo: um dia inteiro de 0h às 23h deixaria a faixa
- * do movimento espremida em um quarto da tela.
+ * Mapa de calor de pedidos por hora e dia da semana.
+ *
+ * Só as horas em que a loja de fato vendeu entram no eixo: um dia inteiro de
+ * 0h às 23h espremeria a faixa do movimento em um quarto da largura. E as
+ * células não trazem número — 77 números pequenos brigando entre si escondem
+ * exatamente o que o mapa existe para mostrar, que é onde está o vermelho.
+ * O número continua a um toque de distância, no tooltip.
  */
 export default function ReportHeatmap({ heatmap }: Props) {
   const activeHours = heatmap.byHour.flatMap((count, hour) => (count > 0 ? [hour] : []))
@@ -27,7 +31,7 @@ export default function ReportHeatmap({ heatmap }: Props) {
   return (
     <div className="report-heatmap">
       <div className="report-heatmap__grid" style={{ gridTemplateColumns: `auto repeat(${hours.length}, 1fr)` }}>
-        <span className="report-heatmap__corner" />
+        <span />
         {hours.map((hour) => (
           <span key={hour} className="report-heatmap__hour">
             {String(hour).padStart(2, '0')}
@@ -39,15 +43,10 @@ export default function ReportHeatmap({ heatmap }: Props) {
         ))}
       </div>
 
-      <div className="report-heatmap__legend">
-        <span>Menos</span>
-        <span className="report-heatmap__scale">
-          {[0.15, 0.4, 0.65, 0.85, 1].map((step) => (
-            <i key={step} style={{ opacity: step }} />
-          ))}
-        </span>
-        <span>Mais ({heatmap.max} pedidos na hora mais cheia)</span>
-      </div>
+      <p className="report-heatmap__legend">
+        Cada quadrado é uma hora de um dia da semana. Quanto mais escuro, mais pedidos — o mais cheio teve{' '}
+        <strong>{heatmap.max}</strong>.
+      </p>
     </div>
   )
 }
@@ -58,18 +57,16 @@ function Row({ label, counts, hours, max }: { label: string; counts: number[]; h
       <span className="report-heatmap__weekday">{label}</span>
       {hours.map((hour) => {
         const count = counts[hour]
-        // A opacidade parte de 0,12 para que uma célula com 1 pedido ainda
-        // apareça — zerada, ela some no fundo e vira "sem dado".
-        const opacity = max > 0 && count > 0 ? 0.12 + (count / max) * 0.88 : 0
+        // A intensidade parte de 0,14 para que uma célula com 1 pedido ainda
+        // se distinga do fundo; zerada, ela viraria "sem dado".
+        const heat = max > 0 && count > 0 ? 0.14 + (count / max) * 0.86 : 0
         return (
           <span
             key={hour}
             className={`report-heatmap__cell ${count > 0 ? 'report-heatmap__cell--on' : ''}`}
-            style={{ '--heat': opacity } as CSSProperties}
-            title={`${label} ${String(hour).padStart(2, '0')}h — ${count} pedido(s)`}
-          >
-            {count > 0 ? count : ''}
-          </span>
+            style={{ '--heat': heat } as CSSProperties}
+            title={`${label}, ${String(hour).padStart(2, '0')}h — ${count} pedido(s)`}
+          />
         )
       })}
     </>

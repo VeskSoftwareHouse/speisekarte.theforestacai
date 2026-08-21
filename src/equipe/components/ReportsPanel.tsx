@@ -1,17 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import {
-  ChartColumn,
-  Clock,
-  Coins,
-  CreditCard,
-  Download,
-  Layers,
-  Percent,
-  Printer,
-  RefreshCw,
-  ShoppingBag,
-  TrendingUp,
-} from 'lucide-react'
+import { Download, Printer, RefreshCw } from 'lucide-react'
 import { formatCHF } from '@shared/format'
 import { addDays, dateKeyToDate, toDateKey } from '../dateUtils'
 import { TREND_MONTHS, useReports } from '../hooks/useReports'
@@ -35,13 +23,16 @@ import ReportTrendChart from './ReportTrendChart'
 const WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
 /**
- * Relatórios do Painel da Equipe: vendas, cardápio, operação e pagamento no
- * período escolhido, sempre com a comparação contra o período anterior de
- * mesmo tamanho.
+ * Relatórios do Painel da Equipe.
+ *
+ * A tela se lê de cima para baixo como uma resposta que vai ficando mais
+ * específica: primeiro quanto entrou no período, depois de onde esse dinheiro
+ * veio, e só então quando a loja encheu. Cada bloco diz por extenso a pergunta
+ * que responde — quem abre isto está no balcão, não numa reunião de diretoria.
  *
  * Só pedidos pagos entram no faturamento e nos rankings. Os que ficaram no
- * caminho não somem: viram carrinho abandonado e falha de pagamento no bloco
- * de conversão, que é onde eles significam alguma coisa.
+ * caminho não somem: aparecem como desistência e cartão recusado, que é onde
+ * eles significam alguma coisa.
  */
 export default function ReportsPanel() {
   const [preset, setPreset] = useState<PeriodPresetId>('sete_dias')
@@ -84,19 +75,23 @@ export default function ReportsPanel() {
     [heatmap],
   )
 
-  const tipShare = sales.pedidos ? sales.pedidosComGorjeta / sales.pedidos : 0
-
   // O cardápio tem muito mais adicional grátis do que pago, e por quantidade os
   // grátis empurram os pagos para fora da lista. Como a margem está justamente
   // nos pagos, eles ganham um ranking próprio, por receita.
-  const adicionaisPagos = useMemo(
-    () => report.adicionais.filter((row) => row.faturamento > 0),
-    [report.adicionais],
-  )
+  const adicionaisPagos = useMemo(() => report.adicionais.filter((row) => row.faturamento > 0), [report.adicionais])
+
+  // Com poucos produtos vendidos, um top 8 e um "bottom 8" mostrariam o mesmo
+  // item nas duas listas — e nada confunde mais do que ver o Couple entre os
+  // mais e entre os menos vendidos. Cada lista fica com metade do ranking.
+  const rankLimit = Math.max(1, Math.min(8, Math.floor(report.itens.length / 2)))
+
+  const tipShare = sales.pedidos ? sales.pedidosComGorjeta / sales.pedidos : 0
+  // "8 de cada 10" cola na cabeça de um jeito que "80,5%" não cola.
+  const conversionInTen = Math.round(conversion.taxaConversao * 10)
 
   return (
     <div className="reports">
-      <div className="reports__toolbar">
+      <div className="reports__bar">
         <div className="reports__presets">
           {PERIOD_PRESETS.map((option) => (
             <button
@@ -116,259 +111,211 @@ export default function ReportsPanel() {
               <input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} />
             </label>
             <label>
-              Até
+              até
               <input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} />
             </label>
           </div>
         )}
 
-        <div className="reports__actions">
-          <button className="reports__action" onClick={reload} disabled={loading}>
-            <RefreshCw size={15} strokeWidth={2} aria-hidden />
-            Atualizar
-          </button>
-          <button
-            className="reports__action"
-            onClick={() => downloadCsv(reportFilename('relatorio-resumo', report), buildSummaryCsv(report))}
-          >
-            <Download size={15} strokeWidth={2} aria-hidden />
-            CSV resumo
-          </button>
-          <button
-            className="reports__action"
-            onClick={() => downloadCsv(reportFilename('relatorio-pedidos', report), buildOrdersCsv(orders))}
-          >
-            <Download size={15} strokeWidth={2} aria-hidden />
-            CSV pedidos
-          </button>
-          <button
-            className="reports__action"
-            onClick={() => downloadCsv(reportFilename('relatorio-itens', report), buildItemsCsv(orders))}
-          >
-            <Download size={15} strokeWidth={2} aria-hidden />
-            CSV itens
-          </button>
-          {/* PDF sai da impressão do navegador ("Salvar como PDF"), com o CSS
-              de impressão escondendo a barra de ferramentas. */}
-          <button className="reports__action" onClick={() => window.print()}>
+        <div className="reports__tools">
+          {/* <details> em vez de um menu em JavaScript: três botões de download
+              soltos na barra pesavam mais na tela do que valiam. */}
+          <details className="reports__menu">
+            <summary>
+              <Download size={15} strokeWidth={2} aria-hidden />
+              Exportar
+            </summary>
+            <div className="reports__menu-list">
+              <button onClick={() => downloadCsv(reportFilename('relatorio-resumo', report), buildSummaryCsv(report))}>
+                Resumo do período
+                <small>Todos os números desta tela</small>
+              </button>
+              <button onClick={() => downloadCsv(reportFilename('relatorio-pedidos', report), buildOrdersCsv(orders))}>
+                Um pedido por linha
+                <small>Para conciliar com o extrato da SumUp</small>
+              </button>
+              <button onClick={() => downloadCsv(reportFilename('relatorio-itens', report), buildItemsCsv(orders))}>
+                Um item por linha
+                <small>Para conferir margem produto a produto</small>
+              </button>
+            </div>
+          </details>
+
+          <button className="reports__tool" onClick={() => window.print()} title="Imprimir ou salvar em PDF">
             <Printer size={15} strokeWidth={2} aria-hidden />
             PDF
           </button>
+          <button className="reports__tool" onClick={reload} disabled={loading} title="Recarregar os dados">
+            <RefreshCw size={15} strokeWidth={2} aria-hidden />
+          </button>
         </div>
       </div>
-
-      <p className="reports__period">
-        {periodLabel(period)} <span>· comparado com {periodLabel(report.previous)}</span>
-      </p>
 
       {error && <p className="equipe-app__error">Erro ao carregar relatórios: {error}</p>}
       {loading && <p className="equipe-app__status">Calculando relatórios…</p>}
 
       {!loading && !error && (
         <>
-          <Section icon={<TrendingUp size={16} strokeWidth={2} aria-hidden />} title="Vendas e faturamento">
-            <div className="kpi-grid">
-              <Kpi
-                label="Faturamento"
-                value={formatCHF(sales.faturamentoBruto)}
-                delta={variation(sales.faturamentoBruto, previousSales.faturamentoBruto)}
-                hint={`${formatCHF(sales.faturamentoLiquido)} sem gorjetas`}
+          <header className="reports__hero">
+            <p className="reports__hero-label">Entrou no caixa · {periodLabel(period)}</p>
+            <div className="reports__hero-line">
+              <strong>{formatCHF(sales.faturamentoBruto)}</strong>
+              <Delta value={variation(sales.faturamentoBruto, previousSales.faturamentoBruto)} />
+            </div>
+            <p className="reports__hero-sub">
+              {sales.pedidos} pedidos pagos · ticket médio de {formatCHF(sales.ticketMedio)} · comparado com{' '}
+              {periodLabel(report.previous)}
+            </p>
+          </header>
+
+          <Section title="Vendas" hint="Quanto entrou, quanto era gorjeta e quantos pedidos se perderam no caminho.">
+            <div className="stat-strip">
+              <Stat
+                label="Vendas sem gorjeta"
+                value={formatCHF(sales.faturamentoLiquido)}
+                delta={variation(sales.faturamentoLiquido, previousSales.faturamentoLiquido)}
+                hint="O número que vai para a contabilidade"
               />
-              <Kpi
-                label="Pedidos pagos"
-                value={String(sales.pedidos)}
-                delta={variation(sales.pedidos, previousSales.pedidos)}
-                hint={`${conversion.criados} iniciados no totem`}
-              />
-              <Kpi
-                label="Ticket médio"
-                value={formatCHF(sales.ticketMedio)}
-                delta={variation(sales.ticketMedio, previousSales.ticketMedio)}
-                hint="Faturamento sem gorjeta ÷ pedidos"
-              />
-              <Kpi
+              <Stat
                 label="Gorjetas"
                 value={formatCHF(sales.gorjetas)}
                 delta={variation(sales.gorjetas, previousSales.gorjetas)}
-                hint={`${formatCHF(sales.gorjetaMedia)} por pedido · ${formatPercent(tipShare, 0)} deixaram gorjeta`}
+                hint={`${formatPercent(tipShare, 0)} dos pedidos deixaram algo`}
+              />
+              <Stat
+                label="Quem começou, pagou"
+                value={`${conversionInTen} de cada 10`}
+                hint={`${conversion.pagos} pagos de ${conversion.criados} iniciados no totem`}
+              />
+              <Stat
+                label="Ficaram pelo caminho"
+                value={String(conversion.abandonados + conversion.falhas)}
+                hint={`${conversion.abandonados} desistiram de pagar · ${conversion.falhas} tiveram o cartão recusado`}
               />
             </div>
 
-            <h3 className="reports__subtitle">
-              <ChartColumn size={15} strokeWidth={2} aria-hidden />
-              Tendência dos últimos {TREND_MONTHS} meses
-            </h3>
-            <ReportTrendChart points={report.tendencia} />
+            <Block title="Faturamento mês a mês" hint={`Últimos ${TREND_MONTHS} meses, sem gorjeta`}>
+              <ReportTrendChart points={report.tendencia} />
+            </Block>
 
-            <h3 className="reports__subtitle">
-              <CreditCard size={15} strokeWidth={2} aria-hidden />
-              Faturamento por forma de pagamento
-            </h3>
-            <ReportBarList
-              rows={report.formasPagamento}
-              metric="faturamento"
-              empty="Nenhum pagamento confirmado no período."
-            />
+            <div className="reports__pair">
+              <Block title="Como pagaram">
+                <ReportBarList
+                  rows={report.formasPagamento}
+                  metric="faturamento"
+                  empty="Nenhum pagamento confirmado no período."
+                />
+              </Block>
+
+              <Block title="Contra o período anterior" hint={periodLabel(report.previous)}>
+                <table className="report-table">
+                  <tbody>
+                    <ComparisonRow
+                      label="Entrou no caixa"
+                      current={sales.faturamentoBruto}
+                      previous={previousSales.faturamentoBruto}
+                      format={formatCHF}
+                    />
+                    <ComparisonRow
+                      label="Pedidos pagos"
+                      current={sales.pedidos}
+                      previous={previousSales.pedidos}
+                      format={String}
+                    />
+                    <ComparisonRow
+                      label="Ticket médio"
+                      current={sales.ticketMedio}
+                      previous={previousSales.ticketMedio}
+                      format={formatCHF}
+                    />
+                    <ComparisonRow
+                      label="Quem começou, pagou"
+                      current={conversion.taxaConversao}
+                      previous={report.previousConversion.taxaConversao}
+                      format={(v) => formatPercent(v, 0)}
+                      unit="pp"
+                    />
+                  </tbody>
+                </table>
+              </Block>
+            </div>
           </Section>
 
-          <Section icon={<ShoppingBag size={16} strokeWidth={2} aria-hidden />} title="Produtos e cardápio">
-            <div className="reports__columns">
-              <div>
-                <h3 className="reports__subtitle">Mais vendidos</h3>
-                <ReportBarList rows={report.itens} limit={10} />
-              </div>
-              <div>
-                <h3 className="reports__subtitle">Menos vendidos</h3>
-                <ReportBarList rows={report.itens} limit={10} fromBottom />
+          <Section title="Cardápio" hint="O que sai, o que encalha e onde está a margem.">
+            <div className="reports__pair">
+              <Block title="Mais vendidos">
+                <ReportBarList rows={report.itens} limit={rankLimit} />
+              </Block>
+              <Block title="Menos vendidos" hint="Do que menos sai para o que sai um pouco mais">
+                <ReportBarList rows={report.itens} limit={rankLimit} fromBottom />
                 {report.naoVendidos.length > 0 && (
-                  <div className="reports__note">
-                    <strong>Nenhuma venda no período ({report.naoVendidos.length}):</strong>{' '}
-                    {report.naoVendidos.map((item) => item.nome).join(', ')}
-                  </div>
+                  <p className="reports__note">
+                    <strong>Sem nenhuma venda no período:</strong>{' '}
+                    {report.naoVendidos.map((item) => item.nome).join(', ')}. Estão disponíveis no cardápio e ninguém
+                    pediu.
+                  </p>
                 )}
-              </div>
+              </Block>
             </div>
 
-            <h3 className="reports__subtitle">
-              <Layers size={15} strokeWidth={2} aria-hidden />
-              Faturamento por categoria
-            </h3>
-            <ReportBarList rows={report.categorias} metric="faturamento" />
+            <Block title="Faturamento por categoria">
+              <ReportBarList rows={report.categorias} metric="faturamento" />
+            </Block>
 
-            <div className="reports__columns">
-              <div>
-                <h3 className="reports__subtitle">Adicionais mais pedidos</h3>
-                <ReportBarList rows={report.adicionais} limit={12} empty="Nenhum adicional escolhido no período." />
-
-                <h3 className="reports__subtitle">Adicionais pagos, por receita</h3>
+            <div className="reports__pair">
+              <Block title="Adicionais mais pedidos" hint="Os grátis também contam, e são os que mais saem">
+                <ReportBarList rows={report.adicionais} limit={8} empty="Nenhum adicional escolhido no período." />
+              </Block>
+              <Block title="Adicionais que dão margem" hint="Só o que o adicional acrescentou ao preço">
                 <ReportBarList
                   rows={adicionaisPagos}
                   metric="faturamento"
                   empty="Nenhum adicional pago escolhido no período."
                 />
-                <p className="reports__caption">
-                  O valor é só o que o adicional acrescentou ao preço do item, não a linha inteira.
-                </p>
-              </div>
-              <div>
-                <h3 className="reports__subtitle">Tamanhos mais pedidos</h3>
+              </Block>
+            </div>
+
+            <div className="reports__pair">
+              <Block title="Tamanhos">
                 <ReportBarList rows={report.tamanhos} empty="Nenhum tamanho registrado no período." />
-
-                <h3 className="reports__subtitle">Montagem customizada vs opção pronta</h3>
+              </Block>
+              <Block title="Montagem customizada vale a pena?" hint="Montados pelo cliente contra opções prontas">
                 <ReportBarList rows={report.montagem} empty="Sem itens vendidos no período." />
-              </div>
+              </Block>
             </div>
           </Section>
 
-          <Section icon={<Clock size={16} strokeWidth={2} aria-hidden />} title="Operação e tempo">
-            <div className="kpi-grid">
-              <Kpi
-                label="Tempo médio de preparo"
+          <Section title="Movimento" hint="Quando a loja enche e quanto a cozinha demora.">
+            <div className="stat-strip">
+              <Stat
+                label="Do pagamento à entrega"
                 value={formatDuration(entrega.preparoMedioSegundos)}
-                hint={`Mediana ${formatDuration(entrega.preparoMedianaSegundos)} · ${entrega.amostra} pedidos medidos`}
+                hint={`Metade dos pedidos sai em até ${formatDuration(entrega.preparoMedianaSegundos)}`}
               />
-              <Kpi
-                label="Do pedido à entrega"
+              <Stat
+                label="Do totem à entrega"
                 value={formatDuration(entrega.totalMedioSegundos)}
-                hint="Inclui o tempo que o cliente levou para pagar"
+                hint={`Média de ${entrega.amostra} pedidos entregues`}
               />
-              <Kpi
-                label="Hora mais movimentada"
+              <Stat
+                label="Hora mais cheia"
                 value={busiestHourLabel(heatmap.byHour)}
-                hint={`Pico de ${heatmap.max} pedido(s) numa hora`}
+                hint={`Pico de ${heatmap.max} pedidos numa hora só`}
               />
-              <Kpi
-                label="Dia mais movimentado"
+              <Stat
+                label="Dia mais cheio"
                 value={weekdayRows[0]?.label ?? '—'}
-                hint={weekdayRows[0] ? `${weekdayRows[0].quantidade} pedidos` : 'Sem pedidos no período'}
+                hint={weekdayRows[0] ? `${weekdayRows[0].quantidade} pedidos no período` : 'Sem pedidos no período'}
               />
             </div>
 
-            <h3 className="reports__subtitle">Horários de pico</h3>
-            <ReportHeatmap heatmap={heatmap} />
+            <Block title="Horários de pico">
+              <ReportHeatmap heatmap={heatmap} />
+            </Block>
 
-            <h3 className="reports__subtitle">Dias da semana</h3>
-            <ReportBarList rows={weekdayRows} metric="quantidade" />
-          </Section>
-
-          <Section icon={<Percent size={16} strokeWidth={2} aria-hidden />} title="Pagamento e conversão">
-            <div className="kpi-grid">
-              <Kpi
-                label="Taxa de conversão"
-                value={formatPercent(conversion.taxaConversao)}
-                delta={variation(conversion.taxaConversao, report.previousConversion.taxaConversao)}
-                hint={`${conversion.pagos} pagos de ${conversion.criados} iniciados`}
-              />
-              <Kpi
-                label="Carrinhos abandonados"
-                value={String(conversion.abandonados)}
-                hint={`${formatCHF(conversion.valorAbandonado)} que não entraram no caixa`}
-              />
-              <Kpi
-                label="Falhas de pagamento"
-                value={String(conversion.falhas)}
-                hint="Pedidos cancelados porque a SumUp recusou"
-              />
-              <Kpi
-                label="Gorjeta média"
-                value={formatCHF(sales.gorjetaMedia)}
-                delta={variation(sales.gorjetaMedia, previousSales.gorjetaMedia)}
-                hint={`${sales.pedidosComGorjeta} pedidos deixaram gorjeta`}
-              />
-            </div>
-
-            <h3 className="reports__subtitle">
-              <Coins size={15} strokeWidth={2} aria-hidden />
-              Comparativo com o período anterior
-            </h3>
-            <table className="report-table">
-              <thead>
-                <tr>
-                  <th>Métrica</th>
-                  <th>{periodLabel(period)}</th>
-                  <th>{periodLabel(report.previous)}</th>
-                  <th>Variação</th>
-                </tr>
-              </thead>
-              <tbody>
-                <ComparisonRow
-                  label="Faturamento bruto"
-                  current={sales.faturamentoBruto}
-                  previous={previousSales.faturamentoBruto}
-                  format={formatCHF}
-                />
-                <ComparisonRow
-                  label="Faturamento sem gorjeta"
-                  current={sales.faturamentoLiquido}
-                  previous={previousSales.faturamentoLiquido}
-                  format={formatCHF}
-                />
-                <ComparisonRow
-                  label="Pedidos pagos"
-                  current={sales.pedidos}
-                  previous={previousSales.pedidos}
-                  format={(v) => String(v)}
-                />
-                <ComparisonRow
-                  label="Ticket médio"
-                  current={sales.ticketMedio}
-                  previous={previousSales.ticketMedio}
-                  format={formatCHF}
-                />
-                <ComparisonRow
-                  label="Gorjetas"
-                  current={sales.gorjetas}
-                  previous={previousSales.gorjetas}
-                  format={formatCHF}
-                />
-                <ComparisonRow
-                  label="Taxa de conversão"
-                  current={conversion.taxaConversao}
-                  previous={report.previousConversion.taxaConversao}
-                  format={(v) => formatPercent(v)}
-                />
-              </tbody>
-            </table>
+            <Block title="Dias da semana">
+              <ReportBarList rows={weekdayRows} />
+            </Block>
           </Section>
         </>
       )}
@@ -376,41 +323,56 @@ export default function ReportsPanel() {
   )
 }
 
-function Section({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+function Section({ title, hint, children }: { title: string; hint: string; children: ReactNode }) {
   return (
     <section className="reports__section">
-      <h2 className="reports__section-title">
-        {icon}
-        {title}
-      </h2>
+      <div className="reports__section-head">
+        <h2>{title}</h2>
+        <p>{hint}</p>
+      </div>
       {children}
     </section>
   )
 }
 
-function Kpi({
-  label,
-  value,
-  delta,
-  hint,
-}: {
-  label: string
-  value: string
-  delta?: number | null
-  hint?: string
-}) {
-  const direction = delta == null ? 'flat' : delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat'
+function Block({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
-    <article className="kpi-card">
-      <p className="kpi-card__label">{label}</p>
-      <p className="kpi-card__value">{value}</p>
-      {delta !== undefined && (
-        <p className={`kpi-card__delta kpi-card__delta--${direction}`}>
-          {formatVariation(delta ?? null)} <span>vs período anterior</span>
-        </p>
-      )}
-      {hint && <p className="kpi-card__hint">{hint}</p>}
-    </article>
+    <div className="report-block">
+      <h3 className="report-block__title">
+        {title}
+        {hint && <span>{hint}</span>}
+      </h3>
+      {children}
+    </div>
+  )
+}
+
+function Stat({ label, value, delta, hint }: { label: string; value: string; delta?: number | null; hint?: string }) {
+  return (
+    <div className="stat">
+      <p className="stat__label">{label}</p>
+      <p className="stat__value">
+        {value}
+        {delta !== undefined && <Delta value={delta} small />}
+      </p>
+      {hint && <p className="stat__hint">{hint}</p>}
+    </div>
+  )
+}
+
+/**
+ * Seta com a variação. Some quando não havia período anterior para comparar.
+ * `text` troca o rótulo sem mexer no sinal, que é como as taxas mostram a
+ * diferença em pontos percentuais em vez de variação relativa.
+ */
+function Delta({ value, text, small = false }: { value: number | null; text?: string; small?: boolean }) {
+  if (value === null) return null
+  const direction = value > 0 ? 'up' : value < 0 ? 'down' : 'flat'
+  const arrow = direction === 'up' ? '▲' : direction === 'down' ? '▼' : '='
+  return (
+    <span className={`delta delta--${direction} ${small ? 'delta--small' : ''}`}>
+      {arrow} {text ?? formatVariation(value).replace(/^[+−]/, '')}
+    </span>
   )
 }
 
@@ -419,25 +381,33 @@ function ComparisonRow({
   current,
   previous,
   format,
+  unit,
 }: {
   label: string
   current: number
   previous: number
   format: (value: number) => string
+  /** `pp`: a linha é uma taxa, então a diferença vai em pontos percentuais. */
+  unit?: 'pp'
 }) {
-  const delta = variation(current, previous)
-  const direction = delta == null ? 'flat' : delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat'
+  const points = current - previous
   return (
     <tr>
-      <td>{label}</td>
-      <td>{format(current)}</td>
-      <td>{format(previous)}</td>
-      <td className={`report-table__delta report-table__delta--${direction}`}>{formatVariation(delta)}</td>
+      <th scope="row">{label}</th>
+      <td className="report-table__was">{format(previous)}</td>
+      <td className="report-table__now">{format(current)}</td>
+      <td>
+        {unit === 'pp' ? (
+          <Delta value={points} text={`${Math.abs(points * 100).toFixed(0)} p.p.`} small />
+        ) : (
+          <Delta value={variation(current, previous)} small />
+        )}
+      </td>
     </tr>
   )
 }
 
-/** "12h–13h" da hora com mais pedidos, ou "—" quando o período está vazio. */
+/** "16h–17h" da hora com mais pedidos, ou "—" quando o período está vazio. */
 function busiestHourLabel(byHour: number[]): string {
   let best = -1
   let bestCount = 0

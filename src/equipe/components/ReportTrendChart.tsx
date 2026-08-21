@@ -6,8 +6,8 @@ interface Props {
 }
 
 const WIDTH = 720
-const HEIGHT = 240
-const PADDING = { top: 16, right: 12, bottom: 30, left: 60 }
+const HEIGHT = 220
+const PADDING = { top: 14, right: 10, bottom: 28, left: 52 }
 
 /**
  * Tendência de faturamento mês a mês. É um SVG desenhado à mão de propósito:
@@ -30,28 +30,21 @@ export default function ReportTrendChart({ points }: Props) {
   const y = (value: number) => PADDING.top + plotHeight - (value / max) * plotHeight
 
   const linePath = points.map((point, i) => `${i === 0 ? 'M' : 'L'} ${x(i)} ${y(point.faturamento)}`).join(' ')
-  const areaPath = `${linePath} L ${x(points.length - 1)} ${PADDING.top + plotHeight} L ${x(0)} ${
-    PADDING.top + plotHeight
-  } Z`
+  const baseline = PADDING.top + plotHeight
+  const areaPath = `${linePath} L ${x(points.length - 1)} ${baseline} L ${x(0)} ${baseline} Z`
 
-  const gridLines = [0, 0.5, 1]
+  const last = points[points.length - 1]
 
   return (
     <div className="report-trend">
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="report-trend__svg" role="img" aria-label="Faturamento mês a mês">
-        {gridLines.map((step) => {
+        {[0, 0.5, 1].map((step) => {
           const value = max * step
           return (
             <g key={step}>
-              <line
-                x1={PADDING.left}
-                x2={WIDTH - PADDING.right}
-                y1={y(value)}
-                y2={y(value)}
-                className="report-trend__grid"
-              />
-              <text x={PADDING.left - 8} y={y(value) + 4} className="report-trend__axis" textAnchor="end">
-                {Math.round(value)}
+              <line x1={PADDING.left} x2={WIDTH - PADDING.right} y1={y(value)} y2={y(value)} className="report-trend__grid" />
+              <text x={PADDING.left - 10} y={y(value) + 4} className="report-trend__axis" textAnchor="end">
+                {compact(value)}
               </text>
             </g>
           )
@@ -62,9 +55,23 @@ export default function ReportTrendChart({ points }: Props) {
 
         {points.map((point, i) => (
           <g key={point.key}>
-            <circle cx={x(i)} cy={y(point.faturamento)} r={4} className="report-trend__dot">
+            {/* Alvo generoso e invisível: o tooltip pega o mês inteiro, não só
+                o ponto de 4px. */}
+            <rect
+              x={x(i) - plotWidth / (points.length - 1) / 2}
+              y={PADDING.top}
+              width={plotWidth / (points.length - 1)}
+              height={plotHeight}
+              fill="transparent"
+            >
               <title>{`${point.label}: ${formatCHF(point.faturamento)} em ${point.pedidos} pedido(s)`}</title>
-            </circle>
+            </rect>
+            <circle
+              cx={x(i)}
+              cy={y(point.faturamento)}
+              r={point.key === last.key ? 5 : 3.5}
+              className={`report-trend__dot ${point.key === last.key ? 'report-trend__dot--last' : ''}`}
+            />
             <text x={x(i)} y={HEIGHT - 8} className="report-trend__axis" textAnchor="middle">
               {point.label}
             </text>
@@ -73,4 +80,10 @@ export default function ReportTrendChart({ points }: Props) {
       </svg>
     </div>
   )
+}
+
+/** "11,7 mil" em vez de "11713" — o eixo é referência, não extrato. */
+function compact(value: number): string {
+  if (value >= 1000) return `${(value / 1000).toFixed(1).replace('.', ',')} mil`
+  return String(Math.round(value))
 }
