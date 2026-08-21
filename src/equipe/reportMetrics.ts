@@ -242,6 +242,31 @@ export interface RankRow {
   faturamento: number
 }
 
+/**
+ * O que a coluna `quantidade` de um ranking está contando. Sem isto, um
+ * "12 un." embaixo de "13 pedidos pagos" se lê como 12 pedidos — e nos
+ * rankings de produto ele são unidades de item, das quais um mesmo pedido
+ * pode levar várias.
+ */
+export type RankUnit = 'itens' | 'pedidos' | 'vezes'
+
+const RANK_UNIT_LABEL: Record<RankUnit, [singular: string, plural: string]> = {
+  itens: ['item', 'itens'],
+  pedidos: ['pedido', 'pedidos'],
+  vezes: ['vez', 'vezes'],
+}
+
+export function formatRankQuantity(quantidade: number, unit: RankUnit): string {
+  const [singular, plural] = RANK_UNIT_LABEL[unit]
+  return `${quantidade} ${quantidade === 1 ? singular : plural}`
+}
+
+/** Cabeçalho da coluna de quantidade na exportação, ex: "Itens". */
+export function rankUnitHeader(unit: RankUnit): string {
+  const plural = RANK_UNIT_LABEL[unit][1]
+  return plural.charAt(0).toUpperCase() + plural.slice(1)
+}
+
 function accumulate() {
   const map = new Map<string, RankRow>()
   return {

@@ -1,10 +1,12 @@
 import { formatCHF } from '@shared/format'
-import type { RankRow } from '../reportMetrics'
+import { formatRankQuantity, type RankRow, type RankUnit } from '../reportMetrics'
 
 interface Props {
   rows: RankRow[]
   /** Qual número desenha a barra. O outro aparece ao lado, apagado. */
   metric?: 'quantidade' | 'faturamento'
+  /** O que a quantidade conta nesta lista — ver `RankUnit`. */
+  unit?: RankUnit
   /** Quantas linhas mostrar. Sem limite, mostra todas. */
   limit?: number
   /** Começa pelo último colocado (ranking dos que menos saem). */
@@ -23,7 +25,14 @@ interface Props {
  * A barra é relativa ao primeiro colocado da lista exibida — o que se lê aqui
  * é a proporção entre os itens, não o valor absoluto.
  */
-export default function ReportBarList({ rows, metric = 'quantidade', limit, fromBottom = false, empty }: Props) {
+export default function ReportBarList({
+  rows,
+  metric = 'quantidade',
+  unit = 'itens',
+  limit,
+  fromBottom = false,
+  empty,
+}: Props) {
   if (!rows.length) {
     return <p className="report-empty">{empty ?? 'Sem dados no período.'}</p>
   }
@@ -32,34 +41,38 @@ export default function ReportBarList({ rows, metric = 'quantidade', limit, from
   const visible = limit ? ordered.slice(0, limit) : ordered
   const max = Math.max(...visible.map((row) => row[metric]), 0)
 
+  /**
+   * O número de apoio, ao lado do principal. Vazio quando não diz nada:
+   * adicional grátis não tem receita para mostrar, e uma coluna de "CHF 0,00"
+   * repetida oito vezes só rouba a atenção do que varia.
+   */
+  const aside = (row: RankRow): string => {
+    if (metric === 'quantidade') return row.faturamento > 0 ? formatCHF(row.faturamento) : ''
+    return row.quantidade > 0 ? formatRankQuantity(row.quantidade, unit) : ''
+  }
+
   return (
     <ul className="report-bars">
       {visible.map((row) => {
-        const value = row[metric]
-        const width = max > 0 ? Math.max((value / max) * 100, 1.5) : 0
+        const width = max > 0 ? Math.max((row[metric] / max) * 100, 1.5) : 0
         return (
           <li key={row.key} className="report-bar">
             <div className="report-bar__head">
               <span className="report-bar__label">{row.label}</span>
-              {/* Adicional grátis não tem receita para mostrar, e uma coluna de
-                  "CHF 0,00" repetida oito vezes só rouba a atenção do que varia. */}
-              {aside(row, metric) && <span className="report-bar__aside">{aside(row, metric)}</span>}
+              {aside(row) && <span className="report-bar__aside">{aside(row)}</span>}
               <span className="report-bar__value">
-                {metric === 'quantidade' ? `${row.quantidade} un.` : formatCHF(row.faturamento)}
+                {metric === 'quantidade' ? formatRankQuantity(row.quantidade, unit) : formatCHF(row.faturamento)}
               </span>
             </div>
             <div className="report-bar__track">
-              <div className={`report-bar__fill ${fromBottom ? 'report-bar__fill--low' : ''}`} style={{ width: `${width}%` }} />
+              <div
+                className={`report-bar__fill ${fromBottom ? 'report-bar__fill--low' : ''}`}
+                style={{ width: `${width}%` }}
+              />
             </div>
           </li>
         )
       })}
     </ul>
   )
-}
-
-/** O número de apoio, ao lado do principal. Vazio quando não diz nada. */
-function aside(row: RankRow, metric: 'quantidade' | 'faturamento'): string {
-  if (metric === 'quantidade') return row.faturamento > 0 ? formatCHF(row.faturamento) : ''
-  return row.quantidade > 0 ? `${row.quantidade} un.` : ''
 }

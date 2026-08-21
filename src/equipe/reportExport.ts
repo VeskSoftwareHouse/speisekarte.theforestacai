@@ -1,6 +1,15 @@
 import type { ReportOrder } from '@shared/types'
 import { toDateKey } from './dateUtils'
-import { formatDuration, isPaid, lineTotal, orderGross, type Report, type RankRow } from './reportMetrics'
+import {
+  formatDuration,
+  isPaid,
+  lineTotal,
+  orderGross,
+  rankUnitHeader,
+  type RankRow,
+  type RankUnit,
+  type Report,
+} from './reportMetrics'
 
 /**
  * Exportação dos relatórios para a contabilidade.
@@ -37,11 +46,16 @@ function line(values: (string | number)[]): string {
   return values.map(cell).join(SEPARATOR)
 }
 
-function rankSection(title: string, rows: RankRow[], unit = 'Quantidade'): string[] {
+/**
+ * Um bloco de ranking. `unit` nomeia a coluna de quantidade: contar itens,
+ * pedidos ou vezes são coisas diferentes, e um "Quantidade" genérico deixava
+ * quem abre a planilha somando o que não se soma.
+ */
+function rankSection(title: string, rows: RankRow[], columnLabel: string, unit: RankUnit): string[] {
   if (!rows.length) return [title, 'Sem dados no período', '']
   return [
     title,
-    line([unit === 'Quantidade' ? 'Item' : unit, 'Quantidade', 'Faturamento (CHF)']),
+    line([columnLabel, rankUnitHeader(unit), 'Faturamento (CHF)']),
     ...rows.map((row) => line([row.label, row.quantidade, decimal(row.faturamento)])),
     '',
   ]
@@ -88,7 +102,7 @@ export function buildSummaryCsv(report: Report): string {
     '',
   ]
 
-  rows.push(...rankSection('Itens mais vendidos', report.itens))
+  rows.push(...rankSection('Itens mais vendidos', report.itens, 'Item', 'itens'))
 
   if (report.naoVendidos.length) {
     rows.push(
@@ -99,11 +113,13 @@ export function buildSummaryCsv(report: Report): string {
     )
   }
 
-  rows.push(...rankSection('Faturamento por categoria', report.categorias, 'Categoria'))
-  rows.push(...rankSection('Adicionais mais pedidos', report.adicionais, 'Adicional'))
-  rows.push(...rankSection('Tamanhos mais pedidos', report.tamanhos, 'Tamanho'))
-  rows.push(...rankSection('Montagem customizada vs opção pronta', report.montagem, 'Tipo'))
-  rows.push(...rankSection('Faturamento por forma de pagamento', report.formasPagamento, 'Forma de pagamento'))
+  rows.push(...rankSection('Faturamento por categoria', report.categorias, 'Categoria', 'itens'))
+  rows.push(...rankSection('Adicionais mais pedidos', report.adicionais, 'Adicional', 'vezes'))
+  rows.push(...rankSection('Tamanhos mais pedidos', report.tamanhos, 'Tamanho', 'itens'))
+  rows.push(...rankSection('Montagem customizada vs opção pronta', report.montagem, 'Tipo', 'itens'))
+  rows.push(
+    ...rankSection('Faturamento por forma de pagamento', report.formasPagamento, 'Forma de pagamento', 'pedidos'),
+  )
 
   rows.push('Movimento por dia da semana', line(['Dia', 'Pedidos', 'Faturamento (CHF)']))
   for (let weekday = 0; weekday < 7; weekday++) {

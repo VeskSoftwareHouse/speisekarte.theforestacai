@@ -203,6 +203,7 @@ export default function ReportsPanel() {
                 <ReportBarList
                   rows={report.formasPagamento}
                   metric="faturamento"
+                  unit="pedidos"
                   empty="Nenhum pagamento confirmado no período."
                 />
               </Block>
@@ -243,7 +244,7 @@ export default function ReportsPanel() {
 
           <Section title="Cardápio" hint="O que sai, o que encalha e onde está a margem.">
             <div className="reports__pair">
-              <Block title="Mais vendidos">
+              <Block title="Mais vendidos" hint="Em itens — um pedido pode levar vários">
                 <ReportBarList rows={report.itens} limit={rankLimit} />
               </Block>
               <Block title="Menos vendidos" hint="Do que menos sai para o que sai um pouco mais">
@@ -264,12 +265,18 @@ export default function ReportsPanel() {
 
             <div className="reports__pair">
               <Block title="Adicionais mais pedidos" hint="Os grátis também contam, e são os que mais saem">
-                <ReportBarList rows={report.adicionais} limit={8} empty="Nenhum adicional escolhido no período." />
+                <ReportBarList
+                  rows={report.adicionais}
+                  unit="vezes"
+                  limit={8}
+                  empty="Nenhum adicional escolhido no período."
+                />
               </Block>
               <Block title="Adicionais que dão margem" hint="Só o que o adicional acrescentou ao preço">
                 <ReportBarList
                   rows={adicionaisPagos}
                   metric="faturamento"
+                  unit="vezes"
                   empty="Nenhum adicional pago escolhido no período."
                 />
               </Block>
@@ -314,7 +321,7 @@ export default function ReportsPanel() {
             </Block>
 
             <Block title="Dias da semana">
-              <ReportBarList rows={weekdayRows} />
+              <ReportBarList rows={weekdayRows} unit="pedidos" />
             </Block>
           </Section>
         </>
