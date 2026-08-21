@@ -3,7 +3,7 @@ import { supabase } from '@shared/supabaseClient'
 import type { OrderItem, ReportOrder } from '@shared/types'
 import { addMonths, endOfDay, startOfMonth } from '../dateUtils'
 import type { Period, ReportCategory, ReportMenuItem, TrendOrder } from '../reportMetrics'
-import { previousPeriod } from '../reportMetrics'
+import { PAID_STATUSES, previousPeriod } from '../reportMetrics'
 import { fetchPaged } from './fetchPaged'
 
 /** Quantos meses o gráfico de tendência mostra, sempre terminando no mês atual. */
@@ -33,6 +33,10 @@ interface OrderRow extends Omit<ReportOrder, 'items'> {
  * período (com itens), os do período anterior e os dos últimos doze meses (só
  * os totais, sem itens), mais o cardápio atual — que é de onde saem categoria
  * e a marca de "montado pelo cliente" de cada produto.
+ *
+ * Só pedidos pagos, e o filtro fica na consulta em vez de na conta: assim não
+ * há como um carrinho abandonado escapar para dentro de alguma métrica nova
+ * que esqueça de peneirar.
  */
 export function useReports(period: Period): ReportData {
   const [orders, setOrders] = useState<ReportOrder[]>([])
@@ -70,6 +74,7 @@ export function useReports(period: Period): ReportData {
       supabase
         .from('orders')
         .select('*, order_items(*)')
+        .in('status', PAID_STATUSES)
         .gte('criado_em', gte)
         .lte('criado_em', lte)
         .order('criado_em', { ascending: true })
@@ -86,6 +91,7 @@ export function useReports(period: Period): ReportData {
           supabase
             .from('orders')
             .select('criado_em, status, valor_pago, gorjeta')
+            .in('status', PAID_STATUSES)
             .gte('criado_em', trendStart.toISOString())
             .lte('criado_em', trendEnd.toISOString())
             .order('criado_em', { ascending: true })

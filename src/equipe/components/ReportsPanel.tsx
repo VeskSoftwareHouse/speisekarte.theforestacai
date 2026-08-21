@@ -72,7 +72,7 @@ function ReportsBody() {
     [period, orders, previousOrders, trendOrders, menuItems, categories],
   )
 
-  const { sales, previousSales, conversion, entrega, heatmap } = report
+  const { sales, previousSales, entrega, heatmap } = report
 
   const weekdayRows: RankRow[] = useMemo(
     () =>
@@ -112,8 +112,11 @@ function ReportsBody() {
   const receitaAdicionais = adicionaisPagos.reduce((sum, row) => sum + row.faturamento, 0)
 
   const tipShare = sales.pedidos ? sales.pedidosComGorjeta / sales.pedidos : 0
-  // "8 de cada 10" cola na cabeça de um jeito que "80,5%" não cola.
-  const conversionInTen = Math.round(conversion.taxaConversao * 10)
+
+  // Quantos dias o período cobre, para dizer o movimento por dia — que num
+  // intervalo longo diz mais do que o total bruto de pedidos.
+  const dias = Math.max(1, Math.round((period.end.getTime() - period.start.getTime()) / 86_400_000))
+  const pedidosPorDia = (sales.pedidos / dias).toFixed(1).replace('.', ',')
 
   return (
     <div className="reports">
@@ -187,19 +190,15 @@ function ReportsBody() {
             <p className="reports__hero-sub">Comparado com {periodLabel(report.previous)}</p>
           </header>
 
-          <Section title="Vendas" hint="Quanto entrou, quanto era gorjeta e quantos pedidos se perderam no caminho.">
+          <Section title="Vendas" hint="Só pedidos pagos: quanto entrou, quanto era gorjeta e quanto rendeu cada um.">
             <div className="stat-strip">
               <Stat
                 label="Pedidos pagos"
                 value={String(sales.pedidos)}
                 delta={variation(sales.pedidos, previousSales.pedidos)}
-                hint={
-                  conversion.criados === 0
-                    ? 'Nenhum pedido foi iniciado no totem'
-                    : `${conversion.criados} chegaram a abrir um pedido no totem`
-                }
+                hint={dias > 1 ? `Média de ${pedidosPorDia} por dia` : 'Pagos e confirmados pela SumUp'}
                 detail={[
-                  `${sales.pedidos} pagos de ${conversion.criados} iniciados`,
+                  dias > 1 && `${sales.pedidos} pedidos em ${dias} dias`,
                   `Período anterior: ${previousSales.pedidos} pedidos pagos`,
                 ]}
               />
@@ -237,27 +236,6 @@ function ReportsBody() {
                 ]}
               />
             </div>
-
-            {/* Conversão saiu dos indicadores para caber os quatro números de
-                venda, mas não some da tela: em uma frase ela ainda responde
-                quantos carrinhos ficaram pelo caminho e quanto isso valia. */}
-            <p className="reports__note">
-              {conversion.criados === 0 ? (
-                <strong>Nenhum pedido foi iniciado no totem neste período.</strong>
-              ) : (
-                <>
-                  <strong>{conversionInTen} de cada 10 pedidos iniciados no totem foram pagos</strong> (
-                  {formatPercent(conversion.taxaConversao)}).{' '}
-                  {conversion.abandonados + conversion.falhas === 0
-                    ? 'Nenhum ficou pelo caminho.'
-                    : `${conversion.abandonados} ${
-                        conversion.abandonados === 1 ? 'saiu' : 'saíram'
-                      } antes de pagar e ${conversion.falhas} ${
-                        conversion.falhas === 1 ? 'teve' : 'tiveram'
-                      } o cartão recusado, somando ${formatCHF(conversion.valorAbandonado)} que não entraram no caixa.`}
-                </>
-              )}
-            </p>
 
             <Block title="Faturamento mês a mês" hint={`Últimos ${TREND_MONTHS} meses, sem gorjeta`}>
               <ReportTrendChart points={report.tendencia} />

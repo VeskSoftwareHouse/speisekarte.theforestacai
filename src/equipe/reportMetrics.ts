@@ -18,8 +18,12 @@ import {
  * abrir o React, e reaproveitar as mesmas contas na exportação em CSV.
  */
 
-/** Pedido já pago: os quatro status que passam pela cozinha. */
-const PAID_STATUSES: FullOrderStatus[] = ['recebido', 'em_preparo', 'pronto', 'entregue']
+/**
+ * Pedido já pago: os quatro status que passam pela cozinha. Os relatórios só
+ * olham para estes — carrinho abandonado e cartão recusado não são venda, e
+ * misturá-los a qualquer contagem só torna o número mais difícil de explicar.
+ */
+export const PAID_STATUSES: FullOrderStatus[] = ['recebido', 'em_preparo', 'pronto', 'entregue']
 
 export function isPaid(order: { status: FullOrderStatus }): boolean {
   return PAID_STATUSES.includes(order.status)
@@ -188,47 +192,6 @@ export function summarizeSales(orders: ReportOrder[]): SalesSummary {
 export function variation(current: number, previous: number): number | null {
   if (previous === 0) return null
   return (current - previous) / previous
-}
-
-// =====================================================================
-// Pagamento e conversão
-// =====================================================================
-
-export interface ConversionSummary {
-  /** Todo pedido que nasceu no totem, pago ou não. */
-  criados: number
-  pagos: number
-  /** Ficaram em `aguardando_pagamento`: o cliente desistiu na hora de pagar. */
-  abandonados: number
-  /** `cancelado`: a SumUp respondeu que o pagamento não passou. */
-  falhas: number
-  /** 0 a 1. */
-  taxaConversao: number
-  /** Quanto havia nos carrinhos abandonados. */
-  valorAbandonado: number
-}
-
-export function summarizeConversion(orders: ReportOrder[]): ConversionSummary {
-  let pagos = 0
-  let abandonados = 0
-  let falhas = 0
-  let valorAbandonado = 0
-  for (const order of orders) {
-    if (isPaid(order)) pagos++
-    else if (order.status === 'cancelado') falhas++
-    else {
-      abandonados++
-      valorAbandonado += orderGross(order)
-    }
-  }
-  return {
-    criados: orders.length,
-    pagos,
-    abandonados,
-    falhas,
-    taxaConversao: orders.length ? pagos / orders.length : 0,
-    valorAbandonado,
-  }
 }
 
 // =====================================================================
@@ -564,8 +527,6 @@ export interface Report {
   previous: Period
   sales: SalesSummary
   previousSales: SalesSummary
-  conversion: ConversionSummary
-  previousConversion: ConversionSummary
   itens: RankRow[]
   naoVendidos: ReportMenuItem[]
   categorias: RankRow[]
@@ -599,8 +560,6 @@ export function buildReport(input: ReportInput): Report {
     previous: previousPeriod(input.period),
     sales: summarizeSales(input.orders),
     previousSales: summarizeSales(input.previousOrders),
-    conversion: summarizeConversion(input.orders),
-    previousConversion: summarizeConversion(input.previousOrders),
     itens,
     naoVendidos: unsoldItems(itens, input.menuItems),
     categorias: rankCategories(input.orders, menuItemsById, categoriesById),

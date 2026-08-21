@@ -29,10 +29,6 @@ function decimal(value: number): string {
   return value.toFixed(2).replace('.', ',')
 }
 
-function percent(value: number): string {
-  return `${(value * 100).toFixed(1).replace('.', ',')}%`
-}
-
 /**
  * Um campo entre aspas sempre que contiver separador, aspas ou quebra de
  * linha — nomes de produto com ponto e vírgula existem e quebrariam a planilha.
@@ -65,7 +61,7 @@ const WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', '
 
 /** Planilha de resumo: um bloco por seção do relatório, na mesma ordem da tela. */
 export function buildSummaryCsv(report: Report): string {
-  const { sales, previousSales, conversion, entrega, heatmap } = report
+  const { sales, previousSales, entrega, heatmap } = report
 
   const rows: string[] = [
     'Relatório Forest Açaí',
@@ -83,15 +79,6 @@ export function buildSummaryCsv(report: Report): string {
     line(['Ticket médio (CHF)', decimal(sales.ticketMedio), decimal(previousSales.ticketMedio)]),
     line(['Gorjeta média (CHF)', decimal(sales.gorjetaMedia), decimal(previousSales.gorjetaMedia)]),
     line(['Pedidos com gorjeta', sales.pedidosComGorjeta, previousSales.pedidosComGorjeta]),
-    '',
-
-    'Pagamento e conversão',
-    line(['Pedidos iniciados', conversion.criados]),
-    line(['Pedidos pagos', conversion.pagos]),
-    line(['Carrinhos abandonados', conversion.abandonados]),
-    line(['Valor abandonado (CHF)', decimal(conversion.valorAbandonado)]),
-    line(['Falhas de pagamento', conversion.falhas]),
-    line(['Taxa de conversão', percent(conversion.taxaConversao)]),
     '',
 
     'Operação',
@@ -144,12 +131,13 @@ export function buildSummaryCsv(report: Report): string {
 }
 
 /**
- * Planilha detalhada: uma linha por pedido, com os itens resumidos numa
- * coluna. É a que a contabilidade concilia contra o extrato da SumUp, então
- * inclui também os não pagos — um pedido cancelado precisa aparecer como
- * cancelado, e não sumir.
+ * Planilha detalhada: uma linha por pedido pago, com os itens resumidos numa
+ * coluna. É a que a contabilidade concilia contra o extrato da SumUp, e lá só
+ * existe o que foi cobrado — carrinho abandonado e cartão recusado não têm
+ * transação do outro lado para bater.
  */
-export function buildOrdersCsv(orders: ReportOrder[]): string {
+export function buildOrdersCsv(allOrders: ReportOrder[]): string {
+  const orders = allOrders.filter(isPaid)
   const header = line([
     'Pedido',
     'Data',
@@ -189,7 +177,7 @@ export function buildOrdersCsv(orders: ReportOrder[]): string {
       decimal(total - gorjeta),
       decimal(gorjeta),
       decimal(total),
-      order.forma_pagamento ?? (isPaid(order) ? 'Não informado' : ''),
+      order.forma_pagamento ?? 'Não informado',
       paidAt ? paidAt.toLocaleString('pt-BR') : '',
       deliveredAt ? deliveredAt.toLocaleString('pt-BR') : '',
       Number.isFinite(prepSeconds) ? formatDuration(prepSeconds) : '',
@@ -200,7 +188,8 @@ export function buildOrdersCsv(orders: ReportOrder[]): string {
 }
 
 /** Planilha com uma linha por item vendido — a base para conferir margem. */
-export function buildItemsCsv(orders: ReportOrder[]): string {
+export function buildItemsCsv(allOrders: ReportOrder[]): string {
+  const orders = allOrders.filter(isPaid)
   const header = line([
     'Pedido',
     'Data',
