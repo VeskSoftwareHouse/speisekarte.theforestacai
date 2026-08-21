@@ -118,6 +118,18 @@ alter table orders add column if not exists valor_pago numeric(10,2);
 alter table orders add column if not exists nome_cliente text;
 alter table orders add column if not exists gorjeta numeric(10,2) not null default 0;
 
+-- Relatórios: como o pedido foi pago (o que a SumUp reporta na transação, ex:
+-- 'Cartão sem contato', 'Cartão (chip)'). Preenchido por
+-- api/sumup-confirm-payment.ts quando o pagamento é confirmado; null nos
+-- pedidos antigos e quando a SumUp não informa.
+alter table orders add column if not exists forma_pagamento text;
+
+-- Relatórios: marcos de tempo do pedido. `atualizado_em` sozinho não serve
+-- porque muda a cada avanço de status; estas duas colunas congelam o instante
+-- do pagamento e o da entrega, que é de onde sai o tempo médio de preparo.
+alter table orders add column if not exists pago_em timestamptz;
+alter table orders add column if not exists entregue_em timestamptz;
+
 -- removido: seleção de mesa. Pedidos passaram a identificar o cliente só
 -- pelo nome (nome_cliente); dropa a coluna e a tabela de mesas em bancos
 -- que já existiam antes dessa mudança (drop da coluna primeiro, pra tirar
@@ -133,6 +145,17 @@ create or replace function set_atualizado_em()
 returns trigger as $$
 begin
   new.atualizado_em = now();
+  -- Marcos usados nos relatórios (ver colunas pago_em/entregue_em acima).
+  -- Só grava na primeira vez que o pedido entra no status, para que uma
+  -- correção manual de status depois não reescreva o horário real.
+  if new.status <> old.status then
+    if new.status = 'recebido' and new.pago_em is null then
+      new.pago_em = now();
+    end if;
+    if new.status = 'entregue' and new.entregue_em is null then
+      new.entregue_em = now();
+    end if;
+  end if;
   return new;
 end;
 $$ language plpgsql;
@@ -157,6 +180,21 @@ create table if not exists order_items (
 );
 
 create index if not exists idx_order_items_order on order_items(order_id);
+
+-- ---------------------------------------------------------------------
+-- Backfill dos marcos de tempo em pedidos anteriores às colunas
+-- pago_em/entregue_em. Não temos o horário exato: aproximamos a entrega
+-- pelo último `atualizado_em` e o pagamento pela criação do pedido. Só
+-- preenche linhas ainda nulas, então roda uma vez e nunca mais mexe.
+-- ---------------------------------------------------------------------
+update orders set entregue_em = atualizado_em where status = 'entregue' and entregue_em is null;
+update orders set pago_em = criado_em
+  where status in ('recebido', 'em_preparo', 'pronto', 'entregue') and pago_em is null;
+
+-- Relatórios varrem períodos inteiros de qualquer status (inclusive
+-- aguardando_pagamento e cancelado, que viram carrinho abandonado e falha
+-- de pagamento), então a varredura por data precisa ser indexada.
+create index if not exists idx_orders_criado_em_status on orders(criado_em, status);
 
 -- =====================================================================
 -- Row Level Security — protótipo sem autenticação: acesso público via

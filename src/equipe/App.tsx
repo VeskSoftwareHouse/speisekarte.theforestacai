@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { LogOut, UtensilsCrossed } from 'lucide-react'
+import { ChartColumn, LogOut, UtensilsCrossed } from 'lucide-react'
 import type { OrderStatus, OrderWithItems } from '@shared/types'
 import { useOrders } from './hooks/useOrders'
 import { useAuth } from './hooks/useAuth'
@@ -7,6 +7,7 @@ import OrderCard from './components/OrderCard'
 import DateStrip from './components/DateStrip'
 import MenuManager from './components/MenuManager'
 import LoginScreen from './components/LoginScreen'
+import ReportsPanel from './components/ReportsPanel'
 import { isoToDateKey, toDateKey } from './dateUtils'
 
 const COLUMNS: { status: OrderStatus; label: string }[] = [
@@ -15,7 +16,7 @@ const COLUMNS: { status: OrderStatus; label: string }[] = [
   { status: 'pronto', label: 'Pronto' },
 ]
 
-type View = 'board' | 'history' | 'menu'
+type View = 'board' | 'history' | 'menu' | 'reports'
 
 export default function App() {
   const { orders, loading, error, newOrderIds, markSeen, advanceStatus } = useOrders()
@@ -55,6 +56,9 @@ export default function App() {
   }, [ordersForDay])
 
   const activeCount = ordersForDay.length - byStatus.entregue.length
+  // Cardápio e relatórios trazem a própria navegação de período; só as duas
+  // telas de pedido usam o calendário e a carga do quadro.
+  const showOrders = view === 'board' || view === 'history'
 
   if (authLoading) {
     return (
@@ -80,6 +84,13 @@ export default function App() {
         </div>
         <nav className="brand-banner__nav">
           <button
+            className={`btn btn-outline btn-outline--dark ${view === 'reports' ? 'btn-outline--dark-active' : ''}`}
+            onClick={() => setView((v) => (v === 'reports' ? 'board' : 'reports'))}
+          >
+            <ChartColumn size={16} strokeWidth={2} aria-hidden />
+            Relatórios
+          </button>
+          <button
             className={`btn btn-outline btn-outline--dark ${view === 'menu' ? 'btn-outline--dark-active' : ''}`}
             onClick={() => setView((v) => (v === 'menu' ? 'board' : 'menu'))}
           >
@@ -103,14 +114,16 @@ export default function App() {
         />
       </header>
 
-      {view !== 'menu' && (
+      {showOrders && (
         <DateStrip selectedDateKey={selectedDateKey} onSelect={setSelectedDateKey} orderCountByDate={orderCountByDate} />
       )}
 
       {view === 'menu' && <MenuManager accessToken={session.access_token} currentUserId={user!.id} />}
 
-      {view !== 'menu' && error && <p className="equipe-app__error">Erro ao carregar pedidos: {error}</p>}
-      {view !== 'menu' && loading && <p className="equipe-app__status">Carregando pedidos…</p>}
+      {view === 'reports' && <ReportsPanel />}
+
+      {showOrders && error && <p className="equipe-app__error">Erro ao carregar pedidos: {error}</p>}
+      {showOrders && loading && <p className="equipe-app__status">Carregando pedidos…</p>}
 
       {!loading && view === 'history' && (
         <main className="history-list">

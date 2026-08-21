@@ -100,5 +100,39 @@ select verificacao, situacao, detalhe from (
        (select count(*) from menu_items where descricao like '%—%' or descricao_i18n::text like '%—%'),
        ' produto(s) ainda com travessão'))
 
+  union all
+
+  -- Relatórios: forma de pagamento gravada no pedido
+  select 8,
+    'orders.forma_pagamento',
+    case when exists (
+      select 1 from information_schema.columns
+      where table_schema = 'public' and table_name = 'orders' and column_name = 'forma_pagamento'
+    ) then 'OK' else 'FALTA' end,
+    'faturamento por forma de pagamento nos relatórios'
+
+  union all
+
+  -- Relatórios: marcos de tempo (pagamento e entrega)
+  select 9,
+    'orders.pago_em / entregue_em',
+    case when (
+      select count(*) from information_schema.columns
+      where table_schema = 'public' and table_name = 'orders'
+        and column_name in ('pago_em', 'entregue_em')
+    ) = 2 then 'OK' else 'FALTA' end,
+    'tempo médio entre pagamento e entrega'
+
+  union all
+
+  -- Relatórios: o gatilho precisa carimbar os marcos a cada troca de status
+  select 10,
+    'gatilho carimba os marcos',
+    case when exists (
+      select 1 from pg_proc
+      where proname = 'set_atualizado_em' and prosrc like '%entregue_em%'
+    ) then 'OK' else 'FALTA' end,
+    'set_atualizado_em() preenche pago_em/entregue_em'
+
 ) checks
 order by ord;

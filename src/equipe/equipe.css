@@ -1164,3 +1164,508 @@ body {
   color: var(--color-text-muted);
 }
 
+
+/* =====================================================================
+   Relatórios — mesma linguagem visual da gestão de cardápio: cartões
+   claros, tipografia de display nos números e ouro só nos destaques.
+   ===================================================================== */
+.reports {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-5) var(--space-7);
+  font-family: var(--font-ui);
+}
+.reports > * {
+  max-width: 1360px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.reports__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  justify-content: space-between;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.reports__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 4px;
+}
+.reports__preset {
+  min-height: 36px;
+  padding: 0 var(--space-4);
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.reports__preset--active {
+  background: var(--color-ink);
+  color: #fff;
+}
+
+.reports__custom {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+.reports__custom label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.reports__custom input {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.reports__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.reports__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.reports__action:hover:not(:disabled),
+.reports__action:active:not(:disabled) {
+  color: var(--color-ink);
+  border-color: var(--color-gold);
+}
+
+.reports__period {
+  margin: var(--space-4) auto 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.15rem;
+  color: var(--color-ink);
+}
+.reports__period span {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.reports__section {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+.reports__section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-5);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.3rem;
+  color: var(--color-ink);
+}
+.reports__section-title svg {
+  color: var(--color-gold);
+}
+.reports__subtitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: var(--space-6) 0 var(--space-3);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.reports__subtitle svg {
+  color: var(--color-gold);
+}
+
+.reports__columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .reports__columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.reports__note {
+  margin-top: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.reports__note strong {
+  color: var(--color-ink);
+}
+.reports__caption {
+  margin: var(--space-2) 0 0;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+.report-empty {
+  margin: 0;
+  padding: var(--space-5);
+  border: 1px dashed var(--color-border);
+  border-radius: 10px;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+/* --- Cartões de indicador --- */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+}
+.kpi-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+}
+.kpi-card__label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.kpi-card__value {
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.75rem;
+  line-height: 1.1;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+.kpi-card__delta {
+  margin: var(--space-2) 0 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-card__delta span {
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+.kpi-card__delta--up {
+  color: var(--color-success);
+}
+.kpi-card__delta--down {
+  color: var(--color-danger);
+}
+.kpi-card__delta--flat {
+  color: var(--color-text-muted);
+}
+.kpi-card__hint {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+/* --- Ranking em barras --- */
+.report-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.report-bar__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: 0.9rem;
+}
+.report-bar__position {
+  flex: 0 0 auto;
+  width: 2ch;
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.report-bar__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.report-bar__value {
+  flex: 0 0 auto;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  font-variant-numeric: tabular-nums;
+}
+.report-bar__track {
+  margin-top: 5px;
+  margin-left: calc(2ch + var(--space-2));
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+.report-bar__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
+}
+.report-bar__hint {
+  margin: 3px 0 0 calc(2ch + var(--space-2));
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Tabela comparativa --- */
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+  font-size: 0.9rem;
+}
+.report-table th {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.report-table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  font-variant-numeric: tabular-nums;
+}
+.report-table tr:last-child td {
+  border-bottom: none;
+}
+.report-table td:first-child {
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.report-table__delta {
+  font-weight: 700;
+}
+.report-table__delta--up {
+  color: var(--color-success);
+}
+.report-table__delta--down {
+  color: var(--color-danger);
+}
+.report-table__delta--flat {
+  color: var(--color-text-muted);
+}
+
+/* --- Mapa de calor (hora x dia da semana) --- */
+.report-heatmap {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: var(--space-4);
+  overflow-x: auto;
+}
+.report-heatmap__grid {
+  display: grid;
+  gap: 3px;
+  min-width: 520px;
+  align-items: center;
+}
+.report-heatmap__corner {
+  display: block;
+}
+.report-heatmap__hour,
+.report-heatmap__weekday {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.report-heatmap__weekday {
+  text-align: right;
+  padding-right: var(--space-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.report-heatmap__cell {
+  position: relative;
+  height: 30px;
+  border-radius: 6px;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: transparent;
+  font-variant-numeric: tabular-nums;
+}
+.report-heatmap__cell--on {
+  /* A intensidade vem do inline `--heat`, calculado no componente. */
+  background: color-mix(in srgb, var(--color-primary) calc(var(--heat) * 100%), var(--color-bg));
+  color: #fff;
+}
+.report-heatmap__legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+.report-heatmap__scale {
+  display: inline-flex;
+  gap: 3px;
+}
+.report-heatmap__scale i {
+  width: 18px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--color-primary);
+}
+
+/* --- Gráfico de tendência --- */
+.report-trend {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: var(--space-4);
+}
+.report-trend__svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.report-trend__grid {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+.report-trend__axis {
+  fill: var(--color-text-muted);
+  font-size: 11px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+}
+.report-trend__area {
+  fill: var(--color-primary);
+  opacity: 0.12;
+}
+.report-trend__line {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.report-trend__dot {
+  fill: var(--color-surface);
+  stroke: var(--color-primary);
+  stroke-width: 2.5;
+}
+
+/* --- Impressão: é assim que sai o PDF do relatório --- */
+@media print {
+  html, body, #root {
+    overflow: visible;
+    height: auto;
+  }
+  .equipe-app {
+    display: block;
+    height: auto;
+  }
+  .brand-banner__nav,
+  .realtime-dot,
+  .reports__toolbar {
+    display: none !important;
+  }
+  .brand-banner {
+    position: static;
+    background: none;
+    color: var(--color-ink);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .equipe-app .brand-banner__eyebrow,
+  .brand-banner__value {
+    color: var(--color-ink);
+  }
+  .reports {
+    overflow: visible;
+    padding: 0;
+  }
+  .reports__section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .kpi-card,
+  .report-heatmap,
+  .report-trend,
+  .report-table {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .report-bar__fill,
+  .report-heatmap__cell--on,
+  .report-trend__area {
+    /* Sem isto o Chrome imprime as barras em branco. */
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

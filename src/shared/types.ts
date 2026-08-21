@@ -78,6 +78,22 @@ export interface Order {
   valor_pago: number | null
   nome_cliente: string | null
   gorjeta: number
+  /** Como a SumUp reportou o pagamento, ex: "Cartão sem contato · VISA". null = pedido antigo ou não informado. */
+  forma_pagamento: string | null
+  /** Instante em que o pagamento foi confirmado (status virou "recebido"). */
+  pago_em: string | null
+  /** Instante em que o pedido foi entregue. Com `pago_em`, dá o tempo de preparo. */
+  entregue_em: string | null
+}
+
+/**
+ * Pedido como os relatórios enxergam: qualquer status, inclusive os dois que
+ * nunca chegam ao quadro da cozinha (`aguardando_pagamento` vira carrinho
+ * abandonado e `cancelado` vira falha de pagamento).
+ */
+export interface ReportOrder extends Omit<Order, 'status'> {
+  status: FullOrderStatus
+  items: OrderItem[]
 }
 
 /** Snapshot de uma opção de modifier escolhida, gravado dentro de order_items.modifiers_selecionados */

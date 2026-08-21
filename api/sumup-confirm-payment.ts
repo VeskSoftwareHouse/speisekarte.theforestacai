@@ -13,7 +13,7 @@ const sumupMerchantCode = process.env.SUMUP_MERCHANT_CODE
  * esta consulta, feita pelo `foreign_transaction_id` (= id do pedido) que
  * mandamos junto com a cobrança.
  */
-async function fetchTapTransactionStatus(orderId: string): Promise<string | null> {
+async function fetchTapTransaction(orderId: string): Promise<Record<string, any> | null> {
   const url =
     `https://api.sumup.com/v2.1/merchants/${encodeURIComponent(sumupMerchantCode as string)}` +
     `/transactions?foreign_transaction_id=${encodeURIComponent(orderId)}`
@@ -23,7 +23,53 @@ async function fetchTapTransactionStatus(orderId: string): Promise<string | null
   // A rota devolve o objeto direto quando encontra pela chave única, mas
   // aceita paginação em outros filtros — cobrimos os dois formatos.
   const tx = Array.isArray(txData) ? txData[0] : (txData?.items?.[0] ?? txData)
-  return typeof tx?.status === 'string' ? tx.status : null
+  return typeof tx?.status === 'string' ? tx : null
+}
+
+const ENTRY_MODE_LABEL: Record<string, string> = {
+  CONTACTLESS: 'Cartão sem contato',
+  CHIP: 'Cartão com chip',
+  MAGSTRIPE: 'Cartão com tarja',
+  MANUAL_ENTRY: 'Cartão digitado',
+  BOARDING: 'Cartão sem contato',
+}
+
+const PAYMENT_TYPE_LABEL: Record<string, string> = {
+  ECOM: 'Cartão online',
+  POS: 'Cartão na maquininha',
+  RECURRING: 'Cartão recorrente',
+  BOLETO: 'Boleto',
+  PIX: 'Pix',
+  IDEAL: 'iDEAL',
+  BANCONTACT: 'Bancontact',
+  BLIK: 'BLIK',
+  SOFORT: 'Sofort',
+  GOOGLE_PAY: 'Google Pay',
+  APPLE_PAY: 'Apple Pay',
+}
+
+/**
+ * Traduz o que a SumUp conta sobre a transação para o rótulo que aparece nos
+ * relatórios do Painel da Equipe ("Faturamento por forma de pagamento").
+ *
+ * A SumUp descreve o pagamento em três campos diferentes conforme o caminho
+ * (maquininha, checkout hospedado, carteira digital), e às vezes dentro de
+ * `transactions[0]`. Tentamos do mais específico para o mais genérico e
+ * devolvemos null quando nada é reconhecido — melhor um pedido sem rótulo
+ * do que um rótulo errado no relatório.
+ */
+function describePaymentMethod(source: Record<string, any> | null | undefined): string | null {
+  if (!source) return null
+  const tx = source.transactions?.[0] ?? source
+
+  const entryMode = typeof tx.entry_mode === 'string' ? ENTRY_MODE_LABEL[tx.entry_mode] : null
+  const paymentType = typeof tx.payment_type === 'string' ? PAYMENT_TYPE_LABEL[tx.payment_type] : null
+  const base = entryMode ?? paymentType
+  if (!base) return null
+
+  // Bandeira do cartão, quando houver: "Cartão sem contato · VISA".
+  const brand = typeof tx.card?.type === 'string' ? tx.card.type : null
+  return brand ? `${base} · ${brand}` : base
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -58,10 +104,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   let paid = false
   let stillPending = false
+  let paymentMethod: string | null = null
 
   if (order.sumup_checkout_id) {
     // Checkout hospedado: o pedido guarda o id da cobrança, então consultamos direto.
     let sumupStatus: string | null = null
+    let lastCheckData: Record<string, any> | null = null
     for (let attempt = 0; attempt < 4; attempt++) {
       const checkRes = await fetch(`https://api.sumup.com/v0.1/checkouts/${order.sumup_checkout_id}`, {
         headers: { Authorization: `Bearer ${sumupApiKey}` },
@@ -71,12 +119,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         res.status(400).json({ error: checkData?.message ?? 'Não foi possível verificar o pagamento.' })
         return
       }
+      lastCheckData = checkData
       sumupStatus = checkData.status
       if (sumupStatus !== 'PENDING') break
       await new Promise((resolve) => setTimeout(resolve, 1200))
     }
     paid = sumupStatus === 'PAID'
     stillPending = sumupStatus === 'PENDING'
+    if (paid) paymentMethod = describePaymentMethod(lastCheckData)
   } else {
     // Tap to Pay: não há cobrança pré-criada, a transação nasce no app da SumUp.
     // Achamos ela pelo foreign_transaction_id que enviamos (= id do pedido).
@@ -84,13 +134,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.status(500).json({ error: 'Servidor não configurado (SUMUP_MERCHANT_CODE ausente).' })
       return
     }
+    let tx: Record<string, any> | null = null
     let txStatus: string | null = null
     for (let attempt = 0; attempt < 4; attempt++) {
-      txStatus = await fetchTapTransactionStatus(orderId)
+      tx = await fetchTapTransaction(orderId)
+      txStatus = typeof tx?.status === 'string' ? tx.status : null
       if (txStatus && txStatus !== 'PENDING') break
       await new Promise((resolve) => setTimeout(resolve, 1200))
     }
     paid = txStatus === 'SUCCESSFUL'
+    if (paid) paymentMethod = describePaymentMethod(tx)
     // `null` = transação ainda não apareceu na API (ou o cliente nem chegou a
     // aproximar o cartão). Nunca cancelamos por isso: um erro temporário na
     // consulta não pode derrubar um pedido que já foi pago.
@@ -98,7 +151,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (paid) {
-    await supabase.from('orders').update({ status: 'recebido' }).eq('id', orderId)
+    // `pago_em` é carimbado pelo gatilho do banco na troca de status.
+    await supabase
+      .from('orders')
+      .update({ status: 'recebido', forma_pagamento: paymentMethod })
+      .eq('id', orderId)
     res.status(200).json({ status: 'recebido' })
     return
   }

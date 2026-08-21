@@ -6,7 +6,9 @@ projeto:
 - **App da Mesa** (`/mesa/`) — cliente navega o cardápio e envia pedidos.
   **Instalável como PWA** ("Adicionar à tela inicial").
 - **App da Equipe** (`/equipe/`) — cozinha/atendimento recebe pedidos em
-  tempo real (quadro Kanban) e avança o status. Fica como página web comum,
+  tempo real (quadro Kanban), avança o status, gerencia o cardápio e vê os
+  **relatórios** (vendas, produtos, operação e conversão, com exportação em
+  CSV e impressão em PDF). Fica como página web comum,
   **não é instalável de propósito** — normalmente roda numa tela/tablet fixo
   da cozinha, então instalabilidade não agrega nada ali.
 
@@ -23,7 +25,7 @@ autenticação, pagamento ou modo offline nesta fase.
 ## 1. Configurar o Supabase
 
 1. Crie um projeto em [supabase.com](https://supabase.com).
-2. No **SQL Editor**, rode o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) — cria as tabelas, RLS e habilita Realtime em `orders`/`order_items`.
+2. No **SQL Editor**, rode o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) — cria as tabelas, RLS e habilita Realtime em `orders`/`order_items`. Rode de novo sempre que o schema mudar: o arquivo é idempotente. Para conferir o que já está aplicado sem alterar nada, rode [`supabase/check-schema.sql`](supabase/check-schema.sql).
 3. Rode o conteúdo de [`supabase/seed.sql`](supabase/seed.sql) — popula categorias, itens e modifiers de exemplo.
 4. Em **Settings → API**, copie a **Project URL** e a **anon/publishable key**.
 
@@ -80,6 +82,7 @@ public/mesa/                         manifest.webmanifest + ícones (só a Mesa 
 public/equipe/                       apenas ícone de favicon, sem manifest
 public/brand/                        logo e fotos de produto recortadas do cardápio impresso
 public/sw.js                         service worker, registrado só pelo App da Mesa
+src/equipe/reportMetrics.ts          contas dos relatórios (funções puras, sem React)
 supabase/schema.sql                  tabelas, RLS, realtime
 supabase/seed.sql                    cardápio real da Forest Açaí
 ```
