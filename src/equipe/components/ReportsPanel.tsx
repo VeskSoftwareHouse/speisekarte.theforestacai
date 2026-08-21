@@ -252,49 +252,6 @@ function ReportsBody() {
             <Block title="Faturamento mês a mês" hint={`Últimos ${TREND_MONTHS} meses, sem gorjeta`}>
               <ReportTrendChart points={report.tendencia} />
             </Block>
-
-            <div className="reports__pair">
-              <Block title="Como pagaram">
-                <ReportBarList
-                  rows={report.formasPagamento}
-                  metric="faturamento"
-                  unit="pedidos"
-                  empty="Nenhum pagamento confirmado no período."
-                />
-              </Block>
-
-              <Block title="Contra o período anterior" hint={periodLabel(report.previous)}>
-                <table className="report-table">
-                  <tbody>
-                    <ComparisonRow
-                      label="Entrou no caixa"
-                      current={sales.faturamentoBruto}
-                      previous={previousSales.faturamentoBruto}
-                      format={formatCHF}
-                    />
-                    <ComparisonRow
-                      label="Pedidos pagos"
-                      current={sales.pedidos}
-                      previous={previousSales.pedidos}
-                      format={String}
-                    />
-                    <ComparisonRow
-                      label="Ticket médio"
-                      current={sales.ticketMedio}
-                      previous={previousSales.ticketMedio}
-                      format={formatCHF}
-                    />
-                    <ComparisonRow
-                      label="Quem começou, pagou"
-                      current={conversion.taxaConversao}
-                      previous={report.previousConversion.taxaConversao}
-                      format={(v) => formatPercent(v, 0)}
-                      unit="pp"
-                    />
-                  </tbody>
-                </table>
-              </Block>
-            </div>
           </Section>
 
           <Section title="Cardápio" hint="O que sai, o que encalha e onde está a margem.">
@@ -482,50 +439,6 @@ function Delta({ value, text, small = false }: { value: number | null; text?: st
     <span className={`delta delta--${direction} ${small ? 'delta--small' : ''}`}>
       {arrow} {text ?? formatVariation(value).replace(/^[+−]/, '')}
     </span>
-  )
-}
-
-function ComparisonRow({
-  label,
-  current,
-  previous,
-  format,
-  unit,
-}: {
-  label: string
-  current: number
-  previous: number
-  format: (value: number) => string
-  /** `pp`: a linha é uma taxa, então a diferença vai em pontos percentuais. */
-  unit?: 'pp'
-}) {
-  const points = current - previous
-  const tooltip = useTooltipBody()
-  // "CHF 1.046,90 a mais" em vez de "+ CHF 1.046,90": o sinal colado no
-  // símbolo da moeda tropeça na leitura, e aqui sobra espaço para dizer.
-  const size =
-    unit === 'pp'
-      ? `${Math.abs(points * 100).toFixed(1).replace('.', ',')} pontos`
-      : format(Math.abs(points))
-  return (
-    <tr
-      {...tooltip(label, [
-        `Agora: ${format(current)}`,
-        `Antes: ${format(previous)}`,
-        points === 0 ? 'Sem diferença entre os períodos' : `${size} a ${points > 0 ? 'mais' : 'menos'}`,
-      ])}
-    >
-      <th scope="row">{label}</th>
-      <td className="report-table__was">{format(previous)}</td>
-      <td className="report-table__now">{format(current)}</td>
-      <td>
-        {unit === 'pp' ? (
-          <Delta value={points} text={`${Math.abs(points * 100).toFixed(0)} p.p.`} small />
-        ) : (
-          <Delta value={variation(current, previous)} small />
-        )}
-      </td>
-    </tr>
   )
 }
 

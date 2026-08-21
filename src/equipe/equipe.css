@@ -1586,43 +1586,6 @@ body {
   background: var(--color-gold);
 }
 
-/* --- Comparativo: antes, agora, variação --- */
-.report-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-.report-table th,
-.report-table td {
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--color-border);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-.report-table tr:last-child th,
-.report-table tr:last-child td {
-  border-bottom: none;
-}
-.report-table th {
-  text-align: left;
-  font-weight: 600;
-  color: var(--color-text-muted);
-}
-.report-table__was {
-  color: var(--color-text-muted);
-  text-decoration: line-through;
-  text-decoration-color: var(--color-border);
-}
-.report-table__now {
-  font-weight: 700;
-  color: var(--color-ink);
-  padding-left: var(--space-4);
-}
-.report-table td:last-child {
-  width: 1%;
-  padding-left: var(--space-3);
-}
-
 /* --- Mapa de calor (hora x dia da semana) --- */
 .report-heatmap {
   background: var(--color-surface);
@@ -1832,22 +1795,6 @@ body {
 }
 .reports__hero-line:hover {
   background: var(--color-bg);
-}
-
-.report-table tbody tr {
-  transition: background 0.12s ease;
-}
-.report-table tbody tr:hover {
-  background: var(--color-bg);
-}
-/* A linha inteira acende, então as bordas precisam vazar para as laterais. */
-.report-table th:first-child {
-  border-radius: 8px 0 0 8px;
-  padding-left: var(--space-2);
-}
-.report-table td:last-child {
-  border-radius: 0 8px 8px 0;
-  padding-right: var(--space-2);
 }
 
 .report-heatmap__cell {
