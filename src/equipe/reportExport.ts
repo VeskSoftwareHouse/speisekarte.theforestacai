@@ -113,12 +113,14 @@ export function buildSummaryCsv(report: Report): string {
     )
   }
 
-  rows.push(...rankSection('Faturamento por categoria', report.categorias, 'Categoria', 'itens'))
+  const categoriasPorFaturamento = [...report.categorias].sort((a, b) => b.faturamento - a.faturamento)
+  rows.push(...rankSection('Faturamento por categoria', categoriasPorFaturamento, 'Categoria', 'itens'))
   rows.push(...rankSection('Adicionais mais pedidos', report.adicionais, 'Adicional', 'vezes'))
   rows.push(...rankSection('Tamanhos mais pedidos', report.tamanhos, 'Tamanho', 'itens'))
   rows.push(...rankSection('Montagem customizada vs opção pronta', report.montagem, 'Tipo', 'itens'))
+  const pagamentosPorFaturamento = [...report.formasPagamento].sort((a, b) => b.faturamento - a.faturamento)
   rows.push(
-    ...rankSection('Faturamento por forma de pagamento', report.formasPagamento, 'Forma de pagamento', 'pedidos'),
+    ...rankSection('Faturamento por forma de pagamento', pagamentosPorFaturamento, 'Forma de pagamento', 'pedidos'),
   )
 
   rows.push('Movimento por dia da semana', line(['Dia', 'Pedidos', 'Faturamento (CHF)']))

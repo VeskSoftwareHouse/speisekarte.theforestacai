@@ -23,6 +23,9 @@ import { TooltipProvider, useTooltipBody } from './ReportTooltip'
 
 const WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
+/** Quantos produtos entram em "o que mais sai" — o resto é candidato a encalhe. */
+const TOP_ITENS = 6
+
 /**
  * Relatórios do Painel da Equipe.
  *
@@ -90,10 +93,24 @@ function ReportsBody() {
   // nos pagos, eles ganham um ranking próprio, por receita.
   const adicionaisPagos = useMemo(() => report.adicionais.filter((row) => row.faturamento > 0), [report.adicionais])
 
-  // Com poucos produtos vendidos, um top 8 e um "bottom 8" mostrariam o mesmo
-  // item nas duas listas — e nada confunde mais do que ver o Couple entre os
-  // mais e entre os menos vendidos. Cada lista fica com metade do ranking.
-  const rankLimit = Math.max(1, Math.min(8, Math.floor(report.itens.length / 2)))
+  /**
+   * Uma lista só para a pergunta "o que tirar do cardápio": quem não vendeu
+   * nada primeiro, depois quem vendeu pouco. Antes eram duas — a cauda do
+   * ranking e, num quadro à parte, os produtos com zero venda, que são
+   * justamente os candidatos mais óbvios.
+   */
+  const encalhados: RankRow[] = useMemo(() => {
+    // Os campeões saem daqui: com poucos produtos vendidos, as duas listas se
+    // encontrariam no meio e o mesmo item apareceria como campeão e encalhado.
+    const campeoes = new Set(report.itens.slice(0, TOP_ITENS).map((row) => row.key))
+    return [
+      ...report.naoVendidos.map((item) => ({ key: item.id, label: item.nome, quantidade: 0, faturamento: 0 })),
+      ...report.itens.filter((row) => !campeoes.has(row.key)),
+    ]
+  }, [report.naoVendidos, report.itens])
+
+  const totalCategorias = report.categorias.reduce((sum, row) => sum + row.faturamento, 0)
+  const receitaAdicionais = adicionaisPagos.reduce((sum, row) => sum + row.faturamento, 0)
 
   const tipShare = sales.pedidos ? sales.pedidosComGorjeta / sales.pedidos : 0
   // "8 de cada 10" cola na cabeça de um jeito que "80,5%" não cola.
@@ -282,27 +299,30 @@ function ReportsBody() {
 
           <Section title="Cardápio" hint="O que sai, o que encalha e onde está a margem.">
             <div className="reports__pair">
-              <Block title="Mais vendidos" hint="Em itens — um pedido pode levar vários">
-                <ReportBarList rows={report.itens} limit={rankLimit} />
+              <Block title="O que mais sai" hint="Por unidades vendidas — um pedido pode levar vários itens">
+                <ReportBarList rows={report.itens} limit={TOP_ITENS} />
               </Block>
-              <Block title="Menos vendidos" hint="Do que menos sai para o que sai um pouco mais">
-                <ReportBarList rows={report.itens} limit={rankLimit} fromBottom />
-                {report.naoVendidos.length > 0 && (
-                  <p className="reports__note">
-                    <strong>Sem nenhuma venda no período:</strong>{' '}
-                    {report.naoVendidos.map((item) => item.nome).join(', ')}. Estão disponíveis no cardápio e ninguém
-                    pediu.
-                  </p>
-                )}
+              <Block title="O que está encalhando" hint="Candidatos a sair do cardápio ou a entrar em promoção">
+                {/* Os que não venderam nada abrem a lista, com a barra zerada e
+                    "nenhuma venda" escrito — antes viviam num quadro à parte,
+                    embaixo, sendo eles os candidatos mais óbvios de todos. */}
+                <ReportBarList
+                  rows={encalhados}
+                  reference={report.itens}
+                  limit={TOP_ITENS}
+                  tone="low"
+                  order="asc"
+                  empty="Todo produto disponível vendeu no período."
+                />
               </Block>
             </div>
 
-            <Block title="Faturamento por categoria">
+            <Block title="De onde vem o faturamento" hint={`${formatCHF(totalCategorias)} no período, por categoria`}>
               <ReportBarList rows={report.categorias} metric="faturamento" />
             </Block>
 
             <div className="reports__pair">
-              <Block title="Adicionais mais pedidos" hint="Os grátis também contam, e são os que mais saem">
+              <Block title="Adicionais mais escolhidos" hint="Quantas vezes cada um entrou num pedido">
                 <ReportBarList
                   rows={report.adicionais}
                   unit="vezes"
@@ -310,7 +330,10 @@ function ReportsBody() {
                   empty="Nenhum adicional escolhido no período."
                 />
               </Block>
-              <Block title="Adicionais que dão margem" hint="Só o que o adicional acrescentou ao preço">
+              <Block
+                title="Adicionais que dão margem"
+                hint={`${formatCHF(receitaAdicionais)} no período — só o que o adicional acrescentou ao preço`}
+              >
                 <ReportBarList
                   rows={adicionaisPagos}
                   metric="faturamento"
@@ -321,10 +344,10 @@ function ReportsBody() {
             </div>
 
             <div className="reports__pair">
-              <Block title="Tamanhos">
+              <Block title="Tamanhos" hint="Só os sucos têm escolha de tamanho no cardápio">
                 <ReportBarList rows={report.tamanhos} empty="Nenhum tamanho registrado no período." />
               </Block>
-              <Block title="Montagem customizada vale a pena?" hint="Montados pelo cliente contra opções prontas">
+              <Block title="Vale manter a montagem customizada?" hint="Itens montados pelo cliente contra opções prontas">
                 <ReportBarList rows={report.montagem} empty="Sem itens vendidos no período." />
               </Block>
             </div>

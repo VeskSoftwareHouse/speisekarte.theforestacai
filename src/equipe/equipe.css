@@ -1536,23 +1536,45 @@ body {
   font-weight: 600;
   color: var(--color-ink);
 }
-.report-bar__aside {
+/* Os dois números andam juntos, na ordem em que se lê: o que a barra mede
+   primeiro, o outro logo atrás e apagado. Separados em colunas distantes, eles
+   pareciam duas medidas concorrentes sem cabeçalho dizendo qual era qual. */
+.report-bar__figures {
   flex: 0 0 auto;
-  font-size: 0.78rem;
-  color: var(--color-text-muted);
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
   font-variant-numeric: tabular-nums;
 }
-.report-bar__value {
-  flex: 0 0 auto;
+.report-bar__figures b {
   font-weight: 700;
   color: var(--color-ink);
-  font-variant-numeric: tabular-nums;
+}
+.report-bar__figures span {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+.report-bar__scale {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 .report-bar__track {
+  flex: 1;
+  min-width: 0;
   height: 6px;
   border-radius: 999px;
   background: var(--color-border);
   overflow: hidden;
+}
+.report-bar__share {
+  flex: 0 0 auto;
+  width: 4ch;
+  text-align: right;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
 }
 .report-bar__fill {
   height: 100%;
@@ -1789,7 +1811,8 @@ body {
 .report-bar:hover .report-bar__fill {
   filter: brightness(1.08);
 }
-.report-bar:hover .report-bar__aside {
+.report-bar:hover .report-bar__figures span,
+.report-bar:hover .report-bar__share {
   color: var(--color-ink);
 }
 
