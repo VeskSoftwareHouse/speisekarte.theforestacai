@@ -108,19 +108,22 @@ export default function App() {
             }
           />
 
-          {error && <p className="equipe-app__error">Erro ao carregar pedidos: {error}</p>}
-          {loading && <p className="equipe-app__status">Carregando pedidos…</p>}
+          <div className="loading-rail">{loading && <span className="loading-rail__bar" aria-hidden />}</div>
 
-          {!loading && showDelivered && (
+          {error && <p className="equipe-app__error">Erro ao carregar pedidos: {error}</p>}
+
+          {showDelivered && (
             <main className="history-list">
-              {deliveredCount === 0 && <p className="equipe-app__status">Nenhum pedido entregue neste dia.</p>}
+              {!loading && deliveredCount === 0 && (
+                <p className="equipe-app__status">Nenhum pedido entregue neste dia.</p>
+              )}
               {byStatus.entregue.map((order) => (
                 <OrderCard key={order.id} order={order} isNew={false} now={now} onAdvance={advanceStatus} onSeen={markSeen} />
               ))}
             </main>
           )}
 
-          {!loading && !showDelivered && (
+          {!showDelivered && (
             <main className="kanban">
               {COLUMNS.map((col) => (
                 <section key={col.status} className="kanban-column">
@@ -129,7 +132,9 @@ export default function App() {
                     <span className="kanban-column__count">{byStatus[col.status].length}</span>
                   </header>
                   <div className="kanban-column__body">
-                    {byStatus[col.status].length === 0 && <p className="kanban-column__empty">Nenhum pedido</p>}
+                    {!loading && byStatus[col.status].length === 0 && (
+                      <p className="kanban-column__empty">Nenhum pedido</p>
+                    )}
                     {byStatus[col.status].map((order) => (
                       <OrderCard
                         key={order.id}

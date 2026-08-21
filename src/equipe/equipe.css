@@ -276,6 +276,42 @@ body {
   background: #fff;
 }
 
+/* --- Fio de progresso ---
+   Mora na borda de baixo do calendário, com altura zero no fluxo: aparecer e
+   sumir não empurra o quadro um pixel sequer. --- */
+.loading-rail {
+  position: relative;
+  flex: 0 0 auto;
+  height: 0;
+  z-index: 5;
+}
+.loading-rail__bar {
+  position: absolute;
+  top: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  overflow: hidden;
+  background: var(--color-border);
+}
+.loading-rail__bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 35%;
+  background: var(--color-primary);
+  animation: loading-rail-slide 0.9s ease-in-out infinite;
+}
+@keyframes loading-rail-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
 /* --- Em andamento / Entregues --- */
 .orders-switch {
   display: flex;
