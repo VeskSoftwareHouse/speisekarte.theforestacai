@@ -111,7 +111,11 @@ export function useReports(period: Period): ReportData {
             .range(from, to),
         ),
         fetchPaged<ReportMenuItem>((from, to) =>
-          supabase.from('menu_items').select('id, nome, categoria_id, max_ingredientes').order('ordem').range(from, to),
+          supabase
+            .from('menu_items')
+            .select('id, nome, categoria_id, max_ingredientes, disponivel')
+            .order('ordem')
+            .range(from, to),
         ),
         fetchPaged<ReportCategory>((from, to) =>
           supabase.from('categories').select('id, nome').order('ordem').range(from, to),

@@ -86,6 +86,14 @@ export default function ReportsPanel() {
 
   const tipShare = sales.pedidos ? sales.pedidosComGorjeta / sales.pedidos : 0
 
+  // O cardápio tem muito mais adicional grátis do que pago, e por quantidade os
+  // grátis empurram os pagos para fora da lista. Como a margem está justamente
+  // nos pagos, eles ganham um ranking próprio, por receita.
+  const adicionaisPagos = useMemo(
+    () => report.adicionais.filter((row) => row.faturamento > 0),
+    [report.adicionais],
+  )
+
   return (
     <div className="reports">
       <div className="reports__toolbar">
@@ -231,8 +239,15 @@ export default function ReportsPanel() {
               <div>
                 <h3 className="reports__subtitle">Adicionais mais pedidos</h3>
                 <ReportBarList rows={report.adicionais} limit={12} empty="Nenhum adicional escolhido no período." />
+
+                <h3 className="reports__subtitle">Adicionais pagos, por receita</h3>
+                <ReportBarList
+                  rows={adicionaisPagos}
+                  metric="faturamento"
+                  empty="Nenhum adicional pago escolhido no período."
+                />
                 <p className="reports__caption">
-                  O valor mostrado é só o que o adicional acrescentou ao preço do item.
+                  O valor é só o que o adicional acrescentou ao preço do item, não a linha inteira.
                 </p>
               </div>
               <div>

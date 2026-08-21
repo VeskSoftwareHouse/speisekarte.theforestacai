@@ -26,7 +26,7 @@ export function isPaid(order: { status: FullOrderStatus }): boolean {
 }
 
 /** Só o que o cálculo dos relatórios precisa saber de um produto do cardápio. */
-export type ReportMenuItem = Pick<MenuItem, 'id' | 'nome' | 'categoria_id' | 'max_ingredientes'>
+export type ReportMenuItem = Pick<MenuItem, 'id' | 'nome' | 'categoria_id' | 'max_ingredientes' | 'disponivel'>
 export type ReportCategory = Pick<Category, 'id' | 'nome'>
 
 /** Pedido "magro" usado só na tendência mensal, que não precisa dos itens. */
@@ -278,12 +278,16 @@ export function rankItems(orders: ReportOrder[]): RankRow[] {
  * Produtos do cardápio que não venderam nenhuma unidade no período. São os
  * candidatos reais a sair do cardápio — justamente por terem zero venda, não
  * aparecem em lugar nenhum do ranking.
+ *
+ * Só entram os que estão disponíveis: um produto desligado no painel não
+ * vendeu porque ninguém podia comprá-lo, e listá-lo aqui seria acusar o
+ * cardápio de um silêncio que a própria equipe pediu.
  */
 export function unsoldItems(sold: RankRow[], menuItems: ReportMenuItem[]): ReportMenuItem[] {
   const soldIds = new Set(sold.map((row) => row.key))
   const soldNames = new Set(sold.map((row) => row.label))
   return menuItems
-    .filter((item) => !soldIds.has(item.id) && !soldNames.has(item.nome))
+    .filter((item) => item.disponivel && !soldIds.has(item.id) && !soldNames.has(item.nome))
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
 }
 
