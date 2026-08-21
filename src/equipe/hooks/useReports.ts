@@ -4,16 +4,10 @@ import type { OrderItem, ReportOrder } from '@shared/types'
 import { addMonths, endOfDay, startOfMonth } from '../dateUtils'
 import type { Period, ReportCategory, ReportMenuItem, TrendOrder } from '../reportMetrics'
 import { previousPeriod } from '../reportMetrics'
+import { fetchPaged } from './fetchPaged'
 
 /** Quantos meses o gráfico de tendência mostra, sempre terminando no mês atual. */
 export const TREND_MONTHS = 12
-
-/**
- * PostgREST corta a resposta num teto de linhas (o padrão do Supabase é 1000).
- * Um mês cheio de pedidos passa disso, e um relatório truncado é pior do que
- * relatório nenhum — então lemos sempre em páginas até a última vir curta.
- */
-const PAGE_SIZE = 1000
 
 export interface ReportData {
   /** Pedidos do período escolhido, com os itens — a base de quase todo relatório. */
@@ -32,19 +26,6 @@ export interface ReportData {
 
 interface OrderRow extends Omit<ReportOrder, 'items'> {
   order_items?: OrderItem[]
-}
-
-async function fetchPaged<T>(
-  build: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
-): Promise<T[]> {
-  const all: T[] = []
-  for (let page = 0; ; page++) {
-    const { data, error } = await build(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
-    if (error) throw new Error(error.message)
-    const rows = data ?? []
-    all.push(...rows)
-    if (rows.length < PAGE_SIZE) return all
-  }
 }
 
 /**

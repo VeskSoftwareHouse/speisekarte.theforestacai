@@ -8,7 +8,7 @@ import DateStrip from './components/DateStrip'
 import MenuManager from './components/MenuManager'
 import LoginScreen from './components/LoginScreen'
 import ReportsPanel from './components/ReportsPanel'
-import { isoToDateKey, toDateKey } from './dateUtils'
+import { toDateKey, toMonthKey } from './dateUtils'
 
 const COLUMNS: { status: OrderStatus; label: string }[] = [
   { status: 'recebido', label: 'Recebido' },
@@ -19,30 +19,21 @@ const COLUMNS: { status: OrderStatus; label: string }[] = [
 type View = 'board' | 'history' | 'menu' | 'reports'
 
 export default function App() {
-  const { orders, loading, error, newOrderIds, markSeen, advanceStatus } = useOrders()
   const { session, user, loading: authLoading, signIn, signOut } = useAuth()
   const [now, setNow] = useState(new Date())
   const [view, setView] = useState<View>('board')
   const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(new Date()))
+  const [viewedMonthKey, setViewedMonthKey] = useState(() => toMonthKey(new Date()))
+
+  const { orders, orderCountByDate, loading, error, newOrderIds, markSeen, advanceStatus } = useOrders(
+    selectedDateKey,
+    viewedMonthKey,
+  )
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 15000)
     return () => clearInterval(id)
   }, [])
-
-  const orderCountByDate = useMemo(() => {
-    const map: Record<string, number> = {}
-    for (const order of orders) {
-      const key = isoToDateKey(order.criado_em)
-      map[key] = (map[key] ?? 0) + 1
-    }
-    return map
-  }, [orders])
-
-  const ordersForDay = useMemo(
-    () => orders.filter((o) => isoToDateKey(o.criado_em) === selectedDateKey),
-    [orders, selectedDateKey],
-  )
 
   const byStatus = useMemo(() => {
     const map: Record<OrderStatus, OrderWithItems[]> = {
@@ -51,11 +42,11 @@ export default function App() {
       pronto: [],
       entregue: [],
     }
-    for (const order of ordersForDay) map[order.status].push(order)
+    for (const order of orders) map[order.status].push(order)
     return map
-  }, [ordersForDay])
+  }, [orders])
 
-  const activeCount = ordersForDay.length - byStatus.entregue.length
+  const activeCount = orders.length - byStatus.entregue.length
   // Cardápio e relatórios trazem a própria navegação de período; só as duas
   // telas de pedido usam o calendário e a carga do quadro.
   const showOrders = view === 'board' || view === 'history'
@@ -115,7 +106,13 @@ export default function App() {
       </header>
 
       {showOrders && (
-        <DateStrip selectedDateKey={selectedDateKey} onSelect={setSelectedDateKey} orderCountByDate={orderCountByDate} />
+        <DateStrip
+          selectedDateKey={selectedDateKey}
+          onSelect={setSelectedDateKey}
+          monthKey={viewedMonthKey}
+          onMonthChange={setViewedMonthKey}
+          orderCountByDate={orderCountByDate}
+        />
       )}
 
       {view === 'menu' && <MenuManager accessToken={session.access_token} currentUserId={user!.id} />}

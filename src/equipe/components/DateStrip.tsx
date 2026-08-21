@@ -1,30 +1,33 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { daysInMonth, toDateKey, weekdayLabel } from '../dateUtils'
+import { daysInMonth, monthKeyToDate, toDateKey, toMonthKey, weekdayLabel } from '../dateUtils'
 
 interface Props {
   selectedDateKey: string
   onSelect: (key: string) => void
+  /** Mês aberto na faixa, ex: "2026-08". Vive no App porque é ele que busca as contagens desse mês. */
+  monthKey: string
+  onMonthChange: (key: string) => void
   orderCountByDate: Record<string, number>
 }
 
-export default function DateStrip({ selectedDateKey, onSelect, orderCountByDate }: Props) {
+export default function DateStrip({ selectedDateKey, onSelect, monthKey, onMonthChange, orderCountByDate }: Props) {
   const today = new Date()
   const todayKey = toDateKey(today)
 
-  const [viewedDate, setViewedDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1))
+  const viewedDate = monthKeyToDate(monthKey)
   const days = daysInMonth(viewedDate.getFullYear(), viewedDate.getMonth())
   const rawMonthLabel = viewedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
   const monthLabel = rawMonthLabel.charAt(0).toUpperCase() + rawMonthLabel.slice(1)
 
   function goToMonth(delta: number) {
-    setViewedDate((d) => new Date(d.getFullYear(), d.getMonth() + delta, 1))
+    onMonthChange(toMonthKey(new Date(viewedDate.getFullYear(), viewedDate.getMonth() + delta, 1)))
   }
 
   const selectedRef = useRef<HTMLButtonElement | null>(null)
   useEffect(() => {
     selectedRef.current?.scrollIntoView({ inline: 'center', block: 'nearest' })
-  }, [viewedDate])
+  }, [monthKey])
 
   return (
     <div className="date-strip">

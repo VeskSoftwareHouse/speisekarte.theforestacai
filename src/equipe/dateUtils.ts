@@ -59,6 +59,12 @@ export function toMonthKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
+/** Converte "2026-08" de volta no primeiro dia do mês, local. */
+export function monthKeyToDate(key: string): Date {
+  const [y, m] = key.split('-').map(Number)
+  return new Date(y, m - 1, 1)
+}
+
 /** Converte "2026-08-20" de volta em Date local (meia-noite). */
 export function dateKeyToDate(key: string): Date {
   const [y, m, d] = key.split('-').map(Number)
