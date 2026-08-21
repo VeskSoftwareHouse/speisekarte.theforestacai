@@ -19,6 +19,7 @@ import { buildItemsCsv, buildOrdersCsv, buildSummaryCsv, downloadCsv, reportFile
 import ReportBarList from './ReportBarList'
 import ReportHeatmap from './ReportHeatmap'
 import ReportTrendChart from './ReportTrendChart'
+import { TooltipProvider, useTooltipBody } from './ReportTooltip'
 
 const WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
@@ -35,6 +36,15 @@ const WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', '
  * eles significam alguma coisa.
  */
 export default function ReportsPanel() {
+  return (
+    <TooltipProvider>
+      <ReportsBody />
+    </TooltipProvider>
+  )
+}
+
+function ReportsBody() {
+  const tooltip = useTooltipBody()
   const [preset, setPreset] = useState<PeriodPresetId>('sete_dias')
   const [customStart, setCustomStart] = useState(() => toDateKey(addDays(new Date(), -6)))
   const [customEnd, setCustomEnd] = useState(() => toDateKey(new Date()))
@@ -158,7 +168,14 @@ export default function ReportsPanel() {
         <>
           <header className="reports__hero">
             <p className="reports__hero-label">Entrou no caixa · {periodLabel(period)}</p>
-            <div className="reports__hero-line">
+            <div
+              className="reports__hero-line"
+              {...tooltip('Entrou no caixa', [
+                `${formatCHF(sales.faturamentoLiquido)} em produtos`,
+                `${formatCHF(sales.gorjetas)} em gorjetas`,
+                `Período anterior: ${formatCHF(previousSales.faturamentoBruto)} em ${previousSales.pedidos} pedidos`,
+              ])}
+            >
               <strong>{formatCHF(sales.faturamentoBruto)}</strong>
               <Delta value={variation(sales.faturamentoBruto, previousSales.faturamentoBruto)} />
             </div>
@@ -175,22 +192,43 @@ export default function ReportsPanel() {
                 value={formatCHF(sales.faturamentoLiquido)}
                 delta={variation(sales.faturamentoLiquido, previousSales.faturamentoLiquido)}
                 hint="O número que vai para a contabilidade"
+                detail={[
+                  `${formatCHF(sales.faturamentoBruto)} entraram no caixa`,
+                  `menos ${formatCHF(sales.gorjetas)} de gorjeta`,
+                  `Período anterior: ${formatCHF(previousSales.faturamentoLiquido)}`,
+                ]}
               />
               <Stat
                 label="Gorjetas"
                 value={formatCHF(sales.gorjetas)}
                 delta={variation(sales.gorjetas, previousSales.gorjetas)}
                 hint={`${formatPercent(tipShare, 0)} dos pedidos deixaram algo`}
+                detail={[
+                  `${sales.pedidosComGorjeta} de ${sales.pedidos} pedidos deixaram gorjeta`,
+                  `${formatCHF(sales.gorjetaMedia)} por pedido, na média de todos`,
+                  `Período anterior: ${formatCHF(previousSales.gorjetas)}`,
+                ]}
               />
               <Stat
                 label="Quem começou, pagou"
                 value={`${conversionInTen} de cada 10`}
                 hint={`${conversion.pagos} pagos de ${conversion.criados} iniciados no totem`}
+                detail={[
+                  `Taxa exata: ${formatPercent(conversion.taxaConversao)}`,
+                  `${conversion.pagos} pagaram`,
+                  `${conversion.abandonados} saíram antes de pagar`,
+                  `${conversion.falhas} tiveram o cartão recusado pela SumUp`,
+                ]}
               />
               <Stat
                 label="Ficaram pelo caminho"
                 value={String(conversion.abandonados + conversion.falhas)}
                 hint={`${conversion.abandonados} desistiram de pagar · ${conversion.falhas} tiveram o cartão recusado`}
+                detail={[
+                  `${formatCHF(conversion.valorAbandonado)} estavam nos carrinhos abandonados`,
+                  'Pedido abandonado nunca chega à cozinha: fica parado no banco',
+                  `De ${conversion.criados} pedidos iniciados no período`,
+                ]}
               />
             </div>
 
@@ -298,21 +336,48 @@ export default function ReportsPanel() {
                 label="Do pagamento à entrega"
                 value={formatDuration(entrega.preparoMedioSegundos)}
                 hint={`Metade dos pedidos sai em até ${formatDuration(entrega.preparoMedianaSegundos)}`}
+                detail={[
+                  'Do pagamento confirmado até a equipe marcar como entregue',
+                  `Média de ${formatDuration(entrega.preparoMedioSegundos)}, mediana de ${formatDuration(
+                    entrega.preparoMedianaSegundos,
+                  )}`,
+                  `Só entram os ${entrega.amostra} pedidos já entregues`,
+                ]}
               />
               <Stat
                 label="Do totem à entrega"
                 value={formatDuration(entrega.totalMedioSegundos)}
                 hint={`Média de ${entrega.amostra} pedidos entregues`}
+                detail={[
+                  'Do primeiro toque no totem até a entrega',
+                  `${formatDuration(
+                    entrega.totalMedioSegundos - entrega.preparoMedioSegundos,
+                  )} disso é o cliente montando o pedido e pagando`,
+                ]}
               />
               <Stat
                 label="Hora mais cheia"
                 value={busiestHourLabel(heatmap.byHour)}
                 hint={`Pico de ${heatmap.max} pedidos numa hora só`}
+                detail={[
+                  `${Math.max(...heatmap.byHour)} pedidos nessa faixa, somando todos os dias do período`,
+                  `O dia mais cheio nessa hora teve ${heatmap.max}`,
+                  'O mapa de calor abaixo abre isso dia a dia',
+                ]}
               />
               <Stat
                 label="Dia mais cheio"
                 value={weekdayRows[0]?.label ?? '—'}
                 hint={weekdayRows[0] ? `${weekdayRows[0].quantidade} pedidos no período` : 'Sem pedidos no período'}
+                detail={
+                  weekdayRows[0]
+                    ? [
+                        `${weekdayRows[0].quantidade} pedidos`,
+                        `${formatCHF(weekdayRows[0].faturamento)} sem gorjeta`,
+                        weekdayRows[1] && `Depois vem ${weekdayRows[1].label}, com ${weekdayRows[1].quantidade}`,
+                      ]
+                    : ['Nenhum pedido pago no período']
+                }
               />
             </div>
 
@@ -354,9 +419,23 @@ function Block({ title, hint, children }: { title: string; hint?: string; childr
   )
 }
 
-function Stat({ label, value, delta, hint }: { label: string; value: string; delta?: number | null; hint?: string }) {
+function Stat({
+  label,
+  value,
+  delta,
+  hint,
+  detail,
+}: {
+  label: string
+  value: string
+  delta?: number | null
+  hint?: string
+  /** Linhas do balão de detalhe. O indicador continua legível sem elas. */
+  detail?: (string | false | undefined)[]
+}) {
+  const tooltip = useTooltipBody()
   return (
-    <div className="stat">
+    <div className="stat" {...(detail ? tooltip(label, detail.map((line) => line ?? false)) : {})}>
       <p className="stat__label">{label}</p>
       <p className="stat__value">
         {value}
@@ -398,8 +477,21 @@ function ComparisonRow({
   unit?: 'pp'
 }) {
   const points = current - previous
+  const tooltip = useTooltipBody()
+  // "CHF 1.046,90 a mais" em vez de "+ CHF 1.046,90": o sinal colado no
+  // símbolo da moeda tropeça na leitura, e aqui sobra espaço para dizer.
+  const size =
+    unit === 'pp'
+      ? `${Math.abs(points * 100).toFixed(1).replace('.', ',')} pontos`
+      : format(Math.abs(points))
   return (
-    <tr>
+    <tr
+      {...tooltip(label, [
+        `Agora: ${format(current)}`,
+        `Antes: ${format(previous)}`,
+        points === 0 ? 'Sem diferença entre os períodos' : `${size} a ${points > 0 ? 'mais' : 'menos'}`,
+      ])}
+    >
       <th scope="row">{label}</th>
       <td className="report-table__was">{format(previous)}</td>
       <td className="report-table__now">{format(current)}</td>

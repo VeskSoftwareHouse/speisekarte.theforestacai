@@ -1733,3 +1733,135 @@ body {
     -webkit-print-color-adjust: exact;
   }
 }
+
+/* =====================================================================
+   Interação por hover nos relatórios
+   O balão é camada extra: o painel roda em tablet, onde não há mouse, e
+   todo número que ele detalha continua escrito na tela.
+   ===================================================================== */
+.report-tooltip {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  z-index: 60;
+  pointer-events: none;
+  max-width: 300px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: 10px;
+  background: var(--color-ink);
+  color: #fff;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  animation: report-tooltip-in 0.12s ease-out;
+}
+@keyframes report-tooltip-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+}
+.report-tooltip__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+.report-tooltip__line {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #cabce6;
+}
+
+/* --- Realce de quem está sob o cursor --- */
+.report-bar {
+  padding: 4px var(--space-2);
+  margin: -4px calc(var(--space-2) * -1);
+  border-radius: 8px;
+  transition: background 0.12s ease;
+}
+.report-bar:hover {
+  background: var(--color-bg);
+}
+.report-bar:hover .report-bar__fill {
+  filter: brightness(1.08);
+}
+.report-bar:hover .report-bar__aside {
+  color: var(--color-ink);
+}
+
+.stat {
+  transition: background 0.12s ease;
+}
+.stat:hover {
+  background: var(--color-bg);
+}
+
+.reports__hero-line {
+  width: fit-content;
+  padding: var(--space-2) var(--space-3);
+  margin: var(--space-2) calc(var(--space-3) * -1) 0;
+  border-radius: 12px;
+  transition: background 0.12s ease;
+}
+.reports__hero-line:hover {
+  background: var(--color-bg);
+}
+
+.report-table tbody tr {
+  transition: background 0.12s ease;
+}
+.report-table tbody tr:hover {
+  background: var(--color-bg);
+}
+/* A linha inteira acende, então as bordas precisam vazar para as laterais. */
+.report-table th:first-child {
+  border-radius: 8px 0 0 8px;
+  padding-left: var(--space-2);
+}
+.report-table td:last-child {
+  border-radius: 0 8px 8px 0;
+  padding-right: var(--space-2);
+}
+
+.report-heatmap__cell {
+  transition: outline-color 0.1s ease;
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+}
+.report-heatmap__cell:hover {
+  outline-color: var(--color-ink);
+}
+.report-heatmap__hour:hover,
+.report-heatmap__weekday:hover {
+  color: var(--color-ink);
+}
+
+/* --- Gráfico de tendência --- */
+.report-trend__svg {
+  /* O gráfico inteiro é área de leitura: o cursor gruda no mês mais próximo. */
+  cursor: crosshair;
+}
+.report-trend__guide {
+  stroke: var(--color-primary);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.5;
+}
+.report-trend__dot--hover {
+  fill: var(--color-primary);
+  stroke: var(--color-surface);
+}
+.report-trend__axis--hover {
+  fill: var(--color-ink);
+  font-weight: 700;
+}
+
+@media print {
+  .report-tooltip {
+    display: none !important;
+  }
+}
