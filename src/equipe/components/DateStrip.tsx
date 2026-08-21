@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { daysInMonth, monthKeyToDate, toDateKey, toMonthKey, weekdayLabel } from '../dateUtils'
 
@@ -9,9 +9,22 @@ interface Props {
   monthKey: string
   onMonthChange: (key: string) => void
   orderCountByDate: Record<string, number>
+  /**
+   * Controle encaixado à direita do nome do mês. A linha do mês era só um
+   * rótulo centralizado com folga sobrando dos dois lados, então o filtro de
+   * pedidos entra ali sem custar nenhuma altura ao quadro da cozinha.
+   */
+  trailing?: ReactNode
 }
 
-export default function DateStrip({ selectedDateKey, onSelect, monthKey, onMonthChange, orderCountByDate }: Props) {
+export default function DateStrip({
+  selectedDateKey,
+  onSelect,
+  monthKey,
+  onMonthChange,
+  orderCountByDate,
+  trailing,
+}: Props) {
   const today = new Date()
   const todayKey = toDateKey(today)
 
@@ -31,7 +44,11 @@ export default function DateStrip({ selectedDateKey, onSelect, monthKey, onMonth
 
   return (
     <div className="date-strip">
-      <p className="date-strip__month">{monthLabel}</p>
+      <div className="date-strip__top">
+        <span />
+        <p className="date-strip__month">{monthLabel}</p>
+        <div className="date-strip__trailing">{trailing}</div>
+      </div>
       <div className="date-strip__row">
         <button className="date-strip__nav" onClick={() => goToMonth(-1)} aria-label="Mês anterior">
           <ChevronLeft size={20} strokeWidth={2} />

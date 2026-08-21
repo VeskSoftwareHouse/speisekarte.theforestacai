@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChartColumn, LogOut, UtensilsCrossed } from 'lucide-react'
 import type { OrderStatus, OrderWithItems } from '@shared/types'
 import { useOrders } from './hooks/useOrders'
 import { useAuth } from './hooks/useAuth'
@@ -8,6 +7,7 @@ import DateStrip from './components/DateStrip'
 import MenuManager from './components/MenuManager'
 import LoginScreen from './components/LoginScreen'
 import ReportsPanel from './components/ReportsPanel'
+import PanelHeader, { type PanelTab } from './components/PanelHeader'
 import { toDateKey, toMonthKey } from './dateUtils'
 
 const COLUMNS: { status: OrderStatus; label: string }[] = [
@@ -16,12 +16,13 @@ const COLUMNS: { status: OrderStatus; label: string }[] = [
   { status: 'pronto', label: 'Pronto' },
 ]
 
-type View = 'board' | 'history' | 'menu' | 'reports'
-
 export default function App() {
   const { session, user, loading: authLoading, signIn, signOut } = useAuth()
   const [now, setNow] = useState(new Date())
-  const [view, setView] = useState<View>('board')
+  const [tab, setTab] = useState<PanelTab>('pedidos')
+  // "Entregues" é um recorte dos pedidos do dia, não uma quarta seção do
+  // painel: mora aqui dentro, ao lado do calendário que escolhe o dia.
+  const [showDelivered, setShowDelivered] = useState(false)
   const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(new Date()))
   const [viewedMonthKey, setViewedMonthKey] = useState(() => toMonthKey(new Date()))
 
@@ -47,9 +48,7 @@ export default function App() {
   }, [orders])
 
   const activeCount = orders.length - byStatus.entregue.length
-  // Cardápio e relatórios trazem a própria navegação de período; só as duas
-  // telas de pedido usam o calendário e a carga do quadro.
-  const showOrders = view === 'board' || view === 'history'
+  const deliveredCount = byStatus.entregue.length
 
   if (authLoading) {
     return (
@@ -65,105 +64,88 @@ export default function App() {
 
   return (
     <div className="equipe-app">
-      <header className="brand-banner">
-        <img src="/brand/logo.png" alt="Forest Açaí" className="brand-banner__logo" />
-        <div className="brand-banner__info">
-          <p className="brand-banner__eyebrow">Painel da Equipe</p>
-          <h1 className="brand-banner__value">
-            Pedidos {activeCount > 0 && <small>{activeCount} ativos</small>}
-          </h1>
-        </div>
-        <nav className="brand-banner__nav">
-          <button
-            className={`btn btn-outline btn-outline--dark ${view === 'reports' ? 'btn-outline--dark-active' : ''}`}
-            onClick={() => setView((v) => (v === 'reports' ? 'board' : 'reports'))}
-          >
-            <ChartColumn size={16} strokeWidth={2} aria-hidden />
-            Relatórios
-          </button>
-          <button
-            className={`btn btn-outline btn-outline--dark ${view === 'menu' ? 'btn-outline--dark-active' : ''}`}
-            onClick={() => setView((v) => (v === 'menu' ? 'board' : 'menu'))}
-          >
-            <UtensilsCrossed size={16} strokeWidth={2} aria-hidden />
-            Cardápio
-          </button>
-          <button
-            className={`btn btn-outline btn-outline--dark ${view === 'history' ? 'btn-outline--dark-active' : ''}`}
-            onClick={() => setView((v) => (v === 'history' ? 'board' : 'history'))}
-          >
-            {view === 'history' ? '← Quadro' : `Entregues (${byStatus.entregue.length})`}
-          </button>
-          <button className="btn btn-outline btn-outline--dark" onClick={signOut} title={user?.email ?? ''}>
-            <LogOut size={16} strokeWidth={2} aria-hidden />
-            Sair
-          </button>
-        </nav>
-        <span
-          className={`realtime-dot ${error ? 'realtime-dot--off' : 'realtime-dot--on'}`}
-          title={error ?? 'Conectado em tempo real'}
-        />
-      </header>
+      <PanelHeader
+        tab={tab}
+        onTabChange={setTab}
+        activeCount={activeCount}
+        connected={!error}
+        connectionError={error}
+        userEmail={user?.email}
+        onSignOut={signOut}
+      />
 
-      {showOrders && (
-        <DateStrip
-          selectedDateKey={selectedDateKey}
-          onSelect={setSelectedDateKey}
-          monthKey={viewedMonthKey}
-          onMonthChange={setViewedMonthKey}
-          orderCountByDate={orderCountByDate}
-        />
-      )}
+      {tab === 'cardapio' && <MenuManager accessToken={session.access_token} currentUserId={user!.id} />}
 
-      {view === 'menu' && <MenuManager accessToken={session.access_token} currentUserId={user!.id} />}
+      {tab === 'relatorios' && <ReportsPanel />}
 
-      {view === 'reports' && <ReportsPanel />}
-
-      {showOrders && error && <p className="equipe-app__error">Erro ao carregar pedidos: {error}</p>}
-      {showOrders && loading && <p className="equipe-app__status">Carregando pedidos…</p>}
-
-      {!loading && view === 'history' && (
-        <main className="history-list">
-          {byStatus.entregue.length === 0 && <p className="equipe-app__status">Nenhum pedido entregue neste dia.</p>}
-          {byStatus.entregue.map((order) => (
-            <OrderCard
-              key={order.id}
-              order={order}
-              isNew={false}
-              now={now}
-              onAdvance={advanceStatus}
-              onSeen={markSeen}
-            />
-          ))}
-        </main>
-      )}
-
-      {!loading && view === 'board' && (
-        <main className="kanban">
-          {COLUMNS.map((col) => (
-            <section key={col.status} className="kanban-column">
-              <header className={`kanban-column__header kanban-column__header--${col.status}`}>
-                <h2>{col.label}</h2>
-                <span className="kanban-column__count">{byStatus[col.status].length}</span>
-              </header>
-              <div className="kanban-column__body">
-                {byStatus[col.status].length === 0 && (
-                  <p className="kanban-column__empty">Nenhum pedido</p>
-                )}
-                {byStatus[col.status].map((order) => (
-                  <OrderCard
-                    key={order.id}
-                    order={order}
-                    isNew={newOrderIds.has(order.id)}
-                    now={now}
-                    onAdvance={advanceStatus}
-                    onSeen={markSeen}
-                  />
-                ))}
+      {tab === 'pedidos' && (
+        <>
+          <DateStrip
+            selectedDateKey={selectedDateKey}
+            onSelect={setSelectedDateKey}
+            monthKey={viewedMonthKey}
+            onMonthChange={setViewedMonthKey}
+            orderCountByDate={orderCountByDate}
+            trailing={
+              <div className="orders-switch" role="tablist" aria-label="Pedidos do dia">
+                <button
+                  role="tab"
+                  aria-selected={!showDelivered}
+                  className={`orders-switch__item ${!showDelivered ? 'orders-switch__item--active' : ''}`}
+                  onClick={() => setShowDelivered(false)}
+                >
+                  Em andamento<span className="orders-switch__count">{activeCount}</span>
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={showDelivered}
+                  className={`orders-switch__item ${showDelivered ? 'orders-switch__item--active' : ''}`}
+                  onClick={() => setShowDelivered(true)}
+                >
+                  Entregues<span className="orders-switch__count">{deliveredCount}</span>
+                </button>
               </div>
-            </section>
-          ))}
-        </main>
+            }
+          />
+
+          {error && <p className="equipe-app__error">Erro ao carregar pedidos: {error}</p>}
+          {loading && <p className="equipe-app__status">Carregando pedidos…</p>}
+
+          {!loading && showDelivered && (
+            <main className="history-list">
+              {deliveredCount === 0 && <p className="equipe-app__status">Nenhum pedido entregue neste dia.</p>}
+              {byStatus.entregue.map((order) => (
+                <OrderCard key={order.id} order={order} isNew={false} now={now} onAdvance={advanceStatus} onSeen={markSeen} />
+              ))}
+            </main>
+          )}
+
+          {!loading && !showDelivered && (
+            <main className="kanban">
+              {COLUMNS.map((col) => (
+                <section key={col.status} className="kanban-column">
+                  <header className={`kanban-column__header kanban-column__header--${col.status}`}>
+                    <h2>{col.label}</h2>
+                    <span className="kanban-column__count">{byStatus[col.status].length}</span>
+                  </header>
+                  <div className="kanban-column__body">
+                    {byStatus[col.status].length === 0 && <p className="kanban-column__empty">Nenhum pedido</p>}
+                    {byStatus[col.status].map((order) => (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        isNew={newOrderIds.has(order.id)}
+                        now={now}
+                        onAdvance={advanceStatus}
+                        onSeen={markSeen}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </main>
+          )}
+        </>
       )}
     </div>
   )
