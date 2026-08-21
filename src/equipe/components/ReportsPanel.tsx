@@ -47,7 +47,6 @@ export default function ReportsPanel() {
 }
 
 function ReportsBody() {
-  const tooltip = useTooltipBody()
   const [preset, setPreset] = useState<PeriodPresetId>('sete_dias')
   const [customStart, setCustomStart] = useState(() => toDateKey(addDays(new Date(), -6)))
   const [customEnd, setCustomEnd] = useState(() => toDateKey(new Date()))
@@ -184,35 +183,35 @@ function ReportsBody() {
       {!loading && !error && (
         <>
           <header className="reports__hero">
-            <p className="reports__hero-label">Entrou no caixa · {periodLabel(period)}</p>
-            <div
-              className="reports__hero-line"
-              {...tooltip('Entrou no caixa', [
-                `${formatCHF(sales.faturamentoLiquido)} em produtos`,
-                `${formatCHF(sales.gorjetas)} em gorjetas`,
-                `Período anterior: ${formatCHF(previousSales.faturamentoBruto)} em ${previousSales.pedidos} pedidos`,
-              ])}
-            >
-              <strong>{formatCHF(sales.faturamentoBruto)}</strong>
-              <Delta value={variation(sales.faturamentoBruto, previousSales.faturamentoBruto)} />
-            </div>
-            <p className="reports__hero-sub">
-              {sales.pedidos} pedidos pagos · ticket médio de {formatCHF(sales.ticketMedio)} · comparado com{' '}
-              {periodLabel(report.previous)}
-            </p>
+            <h2 className="reports__hero-period">{periodLabel(period)}</h2>
+            <p className="reports__hero-sub">Comparado com {periodLabel(report.previous)}</p>
           </header>
 
           <Section title="Vendas" hint="Quanto entrou, quanto era gorjeta e quantos pedidos se perderam no caminho.">
             <div className="stat-strip">
               <Stat
-                label="Vendas sem gorjeta"
-                value={formatCHF(sales.faturamentoLiquido)}
-                delta={variation(sales.faturamentoLiquido, previousSales.faturamentoLiquido)}
-                hint="O número que vai para a contabilidade"
+                label="Pedidos pagos"
+                value={String(sales.pedidos)}
+                delta={variation(sales.pedidos, previousSales.pedidos)}
+                hint={
+                  conversion.criados === 0
+                    ? 'Nenhum pedido foi iniciado no totem'
+                    : `${conversion.criados} chegaram a abrir um pedido no totem`
+                }
                 detail={[
-                  `${formatCHF(sales.faturamentoBruto)} entraram no caixa`,
-                  `menos ${formatCHF(sales.gorjetas)} de gorjeta`,
-                  `Período anterior: ${formatCHF(previousSales.faturamentoLiquido)}`,
+                  `${sales.pedidos} pagos de ${conversion.criados} iniciados`,
+                  `Período anterior: ${previousSales.pedidos} pedidos pagos`,
+                ]}
+              />
+              <Stat
+                label="Entrou no caixa"
+                value={formatCHF(sales.faturamentoBruto)}
+                delta={variation(sales.faturamentoBruto, previousSales.faturamentoBruto)}
+                hint={`${formatCHF(sales.faturamentoLiquido)} sem as gorjetas — é o que vai para a contabilidade`}
+                detail={[
+                  `${formatCHF(sales.faturamentoLiquido)} em produtos`,
+                  `${formatCHF(sales.gorjetas)} em gorjetas`,
+                  `Período anterior: ${formatCHF(previousSales.faturamentoBruto)}`,
                 ]}
               />
               <Stat
@@ -227,27 +226,38 @@ function ReportsBody() {
                 ]}
               />
               <Stat
-                label="Quem começou, pagou"
-                value={`${conversionInTen} de cada 10`}
-                hint={`${conversion.pagos} pagos de ${conversion.criados} iniciados no totem`}
+                label="Ticket médio"
+                value={formatCHF(sales.ticketMedio)}
+                delta={variation(sales.ticketMedio, previousSales.ticketMedio)}
+                hint="Vendas sem gorjeta dividido pelos pedidos pagos"
                 detail={[
-                  `Taxa exata: ${formatPercent(conversion.taxaConversao)}`,
-                  `${conversion.pagos} pagaram`,
-                  `${conversion.abandonados} saíram antes de pagar`,
-                  `${conversion.falhas} tiveram o cartão recusado pela SumUp`,
-                ]}
-              />
-              <Stat
-                label="Ficaram pelo caminho"
-                value={String(conversion.abandonados + conversion.falhas)}
-                hint={`${conversion.abandonados} desistiram de pagar · ${conversion.falhas} tiveram o cartão recusado`}
-                detail={[
-                  `${formatCHF(conversion.valorAbandonado)} estavam nos carrinhos abandonados`,
-                  'Pedido abandonado nunca chega à cozinha: fica parado no banco',
-                  `De ${conversion.criados} pedidos iniciados no período`,
+                  `${formatCHF(sales.faturamentoLiquido)} ÷ ${sales.pedidos} pedidos`,
+                  'A gorjeta fica de fora: ela não é venda',
+                  `Período anterior: ${formatCHF(previousSales.ticketMedio)}`,
                 ]}
               />
             </div>
+
+            {/* Conversão saiu dos indicadores para caber os quatro números de
+                venda, mas não some da tela: em uma frase ela ainda responde
+                quantos carrinhos ficaram pelo caminho e quanto isso valia. */}
+            <p className="reports__note">
+              {conversion.criados === 0 ? (
+                <strong>Nenhum pedido foi iniciado no totem neste período.</strong>
+              ) : (
+                <>
+                  <strong>{conversionInTen} de cada 10 pedidos iniciados no totem foram pagos</strong> (
+                  {formatPercent(conversion.taxaConversao)}).{' '}
+                  {conversion.abandonados + conversion.falhas === 0
+                    ? 'Nenhum ficou pelo caminho.'
+                    : `${conversion.abandonados} ${
+                        conversion.abandonados === 1 ? 'saiu' : 'saíram'
+                      } antes de pagar e ${conversion.falhas} ${
+                        conversion.falhas === 1 ? 'teve' : 'tiveram'
+                      } o cartão recusado, somando ${formatCHF(conversion.valorAbandonado)} que não entraram no caixa.`}
+                </>
+              )}
+            </p>
 
             <Block title="Faturamento mês a mês" hint={`Últimos ${TREND_MONTHS} meses, sem gorjeta`}>
               <ReportTrendChart points={report.tendencia} />

@@ -1312,38 +1312,24 @@ body {
   background: var(--color-bg);
 }
 
-/* --- Número de abertura --- */
+/* --- Cabeçalho de período --- */
 .reports__hero {
-  padding: var(--space-6) 0 var(--space-5);
+  padding: var(--space-6) 0 var(--space-2);
 }
-.reports__hero-label {
+.reports__hero-period {
   margin: 0;
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-.reports__hero-line {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  margin-top: var(--space-2);
-}
-.reports__hero-line strong {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: clamp(2.2rem, 5vw, 3.1rem);
-  line-height: 1;
-  letter-spacing: -0.02em;
+  font-size: 1.5rem;
+  letter-spacing: -0.01em;
   color: var(--color-ink);
   font-variant-numeric: tabular-nums;
 }
 .reports__hero-sub {
-  margin: var(--space-3) 0 0;
-  font-size: 0.92rem;
+  margin: 4px 0 0;
+  font-size: 0.88rem;
   color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 /* --- Seções --- */
@@ -1783,17 +1769,6 @@ body {
   transition: background 0.12s ease;
 }
 .stat:hover {
-  background: var(--color-bg);
-}
-
-.reports__hero-line {
-  width: fit-content;
-  padding: var(--space-2) var(--space-3);
-  margin: var(--space-2) calc(var(--space-3) * -1) 0;
-  border-radius: 12px;
-  transition: background 0.12s ease;
-}
-.reports__hero-line:hover {
   background: var(--color-bg);
 }
 
