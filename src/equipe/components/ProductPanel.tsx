@@ -1,11 +1,8 @@
 import { useMemo, useState } from 'react'
 import { Plus, Pencil, Trash2, ImageOff } from 'lucide-react'
 import type { Category, MenuItem } from '@shared/types'
+import { formatCHF } from '@shared/format'
 import AdminSearchInput from './AdminSearchInput'
-
-function formatCHF(value: number): string {
-  return `CHF ${value.toFixed(2).replace('.', ',')}`
-}
 
 interface Props {
   products: MenuItem[]

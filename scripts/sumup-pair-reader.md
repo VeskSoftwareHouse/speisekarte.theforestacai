@@ -77,9 +77,11 @@ curl "https://api.sumup.com/v0.1/merchants/SEU-MERCHANT-CODE/readers/SEU-READER-
 
 ## Observações
 
-- **Moeda:** hoje a cobrança sai em **BRL** (testes). Antes de abrir ao público
-  troque `CURRENCY` em `api/sumup-create-checkout.ts` para `CHF`.
-- **Crédito/débito:** `card_type` é obrigatório só no Brasil e no Chile, e está
-  fixo em `debit` no mesmo arquivo. Na Suíça o campo é ignorado.
+- **Moeda:** a cobrança sai em **CHF** (`CURRENCY` em
+  `api/sumup-create-checkout.ts`). Precisa bater com a moeda da conta SumUp da
+  loja — se a conta for de outro país, a API recusa a cobrança.
+- **Crédito/débito:** `card_type` era obrigatório enquanto os testes rodavam em
+  BRL, porque só Brasil e Chile pedem essa escolha antes de cobrar. Na Suíça quem
+  decide é o próprio cartão, então o campo saiu do payload.
 - **Uma maquininha por totem.** Com mais de um totem, cada um precisa do seu
   `SUMUP_READER_ID` — senão dois pedidos disputam o mesmo aparelho.

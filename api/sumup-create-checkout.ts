@@ -10,14 +10,10 @@ const sumupMerchantCode = process.env.SUMUP_MERCHANT_CODE
 const sumupReaderId = process.env.SUMUP_READER_ID
 const sumupAffiliateKey = process.env.SUMUP_AFFILIATE_KEY
 
-// TEMPORÁRIO (testes): cobrando em BRL. A conta e os preços do cardápio são
-// suíços, então antes de abrir para o público isto volta para 'CHF'.
-const CURRENCY = 'BRL'
-
-// Só o Brasil e o Chile exigem dizer se o cartão é crédito ou débito; nos demais
-// países o próprio cartão define e este campo é ignorado. Enquanto os testes
-// rodam em BRL, a escolha está fixa aqui.
-const CARD_TYPE = 'debit'
+// Moeda da cobrança. Tem de bater com a moeda da conta SumUp da loja: os
+// preços do cardápio sempre foram francos, e durante os testes eles saíam
+// cobrados em reais — o mesmo número, na moeda errada.
+const CURRENCY = 'CHF'
 
 interface CartItemPayload {
   menu_item_id: string
@@ -119,7 +115,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               value: Math.round(total * 100),
             },
             description: [cleanCustomerName, 'Forest Açaí'].join(' — '),
-            card_type: CARD_TYPE,
             affiliate: {
               app_id: 'ch.forestacai.totem',
               key: sumupAffiliateKey,
