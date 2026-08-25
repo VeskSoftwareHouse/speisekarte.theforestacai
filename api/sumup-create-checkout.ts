@@ -15,6 +15,23 @@ const sumupAffiliateKey = process.env.SUMUP_AFFILIATE_KEY
 // cobrados em reais — o mesmo número, na moeda errada.
 const CURRENCY = 'CHF'
 
+/**
+ * Extrai o que a SumUp disse de errado. Ela não usa um formato só: às vezes é
+ * `message`, às vezes `error_message`, às vezes uma lista em `errors`. Ler só
+ * um deles fazia toda falha cair no texto genérico do totem, e a causa real
+ * — a maquininha registrada em outra conta, por exemplo — nunca chegava a
+ * ninguém.
+ */
+function sumupError(data: any): string | null {
+  if (!data) return null
+  const candidato =
+    data.message ??
+    data.error_message ??
+    data.error?.message ??
+    (Array.isArray(data.errors) ? data.errors[0]?.message : null)
+  return typeof candidato === 'string' && candidato.trim() ? candidato : null
+}
+
 interface CartItemPayload {
   menu_item_id: string
   nome_item: string
@@ -124,11 +141,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }),
         },
       )
-      const readerData = await readerRes.json()
+      const readerData = await readerRes.json().catch(() => null)
       if (!readerRes.ok) {
+        // Vai para os logs da Vercel com o pedido junto: sem isto, investigar
+        // uma recusa depende de reproduzir a falha com o cliente esperando.
+        console.error('SumUp recusou a cobrança na maquininha', {
+          orderId: order.id,
+          status: readerRes.status,
+          reader: sumupReaderId,
+          body: readerData,
+        })
         await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id)
         res.status(400).json({
-          error: readerData?.message ?? 'Não foi possível iniciar o pagamento na maquininha.',
+          error: sumupError(readerData) ?? 'Não foi possível iniciar o pagamento na maquininha.',
         })
         return
       }
@@ -162,10 +187,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }),
     })
 
-    const checkoutData = await checkoutRes.json()
+    const checkoutData = await checkoutRes.json().catch(() => null)
     if (!checkoutRes.ok || !checkoutData?.hosted_checkout_url) {
+      console.error('SumUp recusou o checkout hospedado', {
+        orderId: order.id,
+        status: checkoutRes.status,
+        body: checkoutData,
+      })
       await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id)
-      res.status(400).json({ error: checkoutData?.message ?? 'Não foi possível iniciar o pagamento.' })
+      res.status(400).json({ error: sumupError(checkoutData) ?? 'Não foi possível iniciar o pagamento.' })
       return
     }
 

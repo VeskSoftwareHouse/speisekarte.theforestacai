@@ -85,3 +85,14 @@ curl "https://api.sumup.com/v0.1/merchants/SEU-MERCHANT-CODE/readers/SEU-READER-
   decide é o próprio cartão, então o campo saiu do payload.
 - **Uma maquininha por totem.** Com mais de um totem, cada um precisa do seu
   `SUMUP_READER_ID` — senão dois pedidos disputam o mesmo aparelho.
+- **O pareamento pertence à conta.** Trocar `SUMUP_MERCHANT_CODE` e
+  `SUMUP_API_KEY` para outra conta invalida o `SUMUP_READER_ID`: a maquininha
+  continua registrada na conta antiga, e a cobrança volta com recusa. É preciso
+  refazer os passos 1 e 2 na conta nova. Para conferir o que a conta atual
+  enxerga:
+
+  ```bash
+  curl "https://api.sumup.com/v0.1/merchants/SEU-MERCHANT-CODE/readers"     -H "Authorization: Bearer sup_sk_SUA-CHAVE-SECRETA"
+  ```
+
+  `{"items":[]}` quer dizer nenhuma maquininha pareada nessa conta.
