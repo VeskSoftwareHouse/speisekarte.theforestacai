@@ -24,12 +24,76 @@ const CURRENCY = 'CHF'
  */
 function sumupError(data: any): string | null {
   if (!data) return null
-  const candidato =
-    data.message ??
-    data.error_message ??
-    data.error?.message ??
-    (Array.isArray(data.errors) ? data.errors[0]?.message : null)
+  // `errors` chega das duas formas: lista, e objeto com `detail` — foi o que
+  // uma recusa real de maquininha devolveu ({"errors":{"detail":"Bad Request"}}).
+  const deErrors = Array.isArray(data.errors)
+    ? data.errors[0]?.message ?? data.errors[0]?.detail
+    : data.errors?.message ?? data.errors?.detail
+
+  const candidato = data.message ?? data.error_message ?? data.error?.message ?? deErrors
   return typeof candidato === 'string' && candidato.trim() ? candidato : null
+}
+
+/**
+ * Desfecho de uma cobrança enviada à maquininha.
+ *
+ * `recusada` e `sem_resposta` parecem a mesma falha e não são. Recusada é a
+ * SumUp respondendo que não aceitou: o aparelho não está cobrando nada, e é
+ * seguro oferecer outra forma de pagamento. Sem resposta é a requisição morrer
+ * no meio — pode ser que a cobrança tenha chegado e a maquininha esteja acesa
+ * esperando o cartão. Mandar esse cliente para uma segunda cobrança arrisca
+ * cobrá-lo duas vezes, o que é bem pior do que perder a venda.
+ */
+type ReaderOutcome = 'aceita' | 'recusada' | 'sem_resposta'
+
+async function startReaderCheckout(orderId: string, total: number, description: string): Promise<ReaderOutcome> {
+  try {
+    const readerRes = await fetch(
+      `https://api.sumup.com/v0.1/merchants/${encodeURIComponent(sumupMerchantCode as string)}` +
+        `/readers/${encodeURIComponent(sumupReaderId as string)}/checkout`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${sumupApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          total_amount: {
+            currency: CURRENCY,
+            // `value` vai em unidades menores: 29.80 -> 2980 centavos.
+            minor_unit: 2,
+            value: Math.round(total * 100),
+          },
+          description,
+          affiliate: {
+            app_id: 'ch.forestacai.totem',
+            key: sumupAffiliateKey,
+            // É por aqui que /api/sumup-confirm-payment reencontra a transação.
+            foreign_transaction_id: orderId,
+          },
+        }),
+      },
+    )
+
+    if (readerRes.ok) return 'aceita'
+
+    // Vai para os logs da Vercel com o pedido junto: sem isto, investigar uma
+    // recusa depende de reproduzir a falha com o cliente esperando.
+    console.error('SumUp recusou a cobrança na maquininha; caindo no checkout hospedado', {
+      orderId,
+      status: readerRes.status,
+      reader: sumupReaderId,
+      body: await readerRes.json().catch(() => null),
+    })
+    return 'recusada'
+  } catch (err) {
+    console.error('Maquininha não respondeu; o pedido não segue para outra cobrança', {
+      orderId,
+      reader: sumupReaderId,
+      erro: err instanceof Error ? err.message : String(err),
+    })
+    return 'sem_resposta'
+  }
 }
 
 interface CartItemPayload {
@@ -114,56 +178,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // e não sai do cardápio — o app só fica aguardando e perguntando ao servidor
   // se já pagou (/api/sumup-confirm-payment).
   if (useReader) {
-    try {
-      const readerRes = await fetch(
-        `https://api.sumup.com/v0.1/merchants/${encodeURIComponent(sumupMerchantCode)}` +
-          `/readers/${encodeURIComponent(sumupReaderId as string)}/checkout`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${sumupApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            total_amount: {
-              currency: CURRENCY,
-              // `value` vai em unidades menores: 29.80 -> 2980 centavos.
-              minor_unit: 2,
-              value: Math.round(total * 100),
-            },
-            description: [cleanCustomerName, 'Forest Açaí'].join(' — '),
-            affiliate: {
-              app_id: 'ch.forestacai.totem',
-              key: sumupAffiliateKey,
-              // É por aqui que /api/sumup-confirm-payment reencontra a transação.
-              foreign_transaction_id: order.id,
-            },
-          }),
-        },
-      )
-      const readerData = await readerRes.json().catch(() => null)
-      if (!readerRes.ok) {
-        // Vai para os logs da Vercel com o pedido junto: sem isto, investigar
-        // uma recusa depende de reproduzir a falha com o cliente esperando.
-        console.error('SumUp recusou a cobrança na maquininha', {
-          orderId: order.id,
-          status: readerRes.status,
-          reader: sumupReaderId,
-          body: readerData,
-        })
-        await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id)
-        res.status(400).json({
-          error: sumupError(readerData) ?? 'Não foi possível iniciar o pagamento na maquininha.',
-        })
-        return
-      }
+    const desfecho = await startReaderCheckout(
+      order.id,
+      total,
+      [cleanCustomerName, 'Forest Açaí'].join(' — '),
+    )
+
+    if (desfecho === 'aceita') {
       res.status(200).json({ orderId: order.id, mode: 'reader' })
       return
-    } catch (err) {
+    }
+
+    // Sem resposta da maquininha: pode haver uma cobrança acesa lá que não
+    // chegamos a ver. O pedido morre aqui em vez de arriscar uma segunda.
+    if (desfecho === 'sem_resposta') {
       await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id)
-      res.status(502).json({ error: err instanceof Error ? err.message : 'Erro ao contatar o SumUp.' })
+      res.status(502).json({
+        error: 'A maquininha não respondeu. Confira se ela cobrou antes de tentar de novo.',
+      })
       return
     }
+
+    // Recusada: a maquininha não está cobrando nada — aparelho fora do ar,
+    // pareado em outra conta, sem internet. Em vez de perder a venda, o totem
+    // segue para o checkout hospedado e o cliente digita o cartão na tela.
   }
 
   const origin = `https://${req.headers.host}`
