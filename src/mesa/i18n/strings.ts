@@ -34,6 +34,10 @@ export interface StringDict {
   confirmationBody: string
   newOrderButton: string
   genericOrderError: string
+  /** A cobrança não chegou a ser enviada para a maquininha. */
+  readerUnavailableError: string
+  /** O pagamento não pôde ser iniciado por outro motivo. */
+  paymentStartError: string
   awaitingTapTitle: string
   awaitingTapBody: string
   languageLabel: string
@@ -89,6 +93,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Deine Bestellung ist in der Küche angekommen. Unser Team beginnt in Kürze mit der Zubereitung.',
     newOrderButton: 'Weitere Bestellung aufgeben',
     genericOrderError: 'Die Bestellung konnte nicht erstellt werden.',
+    readerUnavailableError: 'Verbindung zum Kartenlesegerät nicht möglich.',
+    paymentStartError: 'Die Zahlung konnte nicht gestartet werden.',
     awaitingTapTitle: 'Karte ans Terminal halten',
     awaitingTapBody: 'Der Betrag steht bereits auf dem Kartenlesegerät neben dir.',
     languageLabel: 'Sprache',
@@ -140,6 +146,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Votre commande est arrivée en cuisine. Notre équipe va bientôt commencer la préparation.',
     newOrderButton: 'Passer une autre commande',
     genericOrderError: 'Impossible de créer la commande.',
+    readerUnavailableError: 'Impossible de se connecter au lecteur de carte.',
+    paymentStartError: 'Impossible de démarrer le paiement.',
     awaitingTapTitle: 'Approchez votre carte du terminal',
     awaitingTapBody: 'Le montant est déjà affiché sur le terminal à côté de vous.',
     languageLabel: 'Langue',
@@ -191,6 +199,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Il tuo ordine è arrivato in cucina. Il nostro team inizierà a breve la preparazione.',
     newOrderButton: 'Fai un altro ordine',
     genericOrderError: "Non è stato possibile creare l'ordine.",
+    readerUnavailableError: 'Impossibile collegarsi al lettore di carte.',
+    paymentStartError: 'Non è stato possibile avviare il pagamento.',
     awaitingTapTitle: 'Avvicina la carta al terminale',
     awaitingTapBody: "L'importo è già sul lettore di carte accanto a te.",
     languageLabel: 'Lingua',
@@ -242,6 +252,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Your order has reached the kitchen. Our team will start preparing it shortly.',
     newOrderButton: 'Place another order',
     genericOrderError: 'Could not create the order.',
+    readerUnavailableError: 'Could not connect to the card reader.',
+    paymentStartError: 'Could not start the payment.',
     awaitingTapTitle: 'Tap your card on the terminal',
     awaitingTapBody: 'The amount is already showing on the card reader next to you.',
     languageLabel: 'Language',
@@ -293,6 +305,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Seu pedido chegou na cozinha. Em breve nossa equipe começa o preparo.',
     newOrderButton: 'Fazer outro pedido',
     genericOrderError: 'Não foi possível criar o pedido.',
+    readerUnavailableError: 'Não foi possível parear com o leitor.',
+    paymentStartError: 'Não foi possível iniciar o pagamento.',
     awaitingTapTitle: 'Aproxime o cartão da maquininha',
     awaitingTapBody: 'O valor já está na tela da maquininha ao seu lado.',
     languageLabel: 'Idioma',
@@ -344,6 +358,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     confirmationBody: 'Tu pedido llegó a la cocina. Nuestro equipo comenzará la preparación en breve.',
     newOrderButton: 'Hacer otro pedido',
     genericOrderError: 'No se pudo crear el pedido.',
+    readerUnavailableError: 'No se pudo conectar con el lector de tarjetas.',
+    paymentStartError: 'No se pudo iniciar el pago.',
     awaitingTapTitle: 'Acerca tu tarjeta al terminal',
     awaitingTapBody: 'El importe ya aparece en el datáfono que está a tu lado.',
     languageLabel: 'Idioma',

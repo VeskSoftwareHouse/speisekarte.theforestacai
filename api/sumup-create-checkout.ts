@@ -185,7 +185,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // cobra na maquininha e o cliente refaz o pedido se algo der errado.
     if (!aceita) {
       await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id)
-      res.status(502).json({ error: 'Não foi possível parear com o leitor.' })
+      res.status(502).json({ code: 'reader_unavailable', error: 'Não foi possível parear com o leitor.' })
       return
     }
 
@@ -222,7 +222,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         body: checkoutData,
       })
       await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id)
-      res.status(400).json({ error: sumupError(checkoutData) ?? 'Não foi possível iniciar o pagamento.' })
+      res.status(400).json({
+        code: 'payment_start_failed',
+        error: sumupError(checkoutData) ?? 'Não foi possível iniciar o pagamento.',
+      })
       return
     }
 
@@ -235,6 +238,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
   } catch (err) {
     await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id)
-    res.status(502).json({ error: err instanceof Error ? err.message : 'Erro ao contatar o SumUp.' })
+    res.status(502).json({
+      code: 'payment_start_failed',
+      error: err instanceof Error ? err.message : 'Erro ao contatar o SumUp.',
+    })
   }
 }

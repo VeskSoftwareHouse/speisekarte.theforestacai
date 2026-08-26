@@ -117,6 +117,18 @@ export default function App() {
     setView('payment_failed')
   }
 
+  /**
+   * Traduz a falha que o servidor devolveu. Ele responde com um código, não
+   * com a frase: a mensagem pronta chegava sempre em português, e aparecia
+   * assim para um cliente lendo o cardápio em alemão. Código desconhecido —
+   * ou resposta sem código — cai no aviso genérico, que também é traduzido.
+   */
+  function errorMessage(code: unknown): string {
+    if (code === 'reader_unavailable') return t('readerUnavailableError')
+    if (code === 'payment_start_failed') return t('paymentStartError')
+    return t('genericOrderError')
+  }
+
   async function handleSubmit(customerName: string, tip: number) {
     if (cart.length === 0 || !customerName.trim()) return
     setSending(true)
@@ -139,7 +151,7 @@ export default function App() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setSendError(data?.error ?? t('genericOrderError'))
+        setSendError(errorMessage(data?.code))
         setSending(false)
         return
       }
@@ -151,13 +163,13 @@ export default function App() {
       }
 
       if (!data.hostedCheckoutUrl) {
-        setSendError(data?.error ?? t('genericOrderError'))
+        setSendError(errorMessage(data?.code))
         setSending(false)
         return
       }
       window.location.href = data.hostedCheckoutUrl
-    } catch (err) {
-      setSendError(err instanceof Error ? err.message : t('genericOrderError'))
+    } catch {
+      setSendError(t('paymentStartError'))
       setSending(false)
     }
   }
