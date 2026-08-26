@@ -35,18 +35,12 @@ function sumupError(data: any): string | null {
 }
 
 /**
- * Desfecho de uma cobrança enviada à maquininha.
- *
- * `recusada` e `sem_resposta` parecem a mesma falha e não são. Recusada é a
- * SumUp respondendo que não aceitou: o aparelho não está cobrando nada, e é
- * seguro oferecer outra forma de pagamento. Sem resposta é a requisição morrer
- * no meio — pode ser que a cobrança tenha chegado e a maquininha esteja acesa
- * esperando o cartão. Mandar esse cliente para uma segunda cobrança arrisca
- * cobrá-lo duas vezes, o que é bem pior do que perder a venda.
+ * Manda a cobrança para a maquininha pareada. Devolve `false` — sem lançar —
+ * quando a SumUp recusa ou o aparelho não responde, e registra nos logs o que
+ * ela disse. O totem não tenta outra forma de pagamento: a cobrança é na
+ * maquininha ou não é.
  */
-type ReaderOutcome = 'aceita' | 'recusada' | 'sem_resposta'
-
-async function startReaderCheckout(orderId: string, total: number, description: string): Promise<ReaderOutcome> {
+async function startReaderCheckout(orderId: string, total: number, description: string): Promise<boolean> {
   try {
     const readerRes = await fetch(
       `https://api.sumup.com/v0.1/merchants/${encodeURIComponent(sumupMerchantCode as string)}` +
@@ -75,24 +69,27 @@ async function startReaderCheckout(orderId: string, total: number, description: 
       },
     )
 
-    if (readerRes.ok) return 'aceita'
+    if (readerRes.ok) return true
 
-    // Vai para os logs da Vercel com o pedido junto: sem isto, investigar uma
-    // recusa depende de reproduzir a falha com o cliente esperando.
-    console.error('SumUp recusou a cobrança na maquininha; caindo no checkout hospedado', {
+    // O cliente vê uma frase curta; o motivo de verdade vem para cá. Sem isto,
+    // investigar uma recusa depende de reproduzi-la com alguém esperando no
+    // balcão — foi assim que se descobriu a maquininha pareada em outra conta.
+    const body = await readerRes.json().catch(() => null)
+    console.error('SumUp recusou a cobrança na maquininha', {
       orderId,
       status: readerRes.status,
       reader: sumupReaderId,
-      body: await readerRes.json().catch(() => null),
+      motivo: sumupError(body),
+      body,
     })
-    return 'recusada'
+    return false
   } catch (err) {
-    console.error('Maquininha não respondeu; o pedido não segue para outra cobrança', {
+    console.error('Maquininha não respondeu', {
       orderId,
       reader: sumupReaderId,
       erro: err instanceof Error ? err.message : String(err),
     })
-    return 'sem_resposta'
+    return false
   }
 }
 
@@ -178,30 +175,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // e não sai do cardápio — o app só fica aguardando e perguntando ao servidor
   // se já pagou (/api/sumup-confirm-payment).
   if (useReader) {
-    const desfecho = await startReaderCheckout(
+    const aceita = await startReaderCheckout(
       order.id,
       total,
       [cleanCustomerName, 'Forest Açaí'].join(' — '),
     )
 
-    if (desfecho === 'aceita') {
-      res.status(200).json({ orderId: order.id, mode: 'reader' })
-      return
-    }
-
-    // Sem resposta da maquininha: pode haver uma cobrança acesa lá que não
-    // chegamos a ver. O pedido morre aqui em vez de arriscar uma segunda.
-    if (desfecho === 'sem_resposta') {
+    // Falhou, acabou. Não há segunda tentativa por outro caminho: o totem
+    // cobra na maquininha e o cliente refaz o pedido se algo der errado.
+    if (!aceita) {
       await supabase.from('orders').update({ status: 'cancelado' }).eq('id', order.id)
-      res.status(502).json({
-        error: 'A maquininha não respondeu. Confira se ela cobrou antes de tentar de novo.',
-      })
+      res.status(502).json({ error: 'Não foi possível parear com o leitor.' })
       return
     }
 
-    // Recusada: a maquininha não está cobrando nada — aparelho fora do ar,
-    // pareado em outra conta, sem internet. Em vez de perder a venda, o totem
-    // segue para o checkout hospedado e o cliente digita o cartão na tela.
+    res.status(200).json({ orderId: order.id, mode: 'reader' })
+    return
   }
 
   const origin = `https://${req.headers.host}`

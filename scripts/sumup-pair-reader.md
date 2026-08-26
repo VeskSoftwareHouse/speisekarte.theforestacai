@@ -50,9 +50,14 @@ Em Settings → Environment Variables, adicione (e faça um redeploy):
 
 `SUMUP_API_KEY` e `SUMUP_MERCHANT_CODE` já devem estar lá.
 
-**As duas juntas ligam o modo maquininha.** Faltando qualquer uma, o totem cai
-no checkout hospedado (cliente digita o cartão no navegador), que continua
-funcionando — é o comportamento de antes.
+**As duas juntas ligam o modo maquininha.** Faltando qualquer uma, o totem usa
+o checkout hospedado (cliente digita o cartão no navegador).
+
+Isso vale para a **configuração**, não para uma falha: com o modo maquininha
+ligado, uma cobrança que a maquininha recusa termina ali, com "Não foi possível
+parear com o leitor" na tela do cliente. O totem não tenta cobrar por outro
+caminho — se a maquininha não está pareada na conta em uso, a loja não vende
+até resolver.
 
 > A antiga `VITE_SUMUP_AFFILIATE_KEY` não é mais usada: agora quem fala com a
 > SumUp é só o servidor, e a chave deixou de ir no bundle do navegador. Pode
