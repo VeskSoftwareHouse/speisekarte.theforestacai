@@ -60,7 +60,7 @@ export type StringKey = keyof StringDict
 
 export const STRINGS: Record<LanguageCode, StringDict> = {
   de: {
-    sidebarTagline: 'Der Geschmack Brasiliens in der Schweiz',
+    sidebarTagline: 'Schmecke den Amazonas, spüre die Energie',
     screensaverHint: 'Zum Bestellen tippen',
     menuLabel: 'Menü',
     navFeatured: 'Empfehlungen',
@@ -113,7 +113,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     subtotalLabel: 'Zwischensumme',
   },
   fr: {
-    sidebarTagline: 'Le goût du Brésil en Suisse',
+    sidebarTagline: "Savoure l'Amazonie, ressens l'énergie",
     screensaverHint: 'Touchez pour commander',
     menuLabel: 'Menu',
     navFeatured: 'Nos coups de cœur',
@@ -166,7 +166,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     subtotalLabel: 'Sous-total',
   },
   it: {
-    sidebarTagline: 'Il sapore del Brasile in Svizzera',
+    sidebarTagline: "Assapora l'Amazzonia, senti l'energia",
     screensaverHint: 'Tocca per ordinare',
     menuLabel: 'Menu',
     navFeatured: 'In evidenza',
@@ -219,7 +219,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     subtotalLabel: 'Subtotale',
   },
   en: {
-    sidebarTagline: 'The taste of Brazil in Switzerland',
+    sidebarTagline: 'Taste the Amazon, feel the energy',
     screensaverHint: 'Tap to order',
     menuLabel: 'Menu',
     navFeatured: 'Highlights',
@@ -272,7 +272,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     subtotalLabel: 'Subtotal',
   },
   pt: {
-    sidebarTagline: 'O sabor do Brasil na Suíça',
+    sidebarTagline: 'Prove a Amazônia, sinta a energia',
     screensaverHint: 'Toque para pedir',
     menuLabel: 'Menu',
     navFeatured: 'Destaques',
@@ -325,7 +325,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     subtotalLabel: 'Subtotal',
   },
   es: {
-    sidebarTagline: 'El sabor de Brasil en Suiza',
+    sidebarTagline: 'Prueba la Amazonía, siente la energía',
     screensaverHint: 'Toca para pedir',
     menuLabel: 'Menú',
     navFeatured: 'Destacados',
