@@ -134,5 +134,20 @@ select verificacao, situacao, detalhe from (
     ) then 'OK' else 'FALTA' end,
     'set_atualizado_em() preenche pago_em/entregue_em'
 
+  union all
+
+  -- Gorjetas configuráveis pelo Painel da Equipe
+  select 11,
+    'tabela tip_options',
+    case when exists (
+      select 1 from information_schema.tables
+      where table_schema = 'public' and table_name = 'tip_options'
+    ) then 'OK' else 'FALTA' end,
+    (select case when exists (
+       select 1 from information_schema.tables
+       where table_schema = 'public' and table_name = 'tip_options'
+     ) then concat((select count(*) from tip_options), ' opção(ões) cadastrada(s)')
+     else 'o totem vai oferecer só "Sem gorjeta"' end)
+
 ) checks
 order by ord;

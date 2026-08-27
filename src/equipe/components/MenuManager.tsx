@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { Sparkles, UtensilsCrossed, Users } from 'lucide-react'
-import type { Category, MenuItem, Modifier, ModifierOption } from '@shared/types'
+import { Coins, Sparkles, UtensilsCrossed, Users } from 'lucide-react'
+import type { Category, MenuItem, Modifier, ModifierOption, TipOption } from '@shared/types'
 import { useMenuAdmin, DeleteBlockedError } from '../hooks/useMenuAdmin'
 import { useUserAdmin, type AdminUser } from '../hooks/useUserAdmin'
 import { useModifierAdmin } from '../hooks/useModifierAdmin'
+import { useTipAdmin } from '../hooks/useTipAdmin'
 import CategoryPanel from './CategoryPanel'
 import ProductPanel from './ProductPanel'
 import CategoryFormModal from './CategoryFormModal'
@@ -14,6 +15,8 @@ import ModifierGroupPanel from './ModifierGroupPanel'
 import ModifierOptionPanel from './ModifierOptionPanel'
 import ModifierGroupFormModal from './ModifierGroupFormModal'
 import ModifierOptionFormModal from './ModifierOptionFormModal'
+import TipPanel from './TipPanel'
+import TipFormModal from './TipFormModal'
 import ConfirmDialog from './ConfirmDialog'
 import DeleteBlockedDialog from './DeleteBlockedDialog'
 
@@ -23,8 +26,9 @@ type DeleteTarget =
   | { kind: 'user'; item: AdminUser }
   | { kind: 'modifierGroup'; item: Modifier }
   | { kind: 'modifierOption'; item: ModifierOption }
+  | { kind: 'tip'; item: TipOption }
 
-type Tab = 'cardapio' | 'adicionais' | 'usuarios'
+type Tab = 'cardapio' | 'adicionais' | 'gorjetas' | 'usuarios'
 
 interface Props {
   accessToken: string
@@ -70,6 +74,16 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
     setProductModifiers,
   } = useModifierAdmin()
 
+  const {
+    tips,
+    loading: tipsLoading,
+    error: tipsError,
+    createTip,
+    updateTip,
+    deleteTip,
+    toggleTip,
+  } = useTipAdmin()
+
   const [tab, setTab] = useState<Tab>('cardapio')
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
@@ -78,8 +92,12 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
   const [userForm, setUserForm] = useState<'new' | AdminUser | null>(null)
   const [modifierGroupForm, setModifierGroupForm] = useState<'new' | Modifier | null>(null)
   const [modifierOptionForm, setModifierOptionForm] = useState<'new' | ModifierOption | null>(null)
+  const [tipForm, setTipForm] = useState<'new' | TipOption | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
-  const [deleteBlocked, setDeleteBlocked] = useState<DeleteTarget | null>(null)
+  const [deleteBlocked, setDeleteBlocked] = useState<Extract<
+    DeleteTarget,
+    { kind: 'product' | 'category' }
+  > | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
   const categoriesById = useMemo(() => {
@@ -121,6 +139,8 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
         await deleteProduct(deleteTarget.item.id)
       } else if (deleteTarget.kind === 'user') {
         await deleteUser(deleteTarget.item.id)
+      } else if (deleteTarget.kind === 'tip') {
+        await deleteTip(deleteTarget.item.id)
       } else if (deleteTarget.kind === 'modifierGroup') {
         await deleteGroup(deleteTarget.item.id)
         if (selectedGroupId === deleteTarget.item.id) setSelectedGroupId(null)
@@ -175,6 +195,13 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
           Adicionais
         </button>
         <button
+          className={`menu-manager__tab ${tab === 'gorjetas' ? 'menu-manager__tab--active' : ''}`}
+          onClick={() => setTab('gorjetas')}
+        >
+          <Coins size={16} strokeWidth={2} aria-hidden />
+          Gorjetas
+        </button>
+        <button
           className={`menu-manager__tab ${tab === 'usuarios' ? 'menu-manager__tab--active' : ''}`}
           onClick={() => setTab('usuarios')}
         >
@@ -188,6 +215,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
       {tab === 'adicionais' && modifiersError && (
         <p className="equipe-app__error">Erro ao carregar adicionais: {modifiersError}</p>
       )}
+      {tab === 'gorjetas' && tipsError && <p className="equipe-app__error">Erro ao carregar gorjetas: {tipsError}</p>}
       {actionError && (
         <p className="equipe-app__error" role="alert">
           {actionError}
@@ -239,6 +267,26 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
         </div>
       )}
 
+      {tab === 'gorjetas' && tipsLoading && <p className="equipe-app__status">Carregando gorjetas…</p>}
+      {tab === 'gorjetas' && !tipsLoading && (
+        <div className="menu-manager__single">
+          <TipPanel
+            tips={tips}
+            onAdd={() => setTipForm('new')}
+            onEdit={(tip) => setTipForm(tip)}
+            onDelete={(tip) => setDeleteTarget({ kind: 'tip', item: tip })}
+            onToggle={async (tip, ativo) => {
+              setActionError(null)
+              try {
+                await toggleTip(tip.id, ativo)
+              } catch (err) {
+                setActionError(err instanceof Error ? err.message : 'Não foi possível atualizar.')
+              }
+            }}
+          />
+        </div>
+      )}
+
       {tab === 'usuarios' && usersLoading && <p className="equipe-app__status">Carregando usuários…</p>}
       {tab === 'usuarios' && !usersLoading && (
         <UsersPanel
@@ -275,6 +323,18 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
             await setProductModifiers(id, modifierIds)
           }}
           onUploadImage={uploadImage}
+        />
+      )}
+
+      {tipForm && (
+        <TipFormModal
+          tip={tipForm === 'new' ? null : tipForm}
+          proximaOrdem={tips.length ? Math.max(...tips.map((t) => t.ordem)) + 1 : 1}
+          onClose={() => setTipForm(null)}
+          onSave={async (input) => {
+            if (tipForm === 'new') await createTip(input)
+            else await updateTip(tipForm.id, input)
+          }}
         />
       )}
 
@@ -325,7 +385,9 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
                   ? 'Excluir usuário?'
                   : deleteTarget.kind === 'modifierGroup'
                     ? 'Excluir categoria de adicionais?'
-                    : 'Excluir adicional?'
+                    : deleteTarget.kind === 'tip'
+                      ? 'Excluir opção de gorjeta?'
+                      : 'Excluir adicional?'
           }
           message={
             deleteTarget.kind === 'category'
@@ -336,7 +398,9 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
                   ? `"${deleteTarget.item.nome || deleteTarget.item.email}" perderá o acesso ao painel. Essa ação não pode ser desfeita.`
                   : deleteTarget.kind === 'modifierGroup'
                     ? `Isso também vai excluir os ${optionCountByGroup[deleteTarget.item.id] ?? 0} adicional(is) dessa categoria e desassociá-la dos produtos. Essa ação não pode ser desfeita.`
-                    : `"${deleteTarget.item.nome}" será removido. Essa ação não pode ser desfeita.`
+                    : deleteTarget.kind === 'tip'
+                      ? 'Essa opção deixa de aparecer no totem. Os pedidos que já usaram ela não mudam. Se for só por um tempo, dá para desligar em vez de excluir.'
+                      : `"${deleteTarget.item.nome}" será removido. Essa ação não pode ser desfeita.`
           }
           onConfirm={handleDeleteConfirmed}
           onCancel={() => setDeleteTarget(null)}

@@ -4,10 +4,10 @@ import { formatCHF } from '@shared/format'
 import { FallbackPhotoIcon } from '../categoryIcons'
 import { useLanguage } from '../i18n/LanguageContext'
 import { translatedField } from '../i18n/menuTranslations'
+import { tipAmountFor } from '@shared/types'
+import { useTipOptions } from '../hooks/useTipOptions'
 import type { CartItem } from '../types'
 import { cartItemTotal } from '../types'
-
-const TIP_OPTIONS = [0, 5, 10, 20]
 
 interface Props {
   items: CartItem[]
@@ -18,10 +18,16 @@ interface Props {
 
 export default function OrderSummaryScreen({ items, sending, onConfirm, onBack }: Props) {
   const { t, lang } = useLanguage()
+  const tipOptions = useTipOptions()
   const [customerName, setCustomerName] = useState('')
-  const [tip, setTip] = useState(0)
+  // Guarda a opção escolhida, e não o valor: uma gorjeta percentual muda de
+  // francos junto com o carrinho, e guardar o número congelaria o valor de
+  // quando o cliente clicou.
+  const [tipId, setTipId] = useState<string | null>(null)
 
   const subtotal = items.reduce((sum, i) => sum + cartItemTotal(i), 0)
+  const escolhida = tipOptions.find((o) => o.id === tipId) ?? null
+  const tip = escolhida ? tipAmountFor(escolhida, subtotal) : 0
   const total = subtotal + tip
 
   return (
@@ -95,14 +101,23 @@ export default function OrderSummaryScreen({ items, sending, onConfirm, onBack }
           <div className="order-summary__field">
             <span>{t('tipLabel')}</span>
             <div className="order-summary__tip-options">
-              {TIP_OPTIONS.map((v) => (
+              {/* "Sem gorjeta" nunca vem do banco: a saída de não deixar nada
+                  existe sempre, e não é configurável no painel. */}
+              <button
+                type="button"
+                className={`option-pill ${tipId === null ? 'option-pill--active' : ''}`}
+                onClick={() => setTipId(null)}
+              >
+                {t('noTip')}
+              </button>
+              {tipOptions.map((option) => (
                 <button
-                  key={v}
+                  key={option.id}
                   type="button"
-                  className={`option-pill ${tip === v ? 'option-pill--active' : ''}`}
-                  onClick={() => setTip(v)}
+                  className={`option-pill ${tipId === option.id ? 'option-pill--active' : ''}`}
+                  onClick={() => setTipId(option.id)}
                 >
-                  {v === 0 ? t('noTip') : formatCHF(v)}
+                  {formatCHF(tipAmountFor(option, subtotal))}
                 </button>
               ))}
             </div>

@@ -69,6 +69,27 @@ export interface MenuItemModifier {
   modifier_id: string
 }
 
+export type TipTipo = 'fixo' | 'percentual'
+
+/**
+ * Uma opção de gorjeta oferecida no totem. "Sem gorjeta" não está aqui: o
+ * cliente sempre pode não deixar nada, e isso não é configurável.
+ */
+export interface TipOption {
+  id: string
+  tipo: TipTipo
+  /** Francos quando `fixo`; pontos percentuais do subtotal quando `percentual`. */
+  valor: number
+  ordem: number
+  ativo: boolean
+}
+
+/** Quanto uma opção vale em francos, dado o subtotal do pedido. */
+export function tipAmountFor(option: Pick<TipOption, 'tipo' | 'valor'>, subtotal: number): number {
+  const bruto = option.tipo === 'fixo' ? option.valor : (subtotal * option.valor) / 100
+  return Math.round(bruto * 100) / 100
+}
+
 export interface Order {
   id: string
   status: OrderStatus

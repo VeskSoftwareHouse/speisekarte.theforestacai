@@ -97,6 +97,34 @@ create table if not exists menu_item_modifiers (
 );
 
 -- ---------------------------------------------------------------------
+-- tip_options (opções de gorjeta oferecidas no totem)
+--
+-- Eram quatro valores fixos no código, repetidos no App da Mesa e na função
+-- que cobra — mudar a gorjeta exigia deploy, e as duas listas podiam divergir
+-- em silêncio. Agora vivem aqui, e os dois lados leem daqui.
+--
+-- "Sem gorjeta" não é uma linha desta tabela: o totem sempre oferece essa
+-- saída, e ela não é da conta de quem administra o cardápio.
+-- ---------------------------------------------------------------------
+create table if not exists tip_options (
+  id     uuid primary key default gen_random_uuid(),
+  -- 'fixo' = valor em francos; 'percentual' = fatia do subtotal do pedido.
+  tipo   text not null check (tipo in ('fixo', 'percentual')),
+  -- Em francos quando fixo, em pontos percentuais quando percentual.
+  valor  numeric(10,2) not null check (valor > 0),
+  ordem  int not null default 0,
+  ativo  boolean not null default true
+);
+
+create index if not exists idx_tip_options_ordem on tip_options(ordem);
+
+-- Semeia as quatro opções que estavam no código, para o totem não abrir sem
+-- nenhuma gorjeta na primeira vez que este arquivo rodar.
+insert into tip_options (tipo, valor, ordem)
+select * from (values ('fixo', 5.00, 1), ('fixo', 10.00, 2), ('fixo', 20.00, 3)) as v(tipo, valor, ordem)
+where not exists (select 1 from tip_options);
+
+-- ---------------------------------------------------------------------
 -- orders (pedidos)
 -- ---------------------------------------------------------------------
 create table if not exists orders (
@@ -208,6 +236,7 @@ alter table menu_items          enable row level security;
 alter table modifiers           enable row level security;
 alter table modifier_options    enable row level security;
 alter table menu_item_modifiers enable row level security;
+alter table tip_options         enable row level security;
 alter table orders              enable row level security;
 alter table order_items         enable row level security;
 
@@ -236,6 +265,10 @@ drop policy if exists "authenticated delete modifier_options" on modifier_option
 drop policy if exists "public read menu_item_modifiers"          on menu_item_modifiers;
 drop policy if exists "authenticated insert menu_item_modifiers" on menu_item_modifiers;
 drop policy if exists "authenticated delete menu_item_modifiers" on menu_item_modifiers;
+drop policy if exists "public read tip_options"          on tip_options;
+drop policy if exists "authenticated insert tip_options" on tip_options;
+drop policy if exists "authenticated update tip_options" on tip_options;
+drop policy if exists "authenticated delete tip_options" on tip_options;
 drop policy if exists "public read orders"              on orders;
 drop policy if exists "public insert orders"             on orders;
 drop policy if exists "public update orders"             on orders;
@@ -271,6 +304,12 @@ create policy "authenticated delete modifier_options" on modifier_options for de
 create policy "authenticated insert menu_item_modifiers" on menu_item_modifiers for insert with check (auth.uid() is not null);
 create policy "authenticated delete menu_item_modifiers" on menu_item_modifiers for delete using (auth.uid() is not null);
 
+-- gorjetas: o totem lê para montar as opções; só a equipe logada edita.
+create policy "public read tip_options"          on tip_options for select using (true);
+create policy "authenticated insert tip_options" on tip_options for insert with check (auth.uid() is not null);
+create policy "authenticated update tip_options" on tip_options for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete tip_options" on tip_options for delete using (auth.uid() is not null);
+
 -- pedidos: leitura pública (painel da equipe), criação pública (app da mesa),
 -- atualização pública (equipe avança status)
 create policy "public read orders"   on orders for select using (true);
@@ -300,6 +339,13 @@ begin
     where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'order_items'
   ) then
     alter publication supabase_realtime add table order_items;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'tip_options'
+  ) then
+    alter publication supabase_realtime add table tip_options;
   end if;
 
   -- cardápio: permite que o App da Mesa reflita edições feitas no Painel

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY
@@ -93,6 +93,39 @@ async function startReaderCheckout(orderId: string, total: number, description: 
   }
 }
 
+/**
+ * Confere a gorjeta que o totem mandou contra as opções cadastradas.
+ *
+ * O valor vem do cliente, então não pode ser aceito de olhos fechados: um
+ * pedido forjado poderia mandar uma gorjeta negativa e reduzir o total. Aqui a
+ * lista sai do banco e os valores são recalculados para este subtotal — só
+ * passa o que bate com alguma opção ativa. O que não bate vira zero, e o
+ * pedido segue: uma gorjeta que não confere não é motivo para perder a venda.
+ *
+ * As opções são as mesmas que o App da Mesa desenha, vindas da mesma tabela —
+ * antes eram dois arrays iguais escritos à mão em arquivos diferentes.
+ */
+async function resolveTip(
+  supabase: SupabaseClient,
+  enviado: unknown,
+  subtotal: number,
+): Promise<number> {
+  if (typeof enviado !== 'number' || !Number.isFinite(enviado) || enviado <= 0) return 0
+
+  const { data, error } = await supabase.from('tip_options').select('tipo, valor').eq('ativo', true)
+  if (error || !data) return 0
+
+  const permitidos = data.map((o: { tipo: string; valor: number }) => {
+    const bruto = o.tipo === 'fixo' ? Number(o.valor) : (subtotal * Number(o.valor)) / 100
+    // Mesmo arredondamento de `tipAmountFor` em src/shared/types.ts, repetido
+    // aqui porque as funções serverless da Vercel não compartilham o alias
+    // @shared do bundle do front.
+    return Math.round(bruto * 100) / 100
+  })
+
+  return permitidos.includes(Math.round(enviado * 100) / 100) ? enviado : 0
+}
+
 interface CartItemPayload {
   menu_item_id: string
   nome_item: string
@@ -125,8 +158,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const ALLOWED_TIPS = [0, 5, 10, 20]
-  const tipAmount = ALLOWED_TIPS.includes(tip) ? tip : 0
   const cleanCustomerName = customerName.trim().slice(0, 80)
 
   const cartItems = items as CartItemPayload[]
@@ -135,9 +166,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(400).json({ error: 'Valor do pedido inválido.' })
     return
   }
-  const total = Number((subtotal + tipAmount).toFixed(2))
 
   const supabase = createClient(supabaseUrl, anonKey)
+  const tipAmount = await resolveTip(supabase, tip, subtotal)
+  const total = Number((subtotal + tipAmount).toFixed(2))
 
   const { data: order, error: orderErr } = await supabase
     .from('orders')
