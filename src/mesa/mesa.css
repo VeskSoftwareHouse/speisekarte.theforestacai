@@ -398,6 +398,15 @@
   gap: var(--space-3);
   flex: 1;
 }
+/* Todas as categorias, incluindo Destaques, usam a mesma pílula dourada
+   sólida — nada de fundo que aparece/some. Só o halo ao redor pulsa (ver
+   sidebar-aura-pulse mais abaixo), um item de cada vez, em vez de todos
+   respirando juntos: os seis dividem um único ciclo de 4.8s em fatias iguais
+   (0.8s cada) e cada botão só recebe seu brilho na sua própria fatia, graças
+   ao atraso escalonado por --i — o resto do tempo fica quieto. É a mesma
+   lógica de uma luz correndo item a item. A categoria selecionada troca o
+   halo por um anel branco fixo, já que a cor não pode mais indicar "ativo"
+   quando todo mundo é dourado. */
 .sidebar__item {
   position: relative;
   isolation: isolate;
@@ -408,29 +417,29 @@
   border-radius: 999px;
   border: none;
   background: transparent;
-  color: #e3d6f7;
+  color: #340261;
   font-weight: 600;
   font-size: 0.98rem;
   text-align: left;
   min-height: 52px;
-  transition: color 0.16s ease, transform 0.1s ease;
-  /* Entram em cascata, de cima para baixo, quando o cardápio abre. */
-  animation: sidebar-item-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  animation-delay: calc(var(--i, 0) * 55ms);
+  transition: transform 0.1s ease;
+  animation: sidebar-item-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) backwards,
+    sidebar-aura-pulse 4.8s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 55ms), calc(var(--i, 0) * 0.8s);
 }
-/* A pílula roxa é uma camada própria, então pode crescer/encolher sozinha
-   sem brigar com as animações de entrada e de toque do botão. */
+/* A pílula é uma camada própria, então pode crescer/encolher sozinha sem
+   brigar com as animações de entrada e de toque do botão. Sem sombra externa
+   fixa aqui — se ela ficasse sempre ligada, ofuscaria o halo pulsante do
+   sidebar-aura-pulse (que é mais sutil) e a luz pareceria estática. */
 .sidebar__item::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: 0;
   border-radius: inherit;
-  background: var(--color-primary);
-  box-shadow: var(--shadow-glow-primary);
-  opacity: 0;
-  transform: scale(0.86);
-  transition: opacity 0.18s ease, transform 0.32s cubic-bezier(0.34, 1.45, 0.64, 1);
+  background: linear-gradient(135deg, var(--color-gold-light), var(--color-gold));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22) inset;
+  transition: box-shadow 0.18s ease, transform 0.32s cubic-bezier(0.34, 1.45, 0.64, 1);
 }
 .sidebar__item:active {
   transform: scale(0.965);
@@ -440,107 +449,52 @@
   position: relative;
   z-index: 1;
 }
-/* O invólucro responde ao toque e ao hover; o SVG de dentro fica com o
-   movimento constante. Separados assim os dois transforms se compõem em vez de
-   um sobrescrever o outro — no mesmo elemento, o ícone da categoria ativa
-   ficaria parado assim que o "pop" acabasse. */
 .sidebar__item-icon-wrap {
   flex: 0 0 auto;
   display: flex;
-  opacity: 0.85;
-  transition: transform 0.24s cubic-bezier(0.34, 1.45, 0.64, 1), opacity 0.16s ease;
+  transition: transform 0.24s cubic-bezier(0.34, 1.45, 0.64, 1);
 }
+/* A categoria selecionada fica parada — já chamou a atenção do cliente, agora
+   é só confirmar onde ele está — por isso sai do halo pulsante e ganha um
+   anel branco fixo por cima da mesma pílula dourada. */
 .sidebar__item--active {
-  color: #fff;
+  animation: sidebar-item-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 .sidebar__item--active::before {
-  opacity: 1;
-  transform: scale(1);
+  box-shadow: var(--shadow-glow-gold), 0 0 0 2px rgba(255, 255, 255, 0.85) inset;
 }
 .sidebar__item--active .sidebar__item-icon-wrap {
-  opacity: 1;
   animation: sidebar-icon-pop 0.5s cubic-bezier(0.34, 1.5, 0.64, 1);
 }
 @media (hover: hover) {
-  .sidebar__item:hover {
-    color: #fff;
-  }
   .sidebar__item:hover::before {
-    opacity: 0.24;
-    transform: scale(1);
-  }
-  .sidebar__item--active:hover::before {
-    opacity: 1;
+    transform: scale(1.02);
   }
   .sidebar__item:hover .sidebar__item-icon-wrap {
     transform: scale(1.14) rotate(-7deg);
   }
 }
 
-/* "Empfehlungen" precisa saltar aos olhos assim que o cardápio abre — é para lá
-   que o cliente deve olhar primeiro. Em vez da pílula roxa que só aparece nos
-   outros itens em hover/ativo, este item já nasce com uma pílula dourada
-   permanente (a mesma dupla de dourados usada em destaques no resto do app) e
-   respira devagar para puxar o olhar sem virar propaganda piscante. A dupla
-   classe (.sidebar__item.sidebar__item--featured) garante que o dourado vença
-   o roxo do estado ativo, seja qual for a ordem no arquivo.
-*/
-.sidebar__item.sidebar__item--featured::before {
-  opacity: 1;
-  transform: scale(1);
-  background: linear-gradient(135deg, var(--color-gold-light), var(--color-gold));
-  box-shadow: var(--shadow-glow-gold), 0 0 0 1px rgba(255, 255, 255, 0.22) inset;
-  animation: featured-pulse 2.8s ease-in-out infinite;
-}
-.sidebar__item.sidebar__item--featured {
-  color: #340261;
-}
-.sidebar__item.sidebar__item--featured .sidebar__item-icon-wrap {
-  opacity: 1;
-}
-@media (hover: hover) {
-  .sidebar__item.sidebar__item--featured:hover::before {
-    opacity: 1;
-    transform: scale(1.02);
-  }
-  .sidebar__item.sidebar__item--featured:hover .sidebar__item-icon-wrap {
-    transform: scale(1.14) rotate(-7deg);
-  }
-}
-@keyframes featured-pulse {
-  0%,
-  100% {
-    box-shadow: var(--shadow-glow-gold), 0 0 0 1px rgba(255, 255, 255, 0.22) inset;
-  }
-  50% {
-    box-shadow: 0 10px 30px rgba(214, 169, 59, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.3) inset;
-  }
-}
-
-/* As demais categorias não ganham uma pílula fixa (o cliente já teria uma
-   pílula colorida por item e achou chamativo demais) — em vez disso, um halo
-   dourado pulsa ao redor de cada uma, no mesmo tom do botão de Destaques,
-   contornando a mesma forma de pílula sem preencher o fundo. Chama atenção
-   para "tem mais opções aqui" e ecoa a cor do Destaques sem competir com ele.
-   Combinado (não substituído) com a animação de entrada, e escalonado por
-   --i para respirar em onda. */
-.sidebar__item:not(.sidebar__item--featured) {
-  animation: sidebar-item-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) backwards,
-    sidebar-aura-pulse 3s ease-in-out infinite;
-  animation-delay: calc(var(--i, 0) * 55ms), calc(var(--i, 0) * 220ms + 500ms);
-}
-/* Duas camadas em vez de uma só: a primeira, curta e mais opaca, dá o brilho
-   junto à borda; a segunda, mais larga e bem mais fraca, esmaece o resto —
-   sem esse degradê a sombra única virava uma "borda" nítida em vez de um
-   halo. O alcance total fica abaixo do espaço entre os itens (--space-3, 12px)
-   para o brilho de um item não encostar no vizinho e virar uma linha contínua. */
+/* Duas camadas em vez de uma só: a primeira, mais curta e mais opaca, dá o
+   brilho junto à borda; a segunda, bem mais larga e mais fraca, é o halo que
+   estoura para fora do botão — como só um item brilha por vez (nunca dois ao
+   mesmo tempo, graças ao atraso em --i), esse halo pode invadir o espaço dos
+   vizinhos sem virar uma linha contínua entre pílulas. Um leve aumento de
+   escala acompanha o brilho para reforçar que aquele botão "acendeu". O
+   brilho acontece só no primeiro sexto da linha do tempo (0%–16.667%, uma das
+   seis fatias de 4.8s) e o resto do ciclo fica apagado — é o atraso em --i
+   que empurra cada botão para a sua fatia, criando o efeito de luz correndo
+   item a item em vez de todos pulsando ao mesmo tempo. */
 @keyframes sidebar-aura-pulse {
   0%,
+  16.667%,
   100% {
     box-shadow: 0 0 0 0 rgba(214, 169, 59, 0), 0 0 0 0 rgba(214, 169, 59, 0);
+    transform: scale(1);
   }
-  50% {
-    box-shadow: 0 0 4px 0 rgba(214, 169, 59, 0.3), 0 0 8px 1px rgba(214, 169, 59, 0.16);
+  8.333% {
+    box-shadow: 0 0 10px 3px rgba(214, 169, 59, 0.75), 0 0 26px 8px rgba(214, 169, 59, 0.4);
+    transform: scale(1.045);
   }
 }
 
