@@ -74,9 +74,11 @@ tiver ícones oficiais em alta resolução.
 ## Estrutura
 
 ```
-mesa/index.html, equipe/index.html   entry points do Vite (multi-page)
+mesa/index.html, equipe/index.html, recibo/index.html
+                                     entry points do Vite (multi-page)
 src/mesa/                            App da Mesa (cliente) — instalável
 src/equipe/                          App da Equipe (staff, realtime) — não instalável
+src/recibo/                          comprovante que o QR da confirmação abre no celular do cliente
 src/shared/                          cliente Supabase, tipos, hooks e estilos comuns
 public/mesa/                         manifest.webmanifest + ícones (só a Mesa é PWA)
 public/equipe/                       apenas ícone de favicon, sem manifest
