@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
-import { formatCHF } from '@shared/format'
+import { formatCHF, formatTipLabel } from '@shared/format'
 import { FallbackPhotoIcon } from '../categoryIcons'
 import { useLanguage } from '../i18n/LanguageContext'
 import { translatedField } from '../i18n/menuTranslations'
@@ -117,7 +117,7 @@ export default function OrderSummaryScreen({ items, sending, onConfirm, onBack }
                   className={`option-pill ${tipId === option.id ? 'option-pill--active' : ''}`}
                   onClick={() => setTipId(option.id)}
                 >
-                  {formatCHF(tipAmountFor(option, subtotal))}
+                  {formatTipLabel(option)}
                 </button>
               ))}
             </div>

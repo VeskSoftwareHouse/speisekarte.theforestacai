@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
-import { formatCHF } from '@shared/format'
+import { formatCHF, formatTipLabel } from '@shared/format'
 import { tipAmountFor, type TipOption, type TipTipo } from '@shared/types'
 import CurrencyInput from '@shared/components/CurrencyInput'
 import type { TipOptionInput } from '../hooks/useTipAdmin'
@@ -103,10 +103,10 @@ export default function TipFormModal({ tip, proximaOrdem, onClose, onSave }: Pro
           {valor > 0 && (
             <p className="admin-form__hint">
               {tipo === 'fixo'
-                ? `O cliente vê o botão “${formatCHF(valor)}”.`
-                : `Num pedido de ${formatCHF(EXEMPLO_SUBTOTAL)}, o cliente vê “${formatCHF(
-                    tipAmountFor({ tipo, valor }, EXEMPLO_SUBTOTAL),
-                  )}”.`}
+                ? `O cliente vê o botão “${formatTipLabel({ tipo, valor })}”.`
+                : `O cliente vê o botão “${formatTipLabel({ tipo, valor })}”, que num pedido de ${formatCHF(
+                    EXEMPLO_SUBTOTAL,
+                  )} vira ${formatCHF(tipAmountFor({ tipo, valor }, EXEMPLO_SUBTOTAL))}.`}
             </p>
           )}
 

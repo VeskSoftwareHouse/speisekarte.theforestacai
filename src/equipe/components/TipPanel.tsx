@@ -1,5 +1,5 @@
 import { Plus, Pencil, Trash2 } from 'lucide-react'
-import { formatCHF } from '@shared/format'
+import { formatCHF, formatTipLabel } from '@shared/format'
 import { tipAmountFor, type TipOption } from '@shared/types'
 
 /** Pedido de referência para mostrar quanto uma porcentagem daria em francos. */
@@ -42,9 +42,7 @@ export default function TipPanel({ tips, onAdd, onEdit, onDelete, onToggle }: Pr
           <article key={tip.id} className={`admin-product-row ${tip.ativo ? '' : 'admin-product-row--off'}`}>
             <div className="admin-product-row__info">
               <div className="admin-product-row__title">
-                <strong>
-                  {tip.tipo === 'fixo' ? formatCHF(tip.valor) : `${String(tip.valor).replace('.', ',')}%`}
-                </strong>
+                <strong>{formatTipLabel(tip)}</strong>
                 <span className="admin-product-row__category">{tip.tipo === 'fixo' ? 'Valor fixo' : 'Percentual'}</span>
               </div>
               <p className="admin-product-row__desc">
