@@ -477,6 +477,73 @@
   }
 }
 
+/* "Empfehlungen" precisa saltar aos olhos assim que o cardápio abre — é para lá
+   que o cliente deve olhar primeiro. Em vez da pílula roxa que só aparece nos
+   outros itens em hover/ativo, este item já nasce com uma pílula dourada
+   permanente (a mesma dupla de dourados usada em destaques no resto do app) e
+   respira devagar para puxar o olhar sem virar propaganda piscante. A dupla
+   classe (.sidebar__item.sidebar__item--featured) garante que o dourado vença
+   o roxo do estado ativo, seja qual for a ordem no arquivo.
+*/
+.sidebar__item.sidebar__item--featured::before {
+  opacity: 1;
+  transform: scale(1);
+  background: linear-gradient(135deg, var(--color-gold-light), var(--color-gold));
+  box-shadow: var(--shadow-glow-gold), 0 0 0 1px rgba(255, 255, 255, 0.22) inset;
+  animation: featured-pulse 2.8s ease-in-out infinite;
+}
+.sidebar__item.sidebar__item--featured {
+  color: #340261;
+}
+.sidebar__item.sidebar__item--featured .sidebar__item-icon-wrap {
+  opacity: 1;
+}
+@media (hover: hover) {
+  .sidebar__item.sidebar__item--featured:hover::before {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  .sidebar__item.sidebar__item--featured:hover .sidebar__item-icon-wrap {
+    transform: scale(1.14) rotate(-7deg);
+  }
+}
+@keyframes featured-pulse {
+  0%,
+  100% {
+    box-shadow: var(--shadow-glow-gold), 0 0 0 1px rgba(255, 255, 255, 0.22) inset;
+  }
+  50% {
+    box-shadow: 0 10px 30px rgba(214, 169, 59, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+  }
+}
+
+/* As demais categorias não ganham uma pílula fixa (o cliente já teria uma
+   pílula colorida por item e achou chamativo demais) — em vez disso, um halo
+   dourado pulsa ao redor de cada uma, no mesmo tom do botão de Destaques,
+   contornando a mesma forma de pílula sem preencher o fundo. Chama atenção
+   para "tem mais opções aqui" e ecoa a cor do Destaques sem competir com ele.
+   Combinado (não substituído) com a animação de entrada, e escalonado por
+   --i para respirar em onda. */
+.sidebar__item:not(.sidebar__item--featured) {
+  animation: sidebar-item-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) backwards,
+    sidebar-aura-pulse 3s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 55ms), calc(var(--i, 0) * 220ms + 500ms);
+}
+/* Duas camadas em vez de uma só: a primeira, curta e mais opaca, dá o brilho
+   junto à borda; a segunda, mais larga e bem mais fraca, esmaece o resto —
+   sem esse degradê a sombra única virava uma "borda" nítida em vez de um
+   halo. O alcance total fica abaixo do espaço entre os itens (--space-3, 12px)
+   para o brilho de um item não encostar no vizinho e virar uma linha contínua. */
+@keyframes sidebar-aura-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(214, 169, 59, 0), 0 0 0 0 rgba(214, 169, 59, 0);
+  }
+  50% {
+    box-shadow: 0 0 4px 0 rgba(214, 169, 59, 0.3), 0 0 8px 1px rgba(214, 169, 59, 0.16);
+  }
+}
+
 /* --- Vidinha própria de cada ícone ---
    Amplitudes pequenas e períodos propositalmente desencontrados: se os seis
    compartilhassem a mesma duração eles bateriam juntos e o menu viraria um

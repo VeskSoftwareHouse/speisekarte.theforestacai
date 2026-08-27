@@ -46,7 +46,7 @@ export default function Sidebar({ categories, activeId, onSelect }: Props) {
       <div className={`sidebar__drawer ${menuOpen ? 'sidebar__drawer--open' : ''}`}>
         <nav className="sidebar__nav">
           <button
-            className={`sidebar__item ${activeId === FEATURED_ID ? 'sidebar__item--active' : ''}`}
+            className={`sidebar__item sidebar__item--featured ${activeId === FEATURED_ID ? 'sidebar__item--active' : ''}`}
             onClick={() => handleSelect(FEATURED_ID)}
             style={{ '--i': 0 } as CSSProperties}
           >
