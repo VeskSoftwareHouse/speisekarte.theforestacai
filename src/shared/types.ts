@@ -106,7 +106,7 @@ export interface Order {
   valor_pago: number | null
   nome_cliente: string | null
   gorjeta: number
-  /** Como a SumUp reportou o pagamento, ex: "Cartão sem contato · VISA". null = pedido antigo ou não informado. */
+  /** Como a SumUp reportou o pagamento, em alemão: "Kontaktlos · VISA". null = pedido antigo ou não informado. */
   forma_pagamento: string | null
   /** Instante em que o pagamento foi confirmado (status virou "recebido"). */
   pago_em: string | null

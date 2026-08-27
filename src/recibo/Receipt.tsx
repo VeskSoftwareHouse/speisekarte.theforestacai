@@ -24,11 +24,11 @@ interface Carregado {
 /**
  * Só a bandeira do cartão, do que a SumUp reportou.
  *
- * `forma_pagamento` é gravada em português — "Cartão sem contato · VISA" — e
- * este comprovante é lido em seis idiomas. A bandeira é a metade que não tem
- * idioma, e é também a única que importa num recibo: se foi por aproximação
- * ou por chip não muda nada para quem levou o açaí. Sem bandeira, a linha
- * inteira sai, em vez de mostrar português a um cliente que lê alemão.
+ * `forma_pagamento` é gravada em alemão — "Kontaktlos · VISA" — e este
+ * comprovante é lido em seis idiomas. A bandeira é a metade que não tem
+ * idioma nenhum, e é também a única que importa num recibo: se foi por
+ * aproximação ou por chip não muda nada para quem levou o açaí. Sem bandeira,
+ * a linha inteira sai.
  */
 function cardBrand(formaPagamento: string | null): string | null {
   if (!formaPagamento) return null

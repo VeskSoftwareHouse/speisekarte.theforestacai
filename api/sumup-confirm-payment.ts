@@ -26,18 +26,21 @@ async function fetchTapTransaction(orderId: string): Promise<Record<string, any>
   return typeof tx?.status === 'string' ? tx : null
 }
 
+// Rótulos em alemão: a loja é suíça, e este texto sai no comprovante do
+// cliente e na planilha que vai para a contabilidade de lá. O painel da
+// equipe é em português, mas ele não é quem lê este campo.
 const ENTRY_MODE_LABEL: Record<string, string> = {
-  CONTACTLESS: 'Cartão sem contato',
-  CHIP: 'Cartão com chip',
-  MAGSTRIPE: 'Cartão com tarja',
-  MANUAL_ENTRY: 'Cartão digitado',
-  BOARDING: 'Cartão sem contato',
+  CONTACTLESS: 'Kontaktlos',
+  CHIP: 'Chip',
+  MAGSTRIPE: 'Magnetstreifen',
+  MANUAL_ENTRY: 'Manuell erfasst',
+  BOARDING: 'Kontaktlos',
 }
 
 const PAYMENT_TYPE_LABEL: Record<string, string> = {
-  ECOM: 'Cartão online',
-  POS: 'Cartão na maquininha',
-  RECURRING: 'Cartão recorrente',
+  ECOM: 'Online',
+  POS: 'Kartenterminal',
+  RECURRING: 'Wiederkehrend',
   BOLETO: 'Boleto',
   PIX: 'Pix',
   IDEAL: 'iDEAL',
@@ -49,8 +52,9 @@ const PAYMENT_TYPE_LABEL: Record<string, string> = {
 }
 
 /**
- * Traduz o que a SumUp conta sobre a transação para o rótulo que aparece nos
- * relatórios do Painel da Equipe ("Faturamento por forma de pagamento").
+ * Traduz o que a SumUp conta sobre a transação para o rótulo gravado em
+ * `orders.forma_pagamento` — o mesmo que sai no comprovante do cliente e na
+ * exportação para a contabilidade.
  *
  * A SumUp descreve o pagamento em três campos diferentes conforme o caminho
  * (maquininha, checkout hospedado, carteira digital), e às vezes dentro de
@@ -67,7 +71,7 @@ function describePaymentMethod(source: Record<string, any> | null | undefined): 
   const base = entryMode ?? paymentType
   if (!base) return null
 
-  // Bandeira do cartão, quando houver: "Cartão sem contato · VISA".
+  // Bandeira do cartão, quando houver: "Kontaktlos · VISA".
   const brand = typeof tx.card?.type === 'string' ? tx.card.type : null
   return brand ? `${base} · ${brand}` : base
 }
