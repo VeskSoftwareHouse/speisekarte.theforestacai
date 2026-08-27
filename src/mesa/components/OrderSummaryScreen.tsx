@@ -117,7 +117,7 @@ export default function OrderSummaryScreen({ items, sending, onConfirm, onBack }
                   className={`option-pill ${tipId === option.id ? 'option-pill--active' : ''}`}
                   onClick={() => setTipId(option.id)}
                 >
-                  {formatTipLabel(option)}
+                  {formatTipLabel(option, subtotal)}
                 </button>
               ))}
             </div>

@@ -1,4 +1,4 @@
-import type { TipTipo } from './types'
+import { tipAmountFor, type TipTipo } from './types'
 
 /**
  * Formata como o cardápio impresso da loja: "CHF 14,90" (vírgula decimal).
@@ -16,16 +16,21 @@ export function formatCHF(value: number): string {
 }
 
 /**
- * O rótulo de um botão de gorjeta: "5%" ou "CHF 5,00".
+ * O rótulo de um botão de gorjeta.
  *
- * Uma opção percentual se anuncia como porcentagem, e não pelo que ela dá
- * neste carrinho — "CHF 0,05" num pedido de um franco não diz ao cliente o
- * que ele está escolhendo, e muda de número a cada item que ele acrescenta.
- * Quanto virou em francos aparece na linha da gorjeta, no total.
+ * Uma opção fixa é o próprio valor: "CHF 10,00". Uma percentual mostra as
+ * duas coisas — "5% · CHF 0,05" — porque nenhuma das duas basta sozinha: a
+ * porcentagem diz o que se está escolhendo, e os francos dizem quanto isso
+ * custa neste carrinho.
+ *
+ * Sem `subtotal` sai só a porcentagem, que é o caso do painel da equipe: lá
+ * não existe carrinho, e a conversão aparece na descrição da linha.
  */
-export function formatTipLabel(option: { tipo: TipTipo; valor: number }): string {
-  if (option.tipo === 'percentual') return `${String(option.valor).replace('.', ',')}%`
-  return formatCHF(option.valor)
+export function formatTipLabel(option: { tipo: TipTipo; valor: number }, subtotal?: number): string {
+  if (option.tipo !== 'percentual') return formatCHF(option.valor)
+  const porcentagem = `${String(option.valor).replace('.', ',')}%`
+  if (subtotal === undefined) return porcentagem
+  return `${porcentagem} · ${formatCHF(tipAmountFor(option, subtotal))}`
 }
 
 /** "há 3 min" / "há 1h 12min" a partir de um timestamp ISO */
