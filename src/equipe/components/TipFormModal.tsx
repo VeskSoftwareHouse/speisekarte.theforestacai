@@ -69,7 +69,6 @@ export default function TipFormModal({ tip, proximaOrdem, onClose, onSave }: Pro
                 onClick={() => setTipo('percentual')}
               >
                 <strong>Percentual</strong>
-                <small>Acompanha o tamanho do pedido</small>
               </button>
             </div>
           </div>

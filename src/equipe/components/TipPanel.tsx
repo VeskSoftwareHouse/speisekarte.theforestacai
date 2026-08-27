@@ -1,9 +1,6 @@
 import { Plus, Pencil, Trash2 } from 'lucide-react'
-import { formatCHF, formatTipLabel } from '@shared/format'
-import { tipAmountFor, type TipOption } from '@shared/types'
-
-/** Pedido de referência para mostrar quanto uma porcentagem daria em francos. */
-const EXEMPLO_SUBTOTAL = 30
+import { formatTipLabel } from '@shared/format'
+import type { TipOption } from '@shared/types'
 
 interface Props {
   tips: TipOption[]
@@ -26,11 +23,6 @@ export default function TipPanel({ tips, onAdd, onEdit, onDelete, onToggle }: Pr
         </button>
       </header>
 
-      <p className="admin-panel__hint">
-        As opções que o cliente vê ao fechar o pedido, nesta ordem. <strong>&ldquo;Sem gorjeta&rdquo; aparece
-        sempre</strong> e não precisa ser cadastrada — o cliente nunca fica sem a saída de não deixar nada.
-      </p>
-
       <div className="admin-panel__body admin-product-list">
         {tips.length === 0 && (
           <p className="admin-panel__empty">
@@ -45,13 +37,6 @@ export default function TipPanel({ tips, onAdd, onEdit, onDelete, onToggle }: Pr
                 <strong>{formatTipLabel(tip)}</strong>
                 <span className="admin-product-row__category">{tip.tipo === 'fixo' ? 'Valor fixo' : 'Percentual'}</span>
               </div>
-              <p className="admin-product-row__desc">
-                {tip.tipo === 'fixo'
-                  ? 'O mesmo valor em qualquer pedido.'
-                  : `Acompanha o tamanho do pedido: ${formatCHF(
-                      tipAmountFor(tip, EXEMPLO_SUBTOTAL),
-                    )} num pedido de ${formatCHF(EXEMPLO_SUBTOTAL)}.`}
-              </p>
             </div>
 
             <label className="admin-toggle" title={tip.ativo ? 'Aparece no totem' : 'Escondida do totem'}>
