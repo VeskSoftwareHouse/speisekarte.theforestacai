@@ -6,6 +6,7 @@ import { resolve } from 'path'
 //   /            -> landing page (choose Mesa or Equipe)
 //   /mesa/       -> App da Mesa (cliente)
 //   /equipe/     -> App da Equipe (staff)
+//   /recibo/     -> comprovante que o QR do totem abre no celular do cliente
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -23,6 +24,7 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         mesa: resolve(__dirname, 'mesa/index.html'),
         equipe: resolve(__dirname, 'equipe/index.html'),
+        recibo: resolve(__dirname, 'recibo/index.html'),
       },
     },
   },

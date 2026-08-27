@@ -38,6 +38,8 @@ export interface StringDict {
   readerUnavailableError: string
   /** O pagamento não pôde ser iniciado por outro motivo. */
   paymentStartError: string
+  /** Convite para o cliente levar o comprovante no próprio celular. */
+  receiptQrLabel: string
   awaitingTapTitle: string
   awaitingTapBody: string
   languageLabel: string
@@ -95,6 +97,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     genericOrderError: 'Die Bestellung konnte nicht erstellt werden.',
     readerUnavailableError: 'Verbindung zum Kartenlesegerät nicht möglich.',
     paymentStartError: 'Die Zahlung konnte nicht gestartet werden.',
+    receiptQrLabel: 'Beleg mitnehmen: Code scannen',
     awaitingTapTitle: 'Karte ans Terminal halten',
     awaitingTapBody: 'Der Betrag steht bereits auf dem Kartenlesegerät neben dir.',
     languageLabel: 'Sprache',
@@ -148,6 +151,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     genericOrderError: 'Impossible de créer la commande.',
     readerUnavailableError: 'Impossible de se connecter au lecteur de carte.',
     paymentStartError: 'Impossible de démarrer le paiement.',
+    receiptQrLabel: 'Reçu à emporter : scannez le code',
     awaitingTapTitle: 'Approchez votre carte du terminal',
     awaitingTapBody: 'Le montant est déjà affiché sur le terminal à côté de vous.',
     languageLabel: 'Langue',
@@ -201,6 +205,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     genericOrderError: "Non è stato possibile creare l'ordine.",
     readerUnavailableError: 'Impossibile collegarsi al lettore di carte.',
     paymentStartError: 'Non è stato possibile avviare il pagamento.',
+    receiptQrLabel: 'Ricevuta con te: scansiona il codice',
     awaitingTapTitle: 'Avvicina la carta al terminale',
     awaitingTapBody: "L'importo è già sul lettore di carte accanto a te.",
     languageLabel: 'Lingua',
@@ -254,6 +259,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     genericOrderError: 'Could not create the order.',
     readerUnavailableError: 'Could not connect to the card reader.',
     paymentStartError: 'Could not start the payment.',
+    receiptQrLabel: 'Take your receipt: scan the code',
     awaitingTapTitle: 'Tap your card on the terminal',
     awaitingTapBody: 'The amount is already showing on the card reader next to you.',
     languageLabel: 'Language',
@@ -307,6 +313,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     genericOrderError: 'Não foi possível criar o pedido.',
     readerUnavailableError: 'Não foi possível parear com o leitor.',
     paymentStartError: 'Não foi possível iniciar o pagamento.',
+    receiptQrLabel: 'Leve seu comprovante: escaneie o código',
     awaitingTapTitle: 'Aproxime o cartão da maquininha',
     awaitingTapBody: 'O valor já está na tela da maquininha ao seu lado.',
     languageLabel: 'Idioma',
@@ -360,6 +367,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     genericOrderError: 'No se pudo crear el pedido.',
     readerUnavailableError: 'No se pudo conectar con el lector de tarjetas.',
     paymentStartError: 'No se pudo iniciar el pago.',
+    receiptQrLabel: 'Llévate el comprobante: escanea el código',
     awaitingTapTitle: 'Acerca tu tarjeta al terminal',
     awaitingTapBody: 'El importe ya aparece en el datáfono que está a tu lado.',
     languageLabel: 'Idioma',

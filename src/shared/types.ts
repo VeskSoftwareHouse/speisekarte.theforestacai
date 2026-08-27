@@ -7,6 +7,13 @@ export type FullOrderStatus = 'aguardando_pagamento' | OrderStatus | 'cancelado'
 
 export const ORDER_STATUS_FLOW: OrderStatus[] = ['recebido', 'em_preparo', 'pronto', 'entregue']
 
+/** Os quatro status que já passaram pelo pagamento e chegam à cozinha. */
+export const PAID_STATUSES: FullOrderStatus[] = ['recebido', 'em_preparo', 'pronto', 'entregue']
+
+export function isPaidStatus(status: FullOrderStatus): boolean {
+  return PAID_STATUSES.includes(status)
+}
+
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   recebido: 'Recebido',
   em_preparo: 'Em preparo',

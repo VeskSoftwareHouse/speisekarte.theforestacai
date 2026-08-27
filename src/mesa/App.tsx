@@ -196,6 +196,7 @@ export default function App() {
     if (view === 'confirmation') {
       return (
         <ConfirmationScreen
+          orderId={confirmingOrderId}
           onNewOrder={() => {
             setView('dashboard')
           }}

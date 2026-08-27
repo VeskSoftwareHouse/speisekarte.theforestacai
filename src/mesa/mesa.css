@@ -2274,3 +2274,31 @@
     animation: screensaver-out 380ms steps(1, end) forwards;
   }
 }
+
+/* --- QR do comprovante, na tela de confirmação --- */
+.confirmation-screen__receipt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-5) 0 var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+.confirmation-screen__receipt p {
+  margin: 0;
+  max-width: 22ch;
+  text-align: center;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+/* O QR precisa de área branca em volta para a câmera achar as bordas. */
+.receipt-qr {
+  display: block;
+  border: 6px solid #fff;
+  border-radius: 4px;
+}

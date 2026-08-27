@@ -1,3 +1,4 @@
+import { isPaidStatus } from '@shared/types'
 import type { Category, FullOrderStatus, MenuItem, OrderItem, ReportOrder, SelectedModifierOption } from '@shared/types'
 import {
   addDays,
@@ -19,14 +20,14 @@ import {
  */
 
 /**
- * Pedido já pago: os quatro status que passam pela cozinha. Os relatórios só
- * olham para estes — carrinho abandonado e cartão recusado não são venda, e
- * misturá-los a qualquer contagem só torna o número mais difícil de explicar.
+ * Os relatórios só olham para pedidos pagos — carrinho abandonado e cartão
+ * recusado não são venda, e misturá-los a qualquer contagem só torna o número
+ * mais difícil de explicar. A lista dos status vem de `@shared/types`.
  */
-export const PAID_STATUSES: FullOrderStatus[] = ['recebido', 'em_preparo', 'pronto', 'entregue']
+export { PAID_STATUSES } from '@shared/types'
 
 export function isPaid(order: { status: FullOrderStatus }): boolean {
-  return PAID_STATUSES.includes(order.status)
+  return isPaidStatus(order.status)
 }
 
 /** Só o que o cálculo dos relatórios precisa saber de um produto do cardápio. */
