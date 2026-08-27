@@ -888,6 +888,19 @@ body {
   padding: 0;
   border-radius: 0;
 }
+.admin-product-row__featured {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #8a5a00;
+  background: color-mix(in srgb, var(--color-gold) 22%, transparent);
+  padding: 2px 7px;
+  border-radius: 999px;
+}
 .admin-product-row__desc {
   margin: 3px 0 0;
   font-family: var(--font-ui);

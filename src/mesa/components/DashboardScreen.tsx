@@ -37,10 +37,15 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
   const cartCount = cart.reduce((sum, i) => sum + i.quantidade, 0)
   const cartTotal = cart.reduce((sum, i) => sum + cartItemTotal(i), 0)
 
-  const featuredItems = useMemo(
-    () => categories.flatMap((c) => (itemsByCategory[c.id] ?? []).slice(0, 2)).slice(0, 6),
-    [categories, itemsByCategory],
-  )
+  // A equipe escolhe os produtos da página de Destaques marcando-os um a um
+  // (MenuItem.destaque). Enquanto ninguém marcar nada, cai de volta nos dois
+  // primeiros de cada categoria — para a página não ficar vazia antes do
+  // primeiro uso do recurso.
+  const featuredItems = useMemo(() => {
+    const curated = categories.flatMap((c) => (itemsByCategory[c.id] ?? []).filter((i) => i.destaque))
+    if (curated.length > 0) return curated
+    return categories.flatMap((c) => (itemsByCategory[c.id] ?? []).slice(0, 2)).slice(0, 6)
+  }, [categories, itemsByCategory])
 
   // A categoria exibida fica um passo atrás da escolhida: no intervalo os cards
   // antigos continuam montados para poderem animar a saída. A sidebar já marca

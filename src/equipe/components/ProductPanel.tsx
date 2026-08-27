@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Plus, Pencil, Trash2, ImageOff } from 'lucide-react'
+import { Plus, Pencil, Trash2, ImageOff, Flame } from 'lucide-react'
 import type { Category, MenuItem } from '@shared/types'
 import { formatCHF } from '@shared/format'
 import AdminSearchInput from './AdminSearchInput'
@@ -58,6 +58,12 @@ export default function ProductPanel({
               <div className="admin-product-row__title">
                 <strong>{p.nome}</strong>
                 <span className="admin-product-row__category">{categoriesById[p.categoria_id]?.nome ?? '—'}</span>
+                {p.destaque && (
+                  <span className="admin-product-row__featured" title="Aparece na página de Destaques">
+                    <Flame size={12} strokeWidth={2.5} />
+                    Destaque
+                  </span>
+                )}
               </div>
               {p.descricao && <p className="admin-product-row__desc">{p.descricao}</p>}
             </div>

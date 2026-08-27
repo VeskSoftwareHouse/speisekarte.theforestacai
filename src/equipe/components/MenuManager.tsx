@@ -170,6 +170,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
         preco: product.preco,
         foto_url: product.foto_url,
         disponivel: !product.disponivel,
+        destaque: product.destaque,
         ordem: product.ordem,
       })
     } catch (err) {

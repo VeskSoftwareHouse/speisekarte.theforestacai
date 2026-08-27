@@ -25,6 +25,7 @@ export interface ProductInput {
   preco: number
   foto_url: string | null
   disponivel: boolean
+  destaque: boolean
   ordem: number
 }
 

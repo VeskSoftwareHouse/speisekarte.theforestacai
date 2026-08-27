@@ -37,6 +37,8 @@ export interface MenuItem {
   preco: number
   foto_url: string | null
   disponivel: boolean
+  /** Escolhido a dedo pela equipe para aparecer na página "Destaques" do cardápio. */
+  destaque: boolean
   ordem: number
   /** Limite combinado de seleções nos grupos com `conta_para_limite`, ex: "escolha até 4". null = sem limite. */
   max_ingredientes: number | null

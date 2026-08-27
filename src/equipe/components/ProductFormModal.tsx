@@ -31,6 +31,7 @@ export default function ProductFormModal({
   const [descricao, setDescricao] = useState(product?.descricao ?? '')
   const [preco, setPreco] = useState(product?.preco ?? 0)
   const [disponivel, setDisponivel] = useState(product?.disponivel ?? true)
+  const [destaque, setDestaque] = useState(product?.destaque ?? false)
   const [ordem, setOrdem] = useState(product?.ordem ?? 0)
   const [fotoUrl, setFotoUrl] = useState(product?.foto_url ?? '')
   const [selectedModifierIds, setSelectedModifierIds] = useState<string[]>(linkedModifierIds)
@@ -75,6 +76,7 @@ export default function ProductFormModal({
           preco,
           foto_url: fotoUrl.trim() || null,
           disponivel,
+          destaque,
           ordem,
         },
         selectedModifierIds,
@@ -186,6 +188,11 @@ export default function ProductFormModal({
           <label className="admin-form__checkbox">
             <input type="checkbox" checked={disponivel} onChange={(e) => setDisponivel(e.target.checked)} />
             <span>Disponível no cardápio</span>
+          </label>
+
+          <label className="admin-form__checkbox">
+            <input type="checkbox" checked={destaque} onChange={(e) => setDestaque(e.target.checked)} />
+            <span>Destaque (aparece na página de Destaques)</span>
           </label>
 
           <div className="admin-form__field">

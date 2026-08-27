@@ -41,6 +41,8 @@ alter table menu_items add column if not exists max_ingredientes int;
 -- alemão continua vindo das colunas `descricao`/`nome` acima; idiomas ausentes aqui caem no alemão.
 alter table menu_items add column if not exists descricao_i18n jsonb not null default '{}'::jsonb;
 alter table menu_items add column if not exists nome_i18n jsonb not null default '{}'::jsonb;
+-- marca os produtos escolhidos a dedo pela equipe para aparecer na página "Destaques" do cardápio.
+alter table menu_items add column if not exists destaque boolean not null default false;
 
 create index if not exists idx_menu_items_categoria on menu_items(categoria_id);
 
