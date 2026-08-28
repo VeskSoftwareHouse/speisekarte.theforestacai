@@ -239,10 +239,17 @@ export default function App() {
     )
   }
 
-  // Nada de descanso de tela durante o pagamento: cobrir a tela enquanto o
-  // cliente aproxima o cartão, ou enquanto ele lê por que a cobrança falhou,
-  // seria péssimo.
-  const PAYMENT_VIEWS: View[] = ['awaiting_tap', 'confirming_payment', 'payment_failed']
+  // Nada de descanso de tela enquanto o cliente aproxima o cartão ou espera a
+  // confirmação: cobrir a tela nesse meio-tempo seria péssimo.
+  //
+  // "payment_failed" fica de fora desta lista de propósito — tinha entrado
+  // aqui pelo mesmo motivo, mas sem nenhum outro jeito de sair da tela sozinho,
+  // um cliente que via a recusa e simplesmente ia embora (reação comum)
+  // deixava o totem travado ali, sem carrinho e sem forma de o próximo
+  // cliente pedir, até a equipe notar. Os 90s + 3min do próprio descanso de
+  // tela já são folga de sobra para quem ficou lendo o motivo da recusa: ao
+  // primeiro toque a tela desperta normalmente, como em qualquer outra.
+  const PAYMENT_VIEWS: View[] = ['awaiting_tap', 'confirming_payment']
 
   return (
     <>

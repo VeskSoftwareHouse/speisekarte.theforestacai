@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { OrderStatus, OrderWithItems } from '@shared/types'
 import { useOrders } from './hooks/useOrders'
 import { useAuth } from './hooks/useAuth'
@@ -26,15 +26,27 @@ export default function App() {
   const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(new Date()))
   const [viewedMonthKey, setViewedMonthKey] = useState(() => toMonthKey(new Date()))
 
-  const { orders, orderCountByDate, loading, error, newOrderIds, markSeen, advanceStatus } = useOrders(
-    selectedDateKey,
-    viewedMonthKey,
-  )
+  const { orders, orderCountByDate, loading, error, realtimeConnected, newOrderIds, markSeen, advanceStatus } =
+    useOrders(selectedDateKey, viewedMonthKey)
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 15000)
     return () => clearInterval(id)
   }, [])
+
+  // Sem isto, o quadro ficava preso no dia em que a aba foi aberta: um pedido
+  // pago logo depois da meia-noite não batia no filtro de "hoje" e sumia do
+  // quadro sem nenhum aviso, até alguém notar e trocar o dia na mão. Só
+  // adianta o dia selecionado quando ele já era "hoje" — se a equipe navegou
+  // para outro dia de propósito (conferir o histórico), a virada da meia-noite
+  // não deve puxar a tela para longe do que ela escolheu olhar.
+  const todayKeyRef = useRef(toDateKey(now))
+  useEffect(() => {
+    const newTodayKey = toDateKey(now)
+    if (newTodayKey === todayKeyRef.current) return
+    setSelectedDateKey((prev) => (prev === todayKeyRef.current ? newTodayKey : prev))
+    todayKeyRef.current = newTodayKey
+  }, [now])
 
   const byStatus = useMemo(() => {
     const map: Record<OrderStatus, OrderWithItems[]> = {
@@ -68,8 +80,8 @@ export default function App() {
         tab={tab}
         onTabChange={setTab}
         activeCount={activeCount}
-        connected={!error}
-        connectionError={error}
+        connected={realtimeConnected && !error}
+        connectionError={error ?? (!realtimeConnected ? 'Conexão em tempo real caiu — reconectando…' : null)}
         userEmail={user?.email}
         onSignOut={signOut}
       />

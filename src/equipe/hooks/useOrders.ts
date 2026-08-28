@@ -15,6 +15,8 @@ interface UseOrdersResult {
   orderCountByDate: Record<string, number>
   loading: boolean
   error: string | null
+  /** Estado real do canal do Realtime — é o que o "Ao vivo" do cabeçalho mostra. */
+  realtimeConnected: boolean
   newOrderIds: Set<string>
   markSeen: (orderId: string) => void
   advanceStatus: (order: OrderWithItems) => Promise<void>
@@ -45,6 +47,7 @@ export function useOrders(selectedDateKey: string, viewedMonthKey: string): UseO
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set())
+  const [realtimeConnected, setRealtimeConnected] = useState(false)
   const hasLoadedOnce = useRef(false)
 
   // Cada carga do dia recebe um número: se a equipe trocar de dia no meio, a
@@ -166,10 +169,19 @@ export function useOrders(selectedDateKey: string, viewedMonthKey: string): UseO
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'order_items' }, () =>
         latest.current.fetchDay(),
       )
-      .subscribe()
+      // Antes o "Ao vivo" do cabeçalho olhava só se a última busca por REST
+      // tinha dado erro — o canal podia cair (wifi, tablet dormindo) sem que
+      // nada disso mudasse, e a equipe seguia vendo "Ao vivo" enquanto
+      // pedidos novos paravam de chegar. Isto reflete o estado real do
+      // WebSocket; a própria lib tenta reconectar sozinha e o status volta a
+      // SUBSCRIBED quando consegue.
+      .subscribe((status) => {
+        setRealtimeConnected(status === 'SUBSCRIBED')
+      })
 
     return () => {
       supabase.removeChannel(channel)
+      setRealtimeConnected(false)
     }
   }, [])
 
@@ -206,5 +218,5 @@ export function useOrders(selectedDateKey: string, viewedMonthKey: string): UseO
     }
   }, [])
 
-  return { orders, orderCountByDate, loading, error, newOrderIds, markSeen, advanceStatus }
+  return { orders, orderCountByDate, loading, error, realtimeConnected, newOrderIds, markSeen, advanceStatus }
 }
