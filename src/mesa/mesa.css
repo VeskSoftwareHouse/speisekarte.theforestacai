@@ -1399,6 +1399,32 @@
   min-height: 44px;
   font-size: 0.95rem;
 }
+/* Halo roxo contínuo só nas opções que deixam alguma gorjeta — "Sem gorjeta"
+   fica de fora (option-pill--no-tip) porque não faz sentido puxar o olho do
+   cliente justamente pra opção de não deixar nada. Um leve atraso por pílula
+   (nth-child, sem precisar de --i vindo do componente) evita que pulsem
+   coladas, dando uma sensação mais orgânica. */
+.order-summary__tip-options .option-pill:not(.option-pill--no-tip) {
+  animation: tip-pill-aura-pulse 2.6s ease-in-out infinite;
+}
+.order-summary__tip-options .option-pill:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.order-summary__tip-options .option-pill:nth-child(4) {
+  animation-delay: 0.3s;
+}
+.order-summary__tip-options .option-pill:nth-child(5) {
+  animation-delay: 0.45s;
+}
+@keyframes tip-pill-aura-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(108, 60, 230, 0);
+  }
+  50% {
+    box-shadow: 0 0 10px 2px rgba(108, 60, 230, 0.45), 0 0 20px 6px rgba(108, 60, 230, 0.22);
+  }
+}
 .order-summary__footer {
   flex: 0 0 auto;
   padding: var(--space-4) var(--space-5) max(var(--space-5), env(safe-area-inset-bottom));

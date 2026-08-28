@@ -105,7 +105,7 @@ export default function OrderSummaryScreen({ items, sending, onConfirm, onBack }
                   existe sempre, e não é configurável no painel. */}
               <button
                 type="button"
-                className={`option-pill ${tipId === null ? 'option-pill--active' : ''}`}
+                className={`option-pill option-pill--no-tip ${tipId === null ? 'option-pill--active' : ''}`}
                 onClick={() => setTipId(null)}
               >
                 {t('noTip')}
