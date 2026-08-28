@@ -151,10 +151,24 @@ body {
     order: 3;
     width: 100%;
     justify-content: center;
+    /* Rede de segurança: "Pedidos"+"Cardápio"+"Relatórios" com texto
+       nowrap não encolhem abaixo do próprio conteúdo (flex-shrink não
+       reduz um item além do seu tamanho mínimo automático), então em
+       telas bem estreitas a soma ainda pode passar da largura — aí a
+       fileira rola em vez de vazar cortada pelo overflow:hidden do
+       html/body. */
+    overflow-x: auto;
   }
   .banner-tabs__item {
     flex: 1;
     justify-content: center;
+  }
+}
+@media (max-width: 420px) {
+  .banner-tabs__item {
+    padding: 0 var(--space-2);
+    gap: 6px;
+    font-size: 0.82rem;
   }
 }
 
@@ -471,6 +485,12 @@ body {
     padding: var(--space-3);
     scroll-snap-type: x mandatory;
     scroll-padding: var(--space-3);
+    /* Sem isto o "centraliza" do modo desktop (.kanban tem
+       justify-content:center lá em cima) faz o navegador abrir o quadro já
+       rolado pro meio do conteúdo que transbordou — a pessoa cai direto na
+       segunda coluna (Em preparo) e "Recebido" fica escondido à esquerda,
+       fora da primeira tela. */
+    justify-content: flex-start;
   }
   .kanban-column {
     flex: 0 0 calc(100% - var(--space-3) * 2);
