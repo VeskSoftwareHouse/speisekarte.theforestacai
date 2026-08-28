@@ -459,6 +459,27 @@ body {
   font-size: 0.9rem;
 }
 
+/* No celular as três colunas lado a lado não cabem — cada uma vira uma
+   "página" de largura cheia, e o quadro passa a rolar com scroll-snap:
+   arrasta e a próxima coluna encaixa certinha, em vez de parar pela metade.
+   O cabeçalho colorido de cada coluna (que já mostra o nome do status) some
+   e volta ao trocar de página, então a pessoa sempre sabe em qual está sem
+   precisar de um indicador à parte. */
+@media (max-width: 700px) {
+  .kanban {
+    gap: var(--space-3);
+    padding: var(--space-3);
+    scroll-snap-type: x mandatory;
+    scroll-padding: var(--space-3);
+  }
+  .kanban-column {
+    flex: 0 0 calc(100% - var(--space-3) * 2);
+    min-width: calc(100% - var(--space-3) * 2);
+    max-width: none;
+    scroll-snap-align: start;
+  }
+}
+
 /* ===== Histórico (entregues) ===== */
 .history-list {
   flex: 1;
@@ -647,7 +668,19 @@ body {
   margin: 0 auto var(--space-6);
   border-bottom: 1px solid var(--color-border);
 }
+/* As quatro abas juntas passam de 500px — bem mais que a largura de um
+   celular. Em vez de espremer ou quebrar em duas linhas, a fileira vira
+   rolável: cada aba mantém seu tamanho de sempre e o dedo arrasta pra ver
+   as de trás. Sem isto elas ficariam cortadas e inacessíveis, porque
+   html/body está com overflow:hidden. */
+@media (max-width: 700px) {
+  .menu-manager__tabs {
+    gap: var(--space-4);
+    overflow-x: auto;
+  }
+}
 .menu-manager__tab {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -964,6 +997,24 @@ body {
   transform: translateX(15px);
 }
 
+/* No celular a linha do produto (foto + nome + preço + interruptor + ações)
+   não cabe numa só fileira — a foto some (a lista já é só pra escanear
+   rápido; a foto de verdade aparece ao abrir o produto) e o nome quebra pra
+   sua própria linha, empurrando preço/interruptor/ações pra debaixo, onde
+   sobra espaço de sobra pros três lado a lado. */
+@media (max-width: 600px) {
+  .admin-product-row {
+    flex-wrap: wrap;
+    row-gap: var(--space-2);
+  }
+  .admin-product-row__thumb {
+    display: none;
+  }
+  .admin-product-row__info {
+    flex-basis: 100%;
+  }
+}
+
 /* --- Modais de administração --- */
 .admin-modal-overlay {
   position: fixed;
@@ -988,6 +1039,14 @@ body {
 }
 .admin-modal--sm {
   max-width: 380px;
+}
+/* No celular a folga de 24px dos dois lados do overlay (--space-5) mais o
+   padding do formulário já comem quase 100px de uma tela de ~360px — dá pra
+   soltar um pouco mais de largura pros campos sem o modal encostar na borda. */
+@media (max-width: 480px) {
+  .admin-modal-overlay {
+    padding: var(--space-3);
+  }
 }
 .admin-modal__header {
   display: flex;
