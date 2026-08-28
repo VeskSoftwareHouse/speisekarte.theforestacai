@@ -47,7 +47,8 @@ function pivotByField(byLanguage: Record<string, Record<string, string>>): Trans
  */
 export async function translationsFor(
   next: SourceTexts,
-  existing?: ExistingRecord | null,
+  existing: ExistingRecord | null | undefined,
+  accessToken: string,
 ): Promise<Translations> {
   const current: Translations = {
     nome_i18n: existing?.nome_i18n ?? {},
@@ -64,7 +65,7 @@ export async function translationsFor(
   try {
     const res = await fetch('/api/translate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
       body: JSON.stringify({ texts: { nome, ...(descricao ? { descricao } : {}) } }),
     })
     const data = await res.json()

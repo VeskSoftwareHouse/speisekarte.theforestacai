@@ -1,24 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { requireCaller } from './_auth'
 
 const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-const anonKey = process.env.VITE_SUPABASE_ANON_KEY
-
-interface AuthedUser {
-  id: string
-}
-
-async function requireCaller(req: VercelRequest): Promise<AuthedUser | null> {
-  const authHeader = req.headers.authorization
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
-  if (!token || !supabaseUrl || !anonKey) return null
-
-  const anonClient = createClient(supabaseUrl, anonKey)
-  const { data, error } = await anonClient.auth.getUser(token)
-  if (error || !data.user) return null
-  return { id: data.user.id }
-}
 
 function mapUser(u: {
   id: string

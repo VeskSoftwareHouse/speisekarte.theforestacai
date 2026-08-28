@@ -11,6 +11,7 @@ interface Props {
   defaultCategoryId: string | null
   modifierGroups: Modifier[]
   linkedModifierIds: string[]
+  accessToken: string
   onClose: () => void
   onSave: (input: ProductInput, modifierIds: string[]) => Promise<void>
   onUploadImage: (file: File) => Promise<string>
@@ -22,6 +23,7 @@ export default function ProductFormModal({
   defaultCategoryId,
   modifierGroups,
   linkedModifierIds,
+  accessToken,
   onClose,
   onSave,
   onUploadImage,
@@ -65,6 +67,7 @@ export default function ProductFormModal({
       const { nome_i18n, descricao_i18n } = await translationsFor(
         { nome, descricao },
         product,
+        accessToken,
       )
       await onSave(
         {

@@ -6,11 +6,12 @@ import type { CategoryInput } from '../hooks/useMenuAdmin'
 
 interface Props {
   category: Category | null
+  accessToken: string
   onClose: () => void
   onSave: (input: CategoryInput) => Promise<void>
 }
 
-export default function CategoryFormModal({ category, onClose, onSave }: Props) {
+export default function CategoryFormModal({ category, accessToken, onClose, onSave }: Props) {
   const [nome, setNome] = useState(category?.nome ?? '')
   const [ordem, setOrdem] = useState(category?.ordem ?? 0)
   const [saving, setSaving] = useState(false)
@@ -22,7 +23,7 @@ export default function CategoryFormModal({ category, onClose, onSave }: Props) 
     setSaving(true)
     setError(null)
     try {
-      const { nome_i18n } = await translationsFor({ nome }, category)
+      const { nome_i18n } = await translationsFor({ nome }, category, accessToken)
       await onSave({ nome: nome.trim(), nome_i18n, ordem })
       onClose()
     } catch (err) {

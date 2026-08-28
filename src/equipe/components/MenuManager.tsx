@@ -302,6 +302,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
       {categoryForm && (
         <CategoryFormModal
           category={categoryForm === 'new' ? null : categoryForm}
+          accessToken={accessToken}
           onClose={() => setCategoryForm(null)}
           onSave={async (input) => {
             if (categoryForm === 'new') await createCategory(input)
@@ -317,6 +318,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
           defaultCategoryId={selectedCategoryId}
           modifierGroups={groups}
           linkedModifierIds={productForm === 'new' ? [] : (linksByItem[productForm.id] ?? [])}
+          accessToken={accessToken}
           onClose={() => setProductForm(null)}
           onSave={async (input, modifierIds) => {
             const id = productForm === 'new' ? (await createProduct(input)).id : productForm.id
@@ -353,6 +355,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
       {modifierGroupForm && (
         <ModifierGroupFormModal
           group={modifierGroupForm === 'new' ? null : modifierGroupForm}
+          accessToken={accessToken}
           onClose={() => setModifierGroupForm(null)}
           onSave={async (input) => {
             if (modifierGroupForm === 'new') await createGroup(input)
@@ -366,6 +369,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
           option={modifierOptionForm === 'new' ? null : modifierOptionForm}
           groups={groups}
           defaultGroupId={selectedGroupId}
+          accessToken={accessToken}
           onClose={() => setModifierOptionForm(null)}
           onSave={async (input) => {
             if (modifierOptionForm === 'new') await createOption(input)

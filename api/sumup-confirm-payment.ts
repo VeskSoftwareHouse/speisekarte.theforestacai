@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
-const anonKey = process.env.VITE_SUPABASE_ANON_KEY
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 const sumupApiKey = process.env.SUMUP_API_KEY
 const sumupMerchantCode = process.env.SUMUP_MERCHANT_CODE
 
@@ -81,7 +81,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(405).json({ error: 'Método não permitido.' })
     return
   }
-  if (!supabaseUrl || !anonKey || !sumupApiKey) {
+  if (!supabaseUrl || !serviceRoleKey || !sumupApiKey) {
     res.status(500).json({ error: 'Servidor não configurado (variáveis de ambiente do SumUp ausentes).' })
     return
   }
@@ -92,7 +92,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const supabase = createClient(supabaseUrl, anonKey)
+  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
 
   const { data: order, error: orderErr } = await supabase.from('orders').select('*').eq('id', orderId).single()
   if (orderErr || !order) {

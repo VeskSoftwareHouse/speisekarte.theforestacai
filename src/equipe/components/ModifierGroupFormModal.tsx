@@ -6,11 +6,12 @@ import type { ModifierGroupInput } from '../hooks/useModifierAdmin'
 
 interface Props {
   group: Modifier | null
+  accessToken: string
   onClose: () => void
   onSave: (input: ModifierGroupInput) => Promise<void>
 }
 
-export default function ModifierGroupFormModal({ group, onClose, onSave }: Props) {
+export default function ModifierGroupFormModal({ group, accessToken, onClose, onSave }: Props) {
   const [nome, setNome] = useState(group?.nome ?? '')
   const [tipo, setTipo] = useState<Modifier['tipo']>(group?.tipo ?? 'opcional')
   const [selecao, setSelecao] = useState<Modifier['selecao']>(group?.selecao ?? 'multipla')
@@ -25,7 +26,7 @@ export default function ModifierGroupFormModal({ group, onClose, onSave }: Props
     setSaving(true)
     setError(null)
     try {
-      const { nome_i18n } = await translationsFor({ nome }, group)
+      const { nome_i18n } = await translationsFor({ nome }, group, accessToken)
       const parsedMaxSelecoes = maxSelecoes.trim() ? Number(maxSelecoes) : null
       await onSave({
         nome: nome.trim(),

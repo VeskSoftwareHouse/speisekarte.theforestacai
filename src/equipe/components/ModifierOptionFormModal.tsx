@@ -9,6 +9,7 @@ interface Props {
   option: ModifierOption | null
   groups: Modifier[]
   defaultGroupId: string | null
+  accessToken: string
   onClose: () => void
   onSave: (input: ModifierOptionInput) => Promise<void>
   onUploadImage: (file: File) => Promise<string>
@@ -18,6 +19,7 @@ export default function ModifierOptionFormModal({
   option,
   groups,
   defaultGroupId,
+  accessToken,
   onClose,
   onSave,
   onUploadImage,
@@ -53,7 +55,7 @@ export default function ModifierOptionFormModal({
     setSaving(true)
     setError(null)
     try {
-      const { nome_i18n } = await translationsFor({ nome }, option)
+      const { nome_i18n } = await translationsFor({ nome }, option, accessToken)
       await onSave({
         nome: nome.trim(),
         nome_i18n,

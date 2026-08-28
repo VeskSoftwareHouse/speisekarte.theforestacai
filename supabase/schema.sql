@@ -274,8 +274,11 @@ drop policy if exists "authenticated delete tip_options" on tip_options;
 drop policy if exists "public read orders"              on orders;
 drop policy if exists "public insert orders"             on orders;
 drop policy if exists "public update orders"             on orders;
+drop policy if exists "authenticated read orders"        on orders;
+drop policy if exists "authenticated update orders"      on orders;
 drop policy if exists "public read order_items"          on order_items;
 drop policy if exists "public insert order_items"        on order_items;
+drop policy if exists "authenticated read order_items"    on order_items;
 
 -- leitura pública do cardápio
 create policy "public read categories"          on categories          for select using (true);
@@ -312,14 +315,20 @@ create policy "authenticated insert tip_options" on tip_options for insert with 
 create policy "authenticated update tip_options" on tip_options for update using (auth.uid() is not null) with check (auth.uid() is not null);
 create policy "authenticated delete tip_options" on tip_options for delete using (auth.uid() is not null);
 
--- pedidos: leitura pública (painel da equipe), criação pública (app da mesa),
--- atualização pública (equipe avança status)
-create policy "public read orders"   on orders for select using (true);
-create policy "public insert orders" on orders for insert with check (true);
-create policy "public update orders" on orders for update using (true) with check (true);
+-- pedidos: só a equipe logada lê e avança status. O App da Mesa nunca grava
+-- aqui com a chave anon — ele cria/paga pedidos via /api/sumup-create-checkout
+-- e /api/sumup-confirm-payment, que usam a chave de serviço (bypassa RLS) e
+-- reprecificam cada item a partir de menu_items antes de gravar. A página de
+-- recibo lê pelo mesmo caminho, via /api/receipt.
+--
+-- Antes "public read/insert/update ... using(true)" deixava qualquer um, sem
+-- login nenhum, ler o histórico inteiro de pedidos (nome de cliente, valores)
+-- e sobrescrever o status de qualquer pedido direto pela API REST do
+-- Supabase — inclusive marcando um pedido não pago como "recebido".
+create policy "authenticated read orders"   on orders for select using (auth.uid() is not null);
+create policy "authenticated update orders" on orders for update using (auth.uid() is not null) with check (auth.uid() is not null);
 
-create policy "public read order_items"   on order_items for select using (true);
-create policy "public insert order_items" on order_items for insert with check (true);
+create policy "authenticated read order_items" on order_items for select using (auth.uid() is not null);
 
 -- =====================================================================
 -- Realtime — habilita a publicação para o App da Equipe escutar inserts/

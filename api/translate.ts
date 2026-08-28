@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { GoogleGenAI } from '@google/genai'
+import { requireCaller } from './_auth'
 
 const geminiApiKey = process.env.GEMINI_API_KEY
 
@@ -49,6 +50,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
   if (!geminiApiKey) {
     res.status(500).json({ error: 'Servidor não configurado (GEMINI_API_KEY ausente).' })
+    return
+  }
+  // Sem isto, qualquer pessoa na internet podia chamar esta rota direto (sem
+  // passar pelo painel) e gastar a cota paga do Gemini com texto qualquer,
+  // sem relação nenhuma com o cardápio.
+  if (!(await requireCaller(req))) {
+    res.status(401).json({ error: 'Não autenticado.' })
     return
   }
 

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@shared/supabaseClient'
 import { formatCHF } from '@shared/format'
 import { isPaidStatus } from '@shared/types'
 import type { OrderItem, ReportOrder } from '@shared/types'
@@ -48,12 +47,10 @@ export default function Receipt() {
     }
     let vivo = true
     ;(async () => {
-      const { data } = await supabase
-        .from('orders')
-        .select('*, order_items(*)')
-        .eq('id', orderId)
-        .maybeSingle()
+      const resposta = await fetch(`/api/receipt?orderId=${encodeURIComponent(orderId)}`).catch(() => null)
       if (!vivo) return
+      if (!resposta || !resposta.ok) return setEstado('ausente')
+      const { order: data } = await resposta.json()
       if (!data) return setEstado('ausente')
 
       const { order_items, ...order } = data as ReportOrder & { order_items?: OrderItem[] }

@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
-const anonKey = process.env.VITE_SUPABASE_ANON_KEY
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 const sumupApiKey = process.env.SUMUP_API_KEY
 const sumupMerchantCode = process.env.SUMUP_MERCHANT_CODE
 // Id da maquininha Solo pareada (ver scripts/sumup-pair-reader.md). Definido =
@@ -126,13 +126,122 @@ async function resolveTip(
   return permitidos.includes(Math.round(enviado * 100) / 100) ? enviado : 0
 }
 
+interface RawSelectedOption {
+  option_id?: unknown
+}
+
 interface CartItemPayload {
+  menu_item_id: string
+  quantidade: number
+  observacoes: string | null
+  modifiers_selecionados: unknown
+}
+
+interface ResolvedItem {
   menu_item_id: string
   nome_item: string
   quantidade: number
   observacoes: string | null
-  modifiers_selecionados: unknown
+  modifiers_selecionados: unknown[]
   preco_unitario: number
+}
+
+const MAX_QUANTIDADE_POR_ITEM = 30
+
+/**
+ * Reprecifica o carrinho a partir do banco. O totem manda `preco_unitario` só
+ * para render otimista — nunca é o que se cobra: um pedido forjado poderia
+ * declarar qualquer preço, então cada linha é refeita do zero a partir de
+ * `menu_items.preco` mais o `preco_adicional` de cada opção de modifier
+ * (também relido do banco, nunca do que o cliente mandou). Um item ou opção
+ * que não existe mais, está indisponível, ou uma quantidade fora do razoável
+ * derruba o pedido inteiro — não silenciosamente vira zero, como a gorjeta.
+ */
+async function resolveItems(
+  supabase: SupabaseClient,
+  raw: unknown,
+): Promise<ResolvedItem[] | null> {
+  if (!Array.isArray(raw) || raw.length === 0) return null
+  const cartItems = raw as CartItemPayload[]
+
+  const menuItemIds = [...new Set(cartItems.map((it) => it.menu_item_id))]
+  if (menuItemIds.some((id) => typeof id !== 'string' || !id)) return null
+
+  const optionIds = [
+    ...new Set(
+      cartItems.flatMap((it) =>
+        Array.isArray(it.modifiers_selecionados)
+          ? (it.modifiers_selecionados as RawSelectedOption[])
+              .map((o) => o.option_id)
+              .filter((id): id is string => typeof id === 'string' && id.length > 0)
+          : [],
+      ),
+    ),
+  ]
+
+  const [menuItemsRes, optionsRes] = await Promise.all([
+    supabase.from('menu_items').select('id, nome, preco, disponivel').in('id', menuItemIds),
+    optionIds.length > 0
+      ? supabase.from('modifier_options').select('id, modifier_id, nome, nome_i18n, preco_adicional').in('id', optionIds)
+      : Promise.resolve({ data: [], error: null }),
+  ])
+  if (menuItemsRes.error || !menuItemsRes.data || optionsRes.error || !optionsRes.data) return null
+
+  const modifierIds = [...new Set(optionsRes.data.map((o: { modifier_id: string }) => o.modifier_id))]
+  const modifiersRes =
+    modifierIds.length > 0
+      ? await supabase.from('modifiers').select('id, nome').in('id', modifierIds)
+      : { data: [], error: null }
+  if (modifiersRes.error || !modifiersRes.data) return null
+
+  const menuItemById = new Map(menuItemsRes.data.map((m: { id: string }) => [m.id, m]))
+  const optionById = new Map(optionsRes.data.map((o: { id: string }) => [o.id, o]))
+  const modifierNameById = new Map(
+    modifiersRes.data.map((g: { id: string; nome: string }) => [g.id, g.nome]),
+  )
+
+  const resolved: ResolvedItem[] = []
+  for (const it of cartItems) {
+    const quantidade = Number(it.quantidade)
+    if (!Number.isInteger(quantidade) || quantidade <= 0 || quantidade > MAX_QUANTIDADE_POR_ITEM) return null
+
+    const menuItem = menuItemById.get(it.menu_item_id) as
+      | { id: string; nome: string; preco: number; disponivel: boolean }
+      | undefined
+    if (!menuItem || !menuItem.disponivel) return null
+
+    const rawOptions = Array.isArray(it.modifiers_selecionados)
+      ? (it.modifiers_selecionados as RawSelectedOption[])
+      : []
+    const resolvedOptions: unknown[] = []
+    let addOnTotal = 0
+    for (const raw of rawOptions) {
+      if (typeof raw.option_id !== 'string') return null
+      const option = optionById.get(raw.option_id) as
+        | { id: string; modifier_id: string; nome: string; nome_i18n: Record<string, string>; preco_adicional: number }
+        | undefined
+      if (!option) return null
+      addOnTotal += Number(option.preco_adicional)
+      resolvedOptions.push({
+        modifier_id: option.modifier_id,
+        modifier_nome: modifierNameById.get(option.modifier_id) ?? '',
+        option_id: option.id,
+        option_nome: option.nome,
+        option_nome_i18n: option.nome_i18n ?? {},
+        preco_adicional: Number(option.preco_adicional),
+      })
+    }
+
+    resolved.push({
+      menu_item_id: menuItem.id,
+      nome_item: menuItem.nome,
+      quantidade,
+      observacoes: typeof it.observacoes === 'string' ? it.observacoes.trim().slice(0, 500) || null : null,
+      modifiers_selecionados: resolvedOptions,
+      preco_unitario: Math.round((Number(menuItem.preco) + addOnTotal) * 100) / 100,
+    })
+  }
+  return resolved
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -140,16 +249,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(405).json({ error: 'Método não permitido.' })
     return
   }
-  if (!supabaseUrl || !anonKey || !sumupApiKey || !sumupMerchantCode) {
+  if (!supabaseUrl || !serviceRoleKey || !sumupApiKey || !sumupMerchantCode) {
     res.status(500).json({ error: 'Servidor não configurado (variáveis de ambiente do SumUp ausentes).' })
     return
   }
 
   const { items, customerName, tip } = req.body ?? {}
-  if (!Array.isArray(items) || items.length === 0) {
-    res.status(400).json({ error: 'Pedido inválido.' })
-    return
-  }
   // Quem decide a forma de cobrança é o servidor, não o app: com uma maquininha
   // pareada o pedido vai para ela; sem maquininha, cai no checkout hospedado.
   const useReader = Boolean(sumupReaderId && sumupAffiliateKey)
@@ -160,14 +265,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const cleanCustomerName = customerName.trim().slice(0, 80)
 
-  const cartItems = items as CartItemPayload[]
+  // Chave de serviço: os pedidos nunca são escritos com a chave anon (ver
+  // supabase/schema.sql — só a equipe logada e este servidor podem gravar em
+  // `orders`/`order_items`), e é este reprecificamento que garante que o
+  // valor cobrado é sempre o do cardápio, nunca o que o cliente declarou.
+  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+
+  const cartItems = await resolveItems(supabase, items)
+  if (!cartItems) {
+    res.status(400).json({ error: 'Pedido inválido.' })
+    return
+  }
   const subtotal = cartItems.reduce((sum, it) => sum + it.preco_unitario * it.quantidade, 0)
   if (!(subtotal > 0)) {
     res.status(400).json({ error: 'Valor do pedido inválido.' })
     return
   }
-
-  const supabase = createClient(supabaseUrl, anonKey)
   const tipAmount = await resolveTip(supabase, tip, subtotal)
   const total = Number((subtotal + tipAmount).toFixed(2))
 
