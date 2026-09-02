@@ -171,6 +171,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
         foto_url: product.foto_url,
         disponivel: !product.disponivel,
         destaque: product.destaque,
+        descricao_na_comanda: product.descricao_na_comanda,
         ordem: product.ordem,
       })
     } catch (err) {

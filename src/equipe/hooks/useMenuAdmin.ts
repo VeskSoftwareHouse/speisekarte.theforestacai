@@ -26,6 +26,7 @@ export interface ProductInput {
   foto_url: string | null
   disponivel: boolean
   destaque: boolean
+  descricao_na_comanda: boolean
   ordem: number
 }
 

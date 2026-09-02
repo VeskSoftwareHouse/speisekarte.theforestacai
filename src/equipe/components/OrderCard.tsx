@@ -52,6 +52,7 @@ export default function OrderCard({ order, isNew, now, onAdvance, onSeen }: Prop
               <span className="order-card__item-qty">{item.quantidade}×</span>
               <span className="order-card__item-name">{item.nome_item}</span>
             </div>
+            {item.descricao_item && <p className="order-card__item-recipe">{item.descricao_item}</p>}
             {item.modifiers_selecionados.length > 0 && (
               <p className="order-card__item-mods">
                 {item.modifiers_selecionados.map((m) => m.option_nome).join(', ')}

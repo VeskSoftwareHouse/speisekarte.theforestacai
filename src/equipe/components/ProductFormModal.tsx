@@ -34,6 +34,7 @@ export default function ProductFormModal({
   const [preco, setPreco] = useState(product?.preco ?? 0)
   const [disponivel, setDisponivel] = useState(product?.disponivel ?? true)
   const [destaque, setDestaque] = useState(product?.destaque ?? false)
+  const [descricaoNaComanda, setDescricaoNaComanda] = useState(product?.descricao_na_comanda ?? false)
   const [ordem, setOrdem] = useState(product?.ordem ?? 0)
   const [fotoUrl, setFotoUrl] = useState(product?.foto_url ?? '')
   const [selectedModifierIds, setSelectedModifierIds] = useState<string[]>(linkedModifierIds)
@@ -80,6 +81,7 @@ export default function ProductFormModal({
           foto_url: fotoUrl.trim() || null,
           disponivel,
           destaque,
+          descricao_na_comanda: descricaoNaComanda,
           ordem,
         },
         selectedModifierIds,
@@ -170,6 +172,15 @@ export default function ProductFormModal({
               rows={2}
               placeholder="Descrição que aparece no cardápio"
             />
+          </label>
+
+          <label className="admin-form__checkbox">
+            <input
+              type="checkbox"
+              checked={descricaoNaComanda}
+              onChange={(e) => setDescricaoNaComanda(e.target.checked)}
+            />
+            <span>Enviar descrição na comanda do pedido</span>
           </label>
 
           <p className="admin-form__hint">

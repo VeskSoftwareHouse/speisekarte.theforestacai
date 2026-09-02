@@ -70,6 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     observacoes: it.observacoes,
     modifiers_selecionados: it.modifiers_selecionados,
     preco_unitario: it.preco_unitario,
+    descricao_item: it.descricao_item,
   }))
   const { error: itemsErr } = await supabase.from('order_items').insert(orderItemsPayload)
   if (itemsErr) {

@@ -43,6 +43,13 @@ alter table menu_items add column if not exists descricao_i18n jsonb not null de
 alter table menu_items add column if not exists nome_i18n jsonb not null default '{}'::jsonb;
 -- marca os produtos escolhidos a dedo pela equipe para aparecer na página "Destaques" do cardápio.
 alter table menu_items add column if not exists destaque boolean not null default false;
+-- quando true, a descrição do produto (a receita/composição, ex: "Tapioka
+-- Cremig, michpulver, kokosraspel...") é copiada para `order_items.descricao_item`
+-- no momento do pedido e aparece na comanda da cozinha — útil pra combos
+-- prontos sem modifiers, onde a "receita" não vem de escolha nenhuma do
+-- cliente. Produtos com adicionais normalmente não precisam disto: a cozinha
+-- já vê o que foi escolhido em `modifiers_selecionados`.
+alter table menu_items add column if not exists descricao_na_comanda boolean not null default false;
 
 create index if not exists idx_menu_items_categoria on menu_items(categoria_id);
 
@@ -215,6 +222,12 @@ create table if not exists order_items (
   modifiers_selecionados jsonb not null default '[]'::jsonb,
   preco_unitario         numeric(10,2) not null
 );
+
+-- Descrição do produto no momento do pedido, só preenchida quando
+-- `menu_items.descricao_na_comanda` era true na hora da compra — ver
+-- comentário lá. Snapshot, igual `nome_item`: não muda se a descrição do
+-- produto mudar depois.
+alter table order_items add column if not exists descricao_item text;
 
 create index if not exists idx_order_items_order on order_items(order_id);
 

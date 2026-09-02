@@ -621,6 +621,16 @@ body {
 .order-card__item-name {
   font-weight: 600;
 }
+/* Receita/composição do produto (opt-in por produto, ver ProductFormModal) —
+   itálico pra se distinguir à primeira vista dos adicionais que o cliente
+   escolheu (order-card__item-mods, texto reto): uma é a "ficha técnica" do
+   prato, a outra é o que a pessoa pediu em cima dela. */
+.order-card__item-recipe {
+  margin: 1px 0 0 2.4ch;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  font-style: italic;
+}
 .order-card__item-mods,
 .order-card__item-obs {
   margin: 1px 0 0 2.4ch;

@@ -44,6 +44,8 @@ export interface MenuItem {
   disponivel: boolean
   /** Escolhido a dedo pela equipe para aparecer na página "Destaques" do cardápio. */
   destaque: boolean
+  /** Se true, a descrição vai carimbada em `order_items.descricao_item` a cada pedido e aparece na comanda da cozinha. */
+  descricao_na_comanda: boolean
   ordem: number
   /** Limite combinado de seleções nos grupos com `conta_para_limite`, ex: "escolha até 4". null = sem limite. */
   max_ingredientes: number | null
@@ -153,6 +155,8 @@ export interface OrderItem {
   observacoes: string | null
   modifiers_selecionados: SelectedModifierOption[]
   preco_unitario: number
+  /** Descrição do produto, carimbada no pedido quando `MenuItem.descricao_na_comanda` era true na compra. null = não se aplica a este item. */
+  descricao_item: string | null
 }
 
 /** Um item completo com seus modifiers disponíveis, montado no App da Mesa */

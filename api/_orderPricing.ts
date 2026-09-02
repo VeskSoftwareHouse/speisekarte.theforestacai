@@ -53,6 +53,8 @@ export interface ResolvedItem {
   observacoes: string | null
   modifiers_selecionados: unknown[]
   preco_unitario: number
+  /** Descrição do produto, só quando `menu_items.descricao_na_comanda` está ligado — vai carimbada pra comanda da cozinha. */
+  descricao_item: string | null
 }
 
 const MAX_QUANTIDADE_POR_ITEM = 30
@@ -89,7 +91,10 @@ export async function resolveItems(
   ]
 
   const [menuItemsRes, optionsRes] = await Promise.all([
-    supabase.from('menu_items').select('id, nome, preco, disponivel').in('id', menuItemIds),
+    supabase
+      .from('menu_items')
+      .select('id, nome, descricao, preco, disponivel, descricao_na_comanda')
+      .in('id', menuItemIds),
     optionIds.length > 0
       ? supabase.from('modifier_options').select('id, modifier_id, nome, nome_i18n, preco_adicional').in('id', optionIds)
       : Promise.resolve({ data: [], error: null }),
@@ -115,7 +120,14 @@ export async function resolveItems(
     if (!Number.isInteger(quantidade) || quantidade <= 0 || quantidade > MAX_QUANTIDADE_POR_ITEM) return null
 
     const menuItem = menuItemById.get(it.menu_item_id) as
-      | { id: string; nome: string; preco: number; disponivel: boolean }
+      | {
+          id: string
+          nome: string
+          descricao: string | null
+          preco: number
+          disponivel: boolean
+          descricao_na_comanda: boolean
+        }
       | undefined
     if (!menuItem || !menuItem.disponivel) return null
 
@@ -148,6 +160,7 @@ export async function resolveItems(
       observacoes: typeof it.observacoes === 'string' ? it.observacoes.trim().slice(0, 500) || null : null,
       modifiers_selecionados: resolvedOptions,
       preco_unitario: Math.round((Number(menuItem.preco) + addOnTotal) * 100) / 100,
+      descricao_item: menuItem.descricao_na_comanda && menuItem.descricao ? menuItem.descricao : null,
     })
   }
   return resolved
