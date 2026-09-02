@@ -109,7 +109,7 @@ function CashPendingCard({ order, onConfirm }: CardProps) {
 
       {error && <p className="admin-form__error">{error}</p>}
 
-      <button className="btn btn-primary btn-block" disabled={valor < total || saving} onClick={handleConfirm}>
+      <button className="btn btn-primary" disabled={valor < total || saving} onClick={handleConfirm}>
         {saving ? 'Confirmando…' : 'Confirmar e finalizar'}
       </button>
     </article>
