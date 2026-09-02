@@ -93,14 +93,17 @@ function CashPendingCard({ order, onConfirm }: CardProps) {
           <span>Valor recebido</span>
           <CurrencyInput value={valor} onChange={setValor} />
         </label>
-        {valor > 0 &&
-          (troco > 0 ? (
-            <p className="cash-pending-card__change">Troco: {formatCHF(troco)}</p>
-          ) : troco === 0 ? (
-            <p className="cash-pending-card__exact">Valor exato</p>
-          ) : (
-            <p className="cash-pending-card__missing">Faltam {formatCHF(-troco)}</p>
-          ))}
+        {/* Sem isto, o campo ainda em "0,00" não mostrava nada — o botão
+            aparecia só apagado, sem dizer por quê, e parecia travado em vez
+            de esperando o valor. Mostrar "faltam" desde o início deixa claro
+            o que falta pra liberar, mesmo antes da equipe digitar algo. */}
+        {troco > 0 ? (
+          <p className="cash-pending-card__change">Troco: {formatCHF(troco)}</p>
+        ) : troco === 0 ? (
+          <p className="cash-pending-card__exact">Valor exato</p>
+        ) : (
+          <p className="cash-pending-card__missing">Faltam {formatCHF(-troco)}</p>
+        )}
       </div>
 
       {error && <p className="admin-form__error">{error}</p>}
