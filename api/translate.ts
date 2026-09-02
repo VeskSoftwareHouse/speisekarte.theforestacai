@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { GoogleGenAI } from '@google/genai'
-import { requireCaller } from './_auth'
+import { requireCaller } from './_auth.js'
 
 const geminiApiKey = process.env.GEMINI_API_KEY
 
