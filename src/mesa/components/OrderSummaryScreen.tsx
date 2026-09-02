@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, CreditCard, Banknote } from 'lucide-react'
 import { formatCHF, formatTipLabel } from '@shared/format'
 import { FallbackPhotoIcon } from '../categoryIcons'
 import { useLanguage } from '../i18n/LanguageContext'
@@ -104,16 +104,18 @@ export default function OrderSummaryScreen({ items, sending, onConfirm, onBack }
             <div className="order-summary__payment-options">
               <button
                 type="button"
-                className={`option-pill ${paymentMethod === 'cartao' ? 'option-pill--active' : ''}`}
+                className={`option-pill option-pill--card ${paymentMethod === 'cartao' ? 'option-pill--active' : ''}`}
                 onClick={() => setPaymentMethod('cartao')}
               >
+                <CreditCard size={18} strokeWidth={2} aria-hidden />
                 {t('paymentMethodCard')}
               </button>
               <button
                 type="button"
-                className={`option-pill ${paymentMethod === 'dinheiro' ? 'option-pill--active' : ''}`}
+                className={`option-pill option-pill--cash ${paymentMethod === 'dinheiro' ? 'option-pill--active' : ''}`}
                 onClick={() => setPaymentMethod('dinheiro')}
               >
+                <Banknote size={18} strokeWidth={2} aria-hidden />
                 {t('paymentMethodCash')}
               </button>
             </div>
