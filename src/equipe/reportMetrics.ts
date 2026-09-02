@@ -363,7 +363,7 @@ export function splitCustomVsReady(orders: ReportOrder[], menuItemsById: Map<str
   return acc.rows()
 }
 
-/** Faturamento por forma de pagamento, como a SumUp reportou a transação. */
+/** Faturamento por forma de pagamento — como a SumUp reportou a transação no cartão, ou "Dinheiro" quando a equipe confirmou o troco no caixa. */
 export function rankPaymentMethods(orders: ReportOrder[]): RankRow[] {
   const acc = accumulate()
   for (const order of orders) {

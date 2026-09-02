@@ -6,7 +6,7 @@ import PaymentStatusScreen from './components/PaymentStatusScreen'
 import Screensaver from './components/Screensaver'
 import { useKeepFullscreen } from './useFullscreen'
 import { useLanguage } from './i18n/LanguageContext'
-import type { CartItem } from './types'
+import type { CartItem, PaymentMethod } from './types'
 
 type View =
   | 'dashboard'
@@ -14,11 +14,20 @@ type View =
   | 'awaiting_tap'
   | 'confirming_payment'
   | 'payment_failed'
+  | 'awaiting_cash'
+  | 'cash_timeout'
   | 'confirmation'
 
 /** Quanto tempo o totem espera o cliente aproximar o cartão antes de desistir. */
 const TAP_TIMEOUT_MS = 120_000
 const TAP_POLL_INTERVAL_MS = 2_000
+/**
+ * Quanto o totem espera a equipe confirmar o troco no caixa. Bem mais longo
+ * que o do cartão: ali quem decide é o leitor, aqui é gente ocupada — pode
+ * haver fila no caixa antes de alguém digitar o valor.
+ */
+const CASH_TIMEOUT_MS = 600_000
+const CASH_POLL_INTERVAL_MS = 3_000
 
 export default function App() {
   const [view, setView] = useState<View>('dashboard')
@@ -68,7 +77,19 @@ export default function App() {
   }
 
   function isPaid(status: string | null): boolean {
-    return status !== null && status !== 'aguardando_pagamento' && status !== 'cancelado'
+    return (
+      status !== null &&
+      status !== 'aguardando_pagamento' &&
+      status !== 'aguardando_dinheiro' &&
+      status !== 'cancelado'
+    )
+  }
+
+  /** Só lê o status do pedido — quem muda é a equipe, confirmando o troco no painel. */
+  async function fetchOrderStatus(orderId: string): Promise<string | null> {
+    const res = await fetch(`/api/order-status?orderId=${encodeURIComponent(orderId)}`)
+    const data = await res.json()
+    return res.ok && typeof data.status === 'string' ? data.status : null
   }
 
   async function confirmPayment(orderId: string) {
@@ -118,6 +139,35 @@ export default function App() {
   }
 
   /**
+   * Dinheiro: o pedido já está criado como `aguardando_dinheiro`; quem o tira
+   * dali é a equipe, conferindo o troco no painel — aqui só ficamos
+   * perguntando ao servidor até isso acontecer (ou o cliente desistir).
+   */
+  async function waitForCash(orderId: string) {
+    setConfirmingOrderId(orderId)
+    setView('awaiting_cash')
+    setSending(false)
+    const deadline = Date.now() + CASH_TIMEOUT_MS
+
+    while (Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, CASH_POLL_INTERVAL_MS))
+      let status: string | null = null
+      try {
+        status = await fetchOrderStatus(orderId)
+      } catch {
+        continue
+      }
+      if (isPaid(status)) {
+        setCart([])
+        setView('confirmation')
+        return
+      }
+      if (status === 'cancelado') break
+    }
+    setView('cash_timeout')
+  }
+
+  /**
    * Traduz a falha que o servidor devolveu. Ele responde com um código, não
    * com a frase: a mensagem pronta chegava sempre em português, e aparecia
    * assim para um cliente lendo o cardápio em alemão. Código desconhecido —
@@ -129,7 +179,7 @@ export default function App() {
     return t('genericOrderError')
   }
 
-  async function handleSubmit(customerName: string, tip: number) {
+  async function handleSubmit(customerName: string, tip: number, paymentMethod: PaymentMethod) {
     if (cart.length === 0 || !customerName.trim()) return
     setSending(true)
     setSendError(null)
@@ -142,6 +192,27 @@ export default function App() {
       modifiers_selecionados: item.selectedOptions,
       preco_unitario: item.unitPrice,
     }))
+
+    if (paymentMethod === 'dinheiro') {
+      try {
+        const res = await fetch('/api/create-cash-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: itemsPayload, customerName, tip }),
+        })
+        const data = await res.json()
+        if (!res.ok || !data.orderId) {
+          setSendError(errorMessage(data?.code))
+          setSending(false)
+          return
+        }
+        await waitForCash(data.orderId)
+      } catch {
+        setSendError(t('genericOrderError'))
+        setSending(false)
+      }
+      return
+    }
 
     try {
       const res = await fetch('/api/sumup-create-checkout', {
@@ -188,6 +259,20 @@ export default function App() {
         <PaymentStatusScreen
           status="failed"
           onRetry={() => confirmingOrderId && confirmPayment(confirmingOrderId)}
+          onBack={() => setView('dashboard')}
+        />
+      )
+    }
+
+    if (view === 'awaiting_cash') {
+      return <PaymentStatusScreen status="awaiting_cash" />
+    }
+
+    if (view === 'cash_timeout') {
+      return (
+        <PaymentStatusScreen
+          status="cash_timeout"
+          onRetry={() => confirmingOrderId && waitForCash(confirmingOrderId)}
           onBack={() => setView('dashboard')}
         />
       )
@@ -242,14 +327,16 @@ export default function App() {
   // Nada de descanso de tela enquanto o cliente aproxima o cartão ou espera a
   // confirmação: cobrir a tela nesse meio-tempo seria péssimo.
   //
-  // "payment_failed" fica de fora desta lista de propósito — tinha entrado
-  // aqui pelo mesmo motivo, mas sem nenhum outro jeito de sair da tela sozinho,
-  // um cliente que via a recusa e simplesmente ia embora (reação comum)
-  // deixava o totem travado ali, sem carrinho e sem forma de o próximo
-  // cliente pedir, até a equipe notar. Os 90s + 3min do próprio descanso de
-  // tela já são folga de sobra para quem ficou lendo o motivo da recusa: ao
-  // primeiro toque a tela desperta normalmente, como em qualquer outra.
-  const PAYMENT_VIEWS: View[] = ['awaiting_tap', 'confirming_payment']
+  // "payment_failed" e "cash_timeout" ficam de fora desta lista de propósito
+  // — "awaiting_cash" chegou a entrar pelo mesmo motivo de "awaiting_tap",
+  // mas sem nenhum outro jeito de sair da tela sozinho, um cliente que
+  // desiste de esperar e vai embora (reação comum, ainda mais numa fila no
+  // caixa) deixava o totem travado ali, sem forma de o próximo cliente
+  // pedir, até a equipe notar. Os 90s + 3min do próprio descanso de tela já
+  // são folga de sobra para quem ficou esperando: ao primeiro toque a tela
+  // desperta normalmente, como em qualquer outra — o pedido continua
+  // pendente no painel da equipe, e quem confirma o troco tira ele dali.
+  const PAYMENT_VIEWS: View[] = ['awaiting_tap', 'confirming_payment', 'awaiting_cash']
 
   return (
     <>

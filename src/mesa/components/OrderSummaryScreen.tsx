@@ -6,13 +6,13 @@ import { useLanguage } from '../i18n/LanguageContext'
 import { translatedField } from '../i18n/menuTranslations'
 import { tipAmountFor } from '@shared/types'
 import { useTipOptions } from '../hooks/useTipOptions'
-import type { CartItem } from '../types'
+import type { CartItem, PaymentMethod } from '../types'
 import { cartItemTotal } from '../types'
 
 interface Props {
   items: CartItem[]
   sending: boolean
-  onConfirm: (customerName: string, tip: number) => void
+  onConfirm: (customerName: string, tip: number, paymentMethod: PaymentMethod) => void
   onBack: () => void
 }
 
@@ -24,6 +24,7 @@ export default function OrderSummaryScreen({ items, sending, onConfirm, onBack }
   // francos junto com o carrinho, e guardar o número congelaria o valor de
   // quando o cliente clicou.
   const [tipId, setTipId] = useState<string | null>(null)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cartao')
 
   const subtotal = items.reduce((sum, i) => sum + cartItemTotal(i), 0)
   const escolhida = tipOptions.find((o) => o.id === tipId) ?? null
@@ -99,6 +100,26 @@ export default function OrderSummaryScreen({ items, sending, onConfirm, onBack }
           </label>
 
           <div className="order-summary__field">
+            <span>{t('paymentMethodLabel')}</span>
+            <div className="order-summary__payment-options">
+              <button
+                type="button"
+                className={`option-pill ${paymentMethod === 'cartao' ? 'option-pill--active' : ''}`}
+                onClick={() => setPaymentMethod('cartao')}
+              >
+                {t('paymentMethodCard')}
+              </button>
+              <button
+                type="button"
+                className={`option-pill ${paymentMethod === 'dinheiro' ? 'option-pill--active' : ''}`}
+                onClick={() => setPaymentMethod('dinheiro')}
+              >
+                {t('paymentMethodCash')}
+              </button>
+            </div>
+          </div>
+
+          <div className="order-summary__field">
             <span>{t('tipLabel')}</span>
             <div className="order-summary__tip-options">
               {/* "Sem gorjeta" nunca vem do banco: a saída de não deixar nada
@@ -144,9 +165,9 @@ export default function OrderSummaryScreen({ items, sending, onConfirm, onBack }
           <button
             className="btn btn-primary btn-block"
             disabled={items.length === 0 || sending || !customerName.trim()}
-            onClick={() => onConfirm(customerName.trim(), tip)}
+            onClick={() => onConfirm(customerName.trim(), tip, paymentMethod)}
           >
-            {sending ? t('sending') : t('confirmAndPayButton')}
+            {sending ? t('sending') : paymentMethod === 'dinheiro' ? t('confirmOrderButton') : t('confirmAndPayButton')}
           </button>
         </footer>
       </div>

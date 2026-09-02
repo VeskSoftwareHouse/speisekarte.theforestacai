@@ -1,5 +1,7 @@
 import type { MenuItemWithModifiers, SelectedModifierOption } from '@shared/types'
 
+export type PaymentMethod = 'cartao' | 'dinheiro'
+
 export interface CartItem {
   cartId: string
   menuItem: MenuItemWithModifiers

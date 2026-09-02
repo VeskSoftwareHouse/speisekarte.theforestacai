@@ -655,6 +655,126 @@ body {
   background: var(--color-primary-dark);
 }
 
+/* ===== Pagamento em dinheiro pendente =====
+   Fica sempre visível acima do quadro da cozinha — diferente de "Entregues",
+   aqui tem um cliente parado no caixa esperando, então não pode depender de
+   alguém pensar em clicar numa aba. Some sozinha quando não há pendente. */
+.cash-pending {
+  flex: 0 0 auto;
+  padding: var(--space-4) var(--space-5) 0;
+}
+.cash-pending__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  color: #8a5a00;
+}
+.cash-pending__header h2 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.cash-pending__count {
+  background: var(--color-gold);
+  color: #fff;
+  border-radius: 999px;
+  min-width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-2);
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+.cash-pending__list {
+  display: flex;
+  gap: var(--space-4);
+  overflow-x: auto;
+  padding-bottom: var(--space-4);
+}
+.cash-pending-card {
+  flex: 0 0 320px;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-gold);
+  box-shadow: var(--shadow-glow-gold);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cash-pending-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-3);
+}
+.cash-pending-card__customer {
+  display: block;
+  color: var(--color-text);
+}
+.cash-pending-card__meta {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+.cash-pending-card__total {
+  flex: 0 0 auto;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--color-primary-dark);
+}
+.cash-pending-card__cash-row {
+  padding: var(--space-3) var(--space-4) 0;
+  margin-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+.cash-pending-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+.cash-pending-card__field input {
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.cash-pending-card__change,
+.cash-pending-card__exact,
+.cash-pending-card__missing {
+  margin: var(--space-2) 0 0;
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+.cash-pending-card__change {
+  color: var(--color-success);
+}
+.cash-pending-card__exact {
+  color: var(--color-text-muted);
+}
+.cash-pending-card__missing {
+  color: var(--color-danger);
+}
+.cash-pending-card .btn {
+  margin: var(--space-4);
+  margin-top: var(--space-3);
+  min-height: 46px;
+  font-size: 0.92rem;
+}
+.cash-pending-card .admin-form__error {
+  margin: var(--space-2) var(--space-4) 0;
+}
+
 /* =====================================================================
    Gestão de cardápio — elegante e minimalista
    Fontes vêm dos tokens globais --font-display / --font-ui (base.css)

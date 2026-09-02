@@ -2,8 +2,13 @@ export type ModifierTipo = 'obrigatorio' | 'opcional'
 export type ModifierSelecao = 'unica' | 'multipla'
 /** Status visíveis no quadro da cozinha (Painel da Equipe). */
 export type OrderStatus = 'recebido' | 'em_preparo' | 'pronto' | 'entregue'
-/** Status completo, incluindo os dois estados de pagamento que nunca chegam ao quadro da cozinha. */
-export type FullOrderStatus = 'aguardando_pagamento' | OrderStatus | 'cancelado'
+/**
+ * Status completo, incluindo os três estados de pagamento que nunca chegam
+ * ao quadro da cozinha: `aguardando_pagamento` (cartão, aguardando a SumUp),
+ * `aguardando_dinheiro` (aguardando a equipe confirmar o troco no caixa) e
+ * `cancelado`.
+ */
+export type FullOrderStatus = 'aguardando_pagamento' | 'aguardando_dinheiro' | OrderStatus | 'cancelado'
 
 export const ORDER_STATUS_FLOW: OrderStatus[] = ['recebido', 'em_preparo', 'pronto', 'entregue']
 
@@ -108,8 +113,10 @@ export interface Order {
   valor_pago: number | null
   nome_cliente: string | null
   gorjeta: number
-  /** Como a SumUp reportou o pagamento, em alemão: "Kontaktlos · VISA". null = pedido antigo ou não informado. */
+  /** Como a SumUp reportou o pagamento, em alemão: "Kontaktlos · VISA". "Dinheiro" nos pagamentos em espécie. null = pedido antigo ou não informado. */
   forma_pagamento: string | null
+  /** Quanto o cliente entregou em espécie. Só preenchido em pedidos pagos em dinheiro; o troco é este valor menos `valor_pago`. */
+  valor_recebido_dinheiro: number | null
   /** Instante em que o pagamento foi confirmado (status virou "recebido"). */
   pago_em: string | null
   /** Instante em que o pedido foi entregue. Com `pago_em`, dá o tempo de preparo. */

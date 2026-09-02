@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { OrderStatus, OrderWithItems } from '@shared/types'
 import { useOrders } from './hooks/useOrders'
+import { useCashPendingOrders } from './hooks/useCashPendingOrders'
 import { useAuth } from './hooks/useAuth'
 import OrderCard from './components/OrderCard'
+import CashPendingPanel from './components/CashPendingPanel'
 import DateStrip from './components/DateStrip'
 import MenuManager from './components/MenuManager'
 import LoginScreen from './components/LoginScreen'
@@ -28,6 +30,7 @@ export default function App() {
 
   const { orders, orderCountByDate, loading, error, realtimeConnected, newOrderIds, markSeen, advanceStatus } =
     useOrders(selectedDateKey, viewedMonthKey)
+  const { orders: cashPendingOrders, confirmCash } = useCashPendingOrders()
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 15000)
@@ -123,6 +126,8 @@ export default function App() {
           <div className="loading-rail">{loading && <span className="loading-rail__bar" aria-hidden />}</div>
 
           {error && <p className="equipe-app__error">Erro ao carregar pedidos: {error}</p>}
+
+          <CashPendingPanel orders={cashPendingOrders} onConfirm={confirmCash} />
 
           {showDelivered && (
             <main className="history-list">

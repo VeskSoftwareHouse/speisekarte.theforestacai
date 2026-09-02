@@ -56,6 +56,15 @@ export interface StringDict {
   tipLabel: string
   noTip: string
   subtotalLabel: string
+  paymentMethodLabel: string
+  paymentMethodCard: string
+  paymentMethodCash: string
+  /** Botão do fluxo de dinheiro — não "paga" nada no app, só confirma o pedido pro caixa. */
+  confirmOrderButton: string
+  awaitingCashTitle: string
+  awaitingCashBody: string
+  cashTimeoutTitle: string
+  cashTimeoutBody: string
 }
 
 export type StringKey = keyof StringDict
@@ -114,6 +123,14 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     tipLabel: 'Trinkgeld',
     noTip: 'Kein Trinkgeld',
     subtotalLabel: 'Zwischensumme',
+    paymentMethodLabel: 'Zahlungsart',
+    paymentMethodCard: 'Karte',
+    paymentMethodCash: 'Bar',
+    confirmOrderButton: 'Bestellung bestätigen',
+    awaitingCashTitle: 'Bitte an der Kasse bezahlen',
+    awaitingCashBody: 'Sag dem Team den Betrag. Sobald bestätigt, geht deine Bestellung in die Küche.',
+    cashTimeoutTitle: 'Noch nicht bestätigt',
+    cashTimeoutBody: 'Wende dich an unser Team an der Kasse, um die Barzahlung zu bestätigen.',
   },
   fr: {
     sidebarTagline: "Savoure l'Amazonie, ressens l'énergie",
@@ -168,6 +185,14 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     tipLabel: 'Pourboire',
     noTip: 'Sans pourboire',
     subtotalLabel: 'Sous-total',
+    paymentMethodLabel: 'Mode de paiement',
+    paymentMethodCard: 'Carte',
+    paymentMethodCash: 'Espèces',
+    confirmOrderButton: 'Confirmer la commande',
+    awaitingCashTitle: 'Merci de payer à la caisse',
+    awaitingCashBody: "Indiquez le montant à l'équipe. Dès que c'est confirmé, votre commande part en cuisine.",
+    cashTimeoutTitle: 'Toujours pas confirmé',
+    cashTimeoutBody: "Adressez-vous à l'équipe à la caisse pour confirmer le paiement en espèces.",
   },
   it: {
     sidebarTagline: "Assapora l'Amazzonia, senti l'energia",
@@ -222,6 +247,14 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     tipLabel: 'Mancia',
     noTip: 'Senza mancia',
     subtotalLabel: 'Subtotale',
+    paymentMethodLabel: 'Metodo di pagamento',
+    paymentMethodCard: 'Carta',
+    paymentMethodCash: 'Contanti',
+    confirmOrderButton: 'Conferma ordine',
+    awaitingCashTitle: 'Paga alla cassa',
+    awaitingCashBody: "Comunica l'importo al team. Appena confermato, il tuo ordine passa in cucina.",
+    cashTimeoutTitle: 'Ancora da confermare',
+    cashTimeoutBody: 'Parla con il nostro team alla cassa per confermare il pagamento in contanti.',
   },
   en: {
     sidebarTagline: 'Taste the Amazon, feel the energy',
@@ -276,6 +309,14 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     tipLabel: 'Tip',
     noTip: 'No tip',
     subtotalLabel: 'Subtotal',
+    paymentMethodLabel: 'Payment method',
+    paymentMethodCard: 'Card',
+    paymentMethodCash: 'Cash',
+    confirmOrderButton: 'Confirm order',
+    awaitingCashTitle: 'Please pay at the counter',
+    awaitingCashBody: 'Tell our team the amount. Once confirmed, your order goes to the kitchen.',
+    cashTimeoutTitle: 'Still waiting for confirmation',
+    cashTimeoutBody: 'Please check with our team at the counter to confirm your cash payment.',
   },
   pt: {
     sidebarTagline: 'Prove a Amazônia, sinta a energia',
@@ -330,6 +371,14 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     tipLabel: 'Gorjeta',
     noTip: 'Sem gorjeta',
     subtotalLabel: 'Subtotal',
+    paymentMethodLabel: 'Forma de pagamento',
+    paymentMethodCard: 'Cartão',
+    paymentMethodCash: 'Dinheiro',
+    confirmOrderButton: 'Confirmar pedido',
+    awaitingCashTitle: 'Pague no caixa',
+    awaitingCashBody: 'Informe o valor à equipe. Assim que confirmarem, seu pedido segue para a cozinha.',
+    cashTimeoutTitle: 'Ainda aguardando confirmação',
+    cashTimeoutBody: 'Fale com a equipe no caixa para confirmar o pagamento em dinheiro.',
   },
   es: {
     sidebarTagline: 'Prueba la Amazonía, siente la energía',
@@ -384,5 +433,13 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     tipLabel: 'Propina',
     noTip: 'Sin propina',
     subtotalLabel: 'Subtotal',
+    paymentMethodLabel: 'Forma de pago',
+    paymentMethodCard: 'Tarjeta',
+    paymentMethodCash: 'Efectivo',
+    confirmOrderButton: 'Confirmar pedido',
+    awaitingCashTitle: 'Paga en caja',
+    awaitingCashBody: 'Indica el importe al equipo. En cuanto lo confirmen, tu pedido pasa a cocina.',
+    cashTimeoutTitle: 'Aún sin confirmar',
+    cashTimeoutBody: 'Habla con el equipo en caja para confirmar el pago en efectivo.',
   },
 }

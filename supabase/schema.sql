@@ -133,26 +133,33 @@ create table if not exists orders (
   id            uuid primary key default gen_random_uuid(),
   status        text not null default 'aguardando_pagamento'
                   check (status in
-                    ('aguardando_pagamento', 'recebido', 'em_preparo', 'pronto', 'entregue', 'cancelado')),
+                    ('aguardando_pagamento', 'aguardando_dinheiro', 'recebido', 'em_preparo', 'pronto', 'entregue', 'cancelado')),
   criado_em     timestamptz not null default now(),
   atualizado_em timestamptz not null default now()
 );
 
--- pedido só chega na cozinha depois que o pagamento SumUp é confirmado.
+-- pedido só chega na cozinha depois que o pagamento é confirmado — pela SumUp
+-- (aguardando_pagamento) ou pela equipe no caixa (aguardando_dinheiro).
 alter table orders drop constraint if exists orders_status_check;
 alter table orders add constraint orders_status_check check (status in
-  ('aguardando_pagamento', 'recebido', 'em_preparo', 'pronto', 'entregue', 'cancelado'));
+  ('aguardando_pagamento', 'aguardando_dinheiro', 'recebido', 'em_preparo', 'pronto', 'entregue', 'cancelado'));
 alter table orders alter column status set default 'aguardando_pagamento';
 alter table orders add column if not exists sumup_checkout_id text;
 alter table orders add column if not exists valor_pago numeric(10,2);
 alter table orders add column if not exists nome_cliente text;
 alter table orders add column if not exists gorjeta numeric(10,2) not null default 0;
 
--- Relatórios: como o pedido foi pago (o que a SumUp reporta na transação, ex:
--- 'Cartão sem contato', 'Cartão (chip)'). Preenchido por
--- api/sumup-confirm-payment.ts quando o pagamento é confirmado; null nos
--- pedidos antigos e quando a SumUp não informa.
+-- Relatórios: como o pedido foi pago. Para cartão é o que a SumUp reporta na
+-- transação (ex: 'Cartão sem contato'), preenchido por
+-- api/sumup-confirm-payment.ts; para dinheiro é 'Dinheiro', gravado junto com
+-- `valor_recebido_dinheiro` quando a equipe confirma o troco no painel. Null
+-- nos pedidos antigos e quando a SumUp não informa.
 alter table orders add column if not exists forma_pagamento text;
+-- Quanto o cliente entregou em espécie — só preenchido em pedidos pagos em
+-- dinheiro. O troco é `valor_recebido_dinheiro - valor_pago`, calculado na
+-- hora e nunca gravado por si (evita os dois números divergirem se alguém
+-- editar um sem o outro).
+alter table orders add column if not exists valor_recebido_dinheiro numeric(10,2);
 
 -- Relatórios: marcos de tempo do pedido. `atualizado_em` sozinho não serve
 -- porque muda a cada avanço de status; estas duas colunas congelam o instante
