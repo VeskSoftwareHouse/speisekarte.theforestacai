@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Banknote } from 'lucide-react'
+import { Banknote, X } from 'lucide-react'
 import type { ReportOrder } from '@shared/types'
 import { formatCHF } from '@shared/format'
 import CurrencyInput from '@shared/components/CurrencyInput'
@@ -10,27 +10,46 @@ interface Props {
 }
 
 /**
- * Fila de pedidos pagos em dinheiro, esperando a equipe conferir o troco no
- * caixa. Fica sempre visível no topo da aba Pedidos (não só numa aba
- * separada) porque, ao contrário do quadro da cozinha, aqui tem um cliente
- * parado esperando — some sozinha quando não há nenhum pendente.
+ * Pedidos pagos em dinheiro, esperando a equipe conferir o troco no caixa.
+ *
+ * Já morou fixo no topo da aba Pedidos, sempre visível — mas ocupava a
+ * largura toda por cima do quadro da cozinha, empurrando as colunas
+ * Recebido/Em preparo/Pronto pra baixo e atrapalhando quem só queria olhar
+ * os pedidos já em andamento. Agora é só um botão flutuante piscando no
+ * canto superior esquerdo (não reserva espaço nenhum no layout — some
+ * sozinho quando não há pendente); os detalhes e a confirmação do troco
+ * ficam num popup, aberto sob demanda.
  */
 export default function CashPendingPanel({ orders, onConfirm }: Props) {
+  const [open, setOpen] = useState(false)
+
   if (orders.length === 0) return null
 
   return (
-    <section className="cash-pending">
-      <header className="cash-pending__header">
-        <Banknote size={18} strokeWidth={2.5} aria-hidden />
-        <h2>Pagamento em dinheiro</h2>
-        <span className="cash-pending__count">{orders.length}</span>
-      </header>
-      <div className="cash-pending__list">
-        {orders.map((order) => (
-          <CashPendingCard key={order.id} order={order} onConfirm={onConfirm} />
-        ))}
-      </div>
-    </section>
+    <>
+      <button className="cash-pending-fab" onClick={() => setOpen(true)}>
+        <Banknote size={20} strokeWidth={2.5} aria-hidden />
+        {orders.length} {orders.length === 1 ? 'pedido aguardando' : 'pedidos aguardando'} pagamento no dinheiro
+      </button>
+
+      {open && (
+        <div className="admin-modal-overlay" onClick={() => setOpen(false)}>
+          <div className="admin-modal cash-pending-modal" onClick={(e) => e.stopPropagation()}>
+            <header className="admin-modal__header">
+              <h2>Pagamento em dinheiro</h2>
+              <button className="admin-modal__close" onClick={() => setOpen(false)} aria-label="Fechar">
+                <X size={20} strokeWidth={2} />
+              </button>
+            </header>
+            <div className="cash-pending-modal__list">
+              {orders.map((order) => (
+                <CashPendingCard key={order.id} order={order} onConfirm={onConfirm} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
