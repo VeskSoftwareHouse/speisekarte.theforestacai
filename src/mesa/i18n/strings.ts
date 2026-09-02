@@ -127,7 +127,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     subtotalLabel: 'Zwischensumme',
     paymentMethodLabel: 'Zahlungsart',
     paymentMethodCard: 'Karte',
-    paymentMethodCash: 'Bar',
+    paymentMethodCash: 'Bargeld',
     confirmOrderButton: 'Bestellung bestätigen',
     awaitingCashTitle: 'Bitte an der Kasse bezahlen',
     awaitingCashBody: 'Sag dem Team den Betrag. Sobald bestätigt, geht deine Bestellung in die Küche.',
