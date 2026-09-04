@@ -128,7 +128,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       lastCheckData = checkData
       sumupStatus = checkData.status
       if (sumupStatus !== 'PENDING') break
-      await new Promise((resolve) => setTimeout(resolve, 1200))
+      await new Promise((resolve) => setTimeout(resolve, 800))
     }
     paid = sumupStatus === 'PAID'
     stillPending = sumupStatus === 'PENDING'
@@ -146,7 +146,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       tx = await fetchTapTransaction(orderId)
       txStatus = typeof tx?.status === 'string' ? tx.status : null
       if (txStatus && txStatus !== 'PENDING') break
-      await new Promise((resolve) => setTimeout(resolve, 1200))
+      await new Promise((resolve) => setTimeout(resolve, 800))
     }
     paid = txStatus === 'SUCCESSFUL'
     if (paid) paymentMethod = describePaymentMethod(tx)

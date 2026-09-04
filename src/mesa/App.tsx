@@ -20,7 +20,13 @@ type View =
 
 /** Quanto tempo o totem espera o cliente aproximar o cartão antes de desistir. */
 const TAP_TIMEOUT_MS = 120_000
-const TAP_POLL_INTERVAL_MS = 2_000
+/**
+ * O painel da equipe só sabe que um pedido foi pago quando este totem grava
+ * `recebido` no banco — a SumUp não nos avisa sozinha, alguém tem que
+ * perguntar. 1s (em vez de 2s) é o meio-termo: rápido o bastante pra não se
+ * notar no balcão, sem virar um tambor de pedidos por segundo num totem só.
+ */
+const TAP_POLL_INTERVAL_MS = 1_000
 /**
  * Quanto o totem espera a equipe confirmar o troco no caixa. Bem mais longo
  * que o do cartão: ali quem decide é o leitor, aqui é gente ocupada — pode
