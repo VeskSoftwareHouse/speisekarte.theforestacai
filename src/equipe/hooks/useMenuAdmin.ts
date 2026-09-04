@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@shared/supabaseClient'
+import { retryLoad } from '@shared/retryLoad'
 import type { Category, MenuItem } from '@shared/types'
 
 /** Lançado ao tentar excluir uma categoria/produto que já apareceu em algum pedido (viola FK com order_items). */
@@ -38,10 +39,14 @@ export function useMenuAdmin() {
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
-    const [catsRes, itemsRes] = await Promise.all([
-      supabase.from('categories').select('*').order('ordem'),
-      supabase.from('menu_items').select('*').order('ordem'),
-    ])
+    const [catsRes, itemsRes] = await retryLoad(
+      () =>
+        Promise.all([
+          supabase.from('categories').select('*').order('ordem'),
+          supabase.from('menu_items').select('*').order('ordem'),
+        ]),
+      ([c, i]) => !!(c.error ?? i.error),
+    )
     const firstError = catsRes.error ?? itemsRes.error
     if (firstError) {
       setError(firstError.message)

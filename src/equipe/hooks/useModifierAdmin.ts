@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@shared/supabaseClient'
+import { retryLoad } from '@shared/retryLoad'
 import type { Modifier, ModifierOption, ModifierSelecao, ModifierTipo } from '@shared/types'
 
 export interface ModifierGroupInput {
@@ -29,11 +30,15 @@ export function useModifierAdmin() {
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
-    const [groupsRes, optionsRes, linksRes] = await Promise.all([
-      supabase.from('modifiers').select('*').order('nome'),
-      supabase.from('modifier_options').select('*').order('ordem'),
-      supabase.from('menu_item_modifiers').select('*'),
-    ])
+    const [groupsRes, optionsRes, linksRes] = await retryLoad(
+      () =>
+        Promise.all([
+          supabase.from('modifiers').select('*').order('nome'),
+          supabase.from('modifier_options').select('*').order('ordem'),
+          supabase.from('menu_item_modifiers').select('*'),
+        ]),
+      ([g, o, l]) => !!(g.error ?? o.error ?? l.error),
+    )
     const firstError = groupsRes.error ?? optionsRes.error ?? linksRes.error
     if (firstError) {
       setError(firstError.message)

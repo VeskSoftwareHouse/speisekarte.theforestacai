@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@shared/supabaseClient'
+import { retryLoad } from '@shared/retryLoad'
 import type { TipOption, TipTipo } from '@shared/types'
 
 export interface TipOptionInput {
@@ -21,7 +22,10 @@ export function useTipAdmin() {
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
-    const { data, error: err } = await supabase.from('tip_options').select('*').order('ordem')
+    const { data, error: err } = await retryLoad(
+      () => supabase.from('tip_options').select('*').order('ordem'),
+      (r) => !!r.error,
+    )
     if (err) {
       setError(err.message)
       setLoading(false)

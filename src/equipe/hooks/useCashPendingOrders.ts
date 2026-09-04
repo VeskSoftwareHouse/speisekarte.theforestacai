@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@shared/supabaseClient'
+import { retryLoad } from '@shared/retryLoad'
 import type { OrderItem, ReportOrder } from '@shared/types'
 
 interface CashOrderRow extends Omit<ReportOrder, 'items'> {
@@ -17,11 +18,15 @@ export function useCashPendingOrders() {
   const [error, setError] = useState<string | null>(null)
 
   const fetchPending = useCallback(async () => {
-    const { data, error: err } = await supabase
-      .from('orders')
-      .select('*, order_items(*)')
-      .eq('status', 'aguardando_dinheiro')
-      .order('criado_em', { ascending: true })
+    const { data, error: err } = await retryLoad(
+      () =>
+        supabase
+          .from('orders')
+          .select('*, order_items(*)')
+          .eq('status', 'aguardando_dinheiro')
+          .order('criado_em', { ascending: true }),
+      (r) => !!r.error,
+    )
     if (err) {
       setError(err.message)
       return

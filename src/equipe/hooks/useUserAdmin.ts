@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { retryLoad } from '@shared/retryLoad'
 
 export interface AdminUser {
   id: string
@@ -38,15 +39,26 @@ export function useUserAdmin(accessToken: string) {
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
-    try {
-      const data = await request(accessToken, '/api/admin-users')
-      setUsers(data.users)
+    // `request` lança em vez de devolver { error } — retryLoad só sabe repetir
+    // olhando o resultado, então a tentativa aqui apanha o erro e o embrulha
+    // num resultado, pra depois desembrulhar do lado de fora.
+    const result = await retryLoad(
+      async () => {
+        try {
+          return { data: (await request(accessToken, '/api/admin-users')) as { users: unknown }, error: null }
+        } catch (err) {
+          return { data: null, error: err instanceof Error ? err : new Error('Não foi possível carregar usuários.') }
+        }
+      },
+      (r) => !!r.error,
+    )
+    if (result.error) {
+      setError(result.error.message)
+    } else {
+      setUsers((result.data.users as typeof users) ?? [])
       setError(null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível carregar usuários.')
-    } finally {
-      setLoading(false)
     }
+    setLoading(false)
   }, [accessToken])
 
   useEffect(() => {
