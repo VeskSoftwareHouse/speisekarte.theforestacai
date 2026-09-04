@@ -147,6 +147,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .select()
     .single()
   if (orderErr || !order) {
+    console.error('sumup-create-checkout: falha ao inserir em orders', orderErr)
     res.status(400).json({ error: orderErr?.message ?? 'Não foi possível criar o pedido.' })
     return
   }
@@ -163,6 +164,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }))
   const { error: itemsErr } = await supabase.from('order_items').insert(orderItemsPayload)
   if (itemsErr) {
+    console.error('sumup-create-checkout: falha ao inserir em order_items', { orderId: order.id, itemsErr })
     await supabase.from('orders').delete().eq('id', order.id)
     res.status(400).json({ error: itemsErr.message })
     return

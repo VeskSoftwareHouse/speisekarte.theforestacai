@@ -8,6 +8,28 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  * qualquer gorjeta — então tudo aqui é refeito a partir do banco.
  */
 
+interface SupabaseResult<T> {
+  data: T | null
+  error: unknown
+}
+
+/**
+ * Repete uma consulta ao Supabase que falhou, antes de desistir. Existe
+ * porque uma falha passageira aqui (a mesma classe de tropeço momentâneo já
+ * visto no painel da equipe) derrubava o pedido inteiro com "Pedido
+ * inválido" — sem log nenhum, então cada ocorrência virava um cliente parado
+ * no totem sem ninguém conseguir dizer o motivo depois.
+ */
+async function withRetry<T>(label: string, attempt: () => PromiseLike<SupabaseResult<T>>): Promise<SupabaseResult<T>> {
+  let result = await attempt()
+  for (let i = 0; result.error && i < 2; i++) {
+    console.error(`Supabase falhou em ${label} (tentativa ${i + 1}), tentando de novo`, result.error)
+    await new Promise((resolve) => setTimeout(resolve, 400 * (i + 1)))
+    result = await attempt()
+  }
+  return result
+}
+
 /**
  * Confere a gorjeta que o totem mandou contra as opções cadastradas.
  *
@@ -91,22 +113,35 @@ export async function resolveItems(
   ]
 
   const [menuItemsRes, optionsRes] = await Promise.all([
-    supabase
-      .from('menu_items')
-      .select('id, nome, descricao, preco, disponivel, descricao_na_comanda')
-      .in('id', menuItemIds),
+    withRetry('menu_items', () =>
+      supabase
+        .from('menu_items')
+        .select('id, nome, descricao, preco, disponivel, descricao_na_comanda')
+        .in('id', menuItemIds),
+    ),
     optionIds.length > 0
-      ? supabase.from('modifier_options').select('id, modifier_id, nome, nome_i18n, preco_adicional').in('id', optionIds)
+      ? withRetry('modifier_options', () =>
+          supabase.from('modifier_options').select('id, modifier_id, nome, nome_i18n, preco_adicional').in('id', optionIds),
+        )
       : Promise.resolve({ data: [], error: null }),
   ])
-  if (menuItemsRes.error || !menuItemsRes.data || optionsRes.error || !optionsRes.data) return null
+  if (menuItemsRes.error || !menuItemsRes.data || optionsRes.error || !optionsRes.data) {
+    console.error('resolveItems: não deu pra ler menu_items/modifier_options', {
+      menuItemsError: menuItemsRes.error,
+      optionsError: optionsRes.error,
+    })
+    return null
+  }
 
   const modifierIds = [...new Set(optionsRes.data.map((o: { modifier_id: string }) => o.modifier_id))]
   const modifiersRes =
     modifierIds.length > 0
-      ? await supabase.from('modifiers').select('id, nome').in('id', modifierIds)
+      ? await withRetry('modifiers', () => supabase.from('modifiers').select('id, nome').in('id', modifierIds))
       : { data: [], error: null }
-  if (modifiersRes.error || !modifiersRes.data) return null
+  if (modifiersRes.error || !modifiersRes.data) {
+    console.error('resolveItems: não deu pra ler modifiers', modifiersRes.error)
+    return null
+  }
 
   const menuItemById = new Map(menuItemsRes.data.map((m: { id: string }) => [m.id, m]))
   const optionById = new Map(optionsRes.data.map((o: { id: string }) => [o.id, o]))
@@ -117,7 +152,10 @@ export async function resolveItems(
   const resolved: ResolvedItem[] = []
   for (const it of cartItems) {
     const quantidade = Number(it.quantidade)
-    if (!Number.isInteger(quantidade) || quantidade <= 0 || quantidade > MAX_QUANTIDADE_POR_ITEM) return null
+    if (!Number.isInteger(quantidade) || quantidade <= 0 || quantidade > MAX_QUANTIDADE_POR_ITEM) {
+      console.error('resolveItems: quantidade fora do razoável', { menu_item_id: it.menu_item_id, quantidade: it.quantidade })
+      return null
+    }
 
     const menuItem = menuItemById.get(it.menu_item_id) as
       | {
@@ -129,7 +167,10 @@ export async function resolveItems(
           descricao_na_comanda: boolean
         }
       | undefined
-    if (!menuItem || !menuItem.disponivel) return null
+    if (!menuItem || !menuItem.disponivel) {
+      console.error('resolveItems: item inexistente ou indisponível', { menu_item_id: it.menu_item_id })
+      return null
+    }
 
     const rawOptions = Array.isArray(it.modifiers_selecionados)
       ? (it.modifiers_selecionados as RawSelectedOption[])
@@ -137,11 +178,17 @@ export async function resolveItems(
     const resolvedOptions: unknown[] = []
     let addOnTotal = 0
     for (const raw of rawOptions) {
-      if (typeof raw.option_id !== 'string') return null
+      if (typeof raw.option_id !== 'string') {
+        console.error('resolveItems: option_id ausente/inválido no carrinho', { menu_item_id: it.menu_item_id })
+        return null
+      }
       const option = optionById.get(raw.option_id) as
         | { id: string; modifier_id: string; nome: string; nome_i18n: Record<string, string>; preco_adicional: number }
         | undefined
-      if (!option) return null
+      if (!option) {
+        console.error('resolveItems: opção de modifier inexistente', { menu_item_id: it.menu_item_id, option_id: raw.option_id })
+        return null
+      }
       addOnTotal += Number(option.preco_adicional)
       resolvedOptions.push({
         modifier_id: option.modifier_id,
