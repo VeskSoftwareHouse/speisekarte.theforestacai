@@ -631,14 +631,16 @@ body {
   font-size: 0.82rem;
   font-style: italic;
 }
-.order-card__item-mods,
-.order-card__item-obs {
+.order-card__item-mods {
   margin: 1px 0 0 2.4ch;
   color: var(--color-text-muted);
-  font-size: 0.82rem;
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 .order-card__item-obs {
+  margin: 1px 0 0 2.4ch;
   color: #a67c1f;
+  font-size: 0.82rem;
   font-weight: 600;
 }
 
