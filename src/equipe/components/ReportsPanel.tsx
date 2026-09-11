@@ -108,7 +108,6 @@ function ReportsBody() {
     ]
   }, [report.naoVendidos, report.itens])
 
-  const totalCategorias = report.categorias.reduce((sum, row) => sum + row.faturamento, 0)
   const receitaAdicionais = adicionaisPagos.reduce((sum, row) => sum + row.faturamento, 0)
 
   const tipShare = sales.pedidos ? sales.pedidosComGorjeta / sales.pedidos : 0
@@ -261,10 +260,6 @@ function ReportsBody() {
                 />
               </Block>
             </div>
-
-            <Block title="De onde vem o faturamento" hint={`${formatCHF(totalCategorias)} no período, por categoria`}>
-              <ReportBarList rows={report.categorias} metric="faturamento" />
-            </Block>
 
             <div className="reports__pair">
               <Block title="Adicionais mais escolhidos" hint="Quantas vezes cada um entrou num pedido">
