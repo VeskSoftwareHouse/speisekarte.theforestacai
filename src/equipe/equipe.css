@@ -222,18 +222,42 @@ body {
      quebra pra uma segunda linha em vez de cortar ou espremer. */
   .brand-banner {
     flex-wrap: wrap;
+    gap: var(--space-3);
   }
   /* O logo encolhe: o cabeçalho não precisa de espaço extra pra caber o
      título e o botão de menu numa linha só. */
   .equipe-app .brand-banner__logo {
-    height: 56px;
-    width: 56px;
+    height: 44px;
+    width: 44px;
+  }
+  /* "Painel da Equipe" é redundante aqui — o título grande já diz em que
+     seção a equipe está, e sobrava pouco espaço pro resto do cabeçalho,
+     fazendo até esse textinho quebrar linha. */
+  .brand-banner__eyebrow {
+    display: none;
+  }
+  .equipe-app .brand-banner__value {
+    margin-top: 0;
+    font-size: 1.05rem;
   }
   .banner-tabs {
     display: none;
   }
   .banner-hamburger {
     display: flex;
+  }
+  /* Só o ícone: o rótulo ("Ao vivo"/"Sem conexão", "Sair") não cabe do
+     lado do título sem espremer tudo de novo — o tooltip/aria-label
+     continua dizendo o que cada um significa pra quem usa leitor de tela. */
+  .banner-status__label,
+  .banner-signout__label {
+    display: none;
+  }
+  .banner-signout {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
   }
 }
 

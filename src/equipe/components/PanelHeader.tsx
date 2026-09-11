@@ -106,11 +106,11 @@ export default function PanelHeader({
           title={connectionError ?? 'Pedidos novos aparecem sozinhos, sem recarregar a página'}
         >
           <span className={`realtime-dot ${connected ? 'realtime-dot--on' : 'realtime-dot--off'}`} />
-          {connected ? 'Ao vivo' : 'Sem conexão'}
+          <span className="banner-status__label">{connected ? 'Ao vivo' : 'Sem conexão'}</span>
         </span>
         <button className="banner-signout" onClick={onSignOut} title={`Sair de ${userEmail ?? 'sua conta'}`}>
           <LogOut size={16} strokeWidth={2} aria-hidden />
-          Sair
+          <span className="banner-signout__label">Sair</span>
         </button>
       </div>
     </header>
