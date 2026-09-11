@@ -1038,6 +1038,25 @@ alter table orders add column if not exists baixado_em timestamptz;
 
 create index if not exists idx_orders_estoque_baixado on orders(estoque_baixado);
 
+-- Linha única (singleton) de configurações do módulo de estoque. Hoje só
+-- guarda o interruptor de fechamento automático — em vez de esperar a
+-- revisão manual, dá baixa assim que o pedido é confirmado (cartão ou
+-- dinheiro). Uma tabela em vez de uma coluna solta em algum outro lugar,
+-- pra deixar espaço pra outras configurações do módulo no futuro.
+create table if not exists configuracoes_estoque (
+  id                     uuid primary key default '00000000-0000-0000-0000-000000000001',
+  fechamento_automatico  boolean not null default false
+);
+insert into configuracoes_estoque (id) values ('00000000-0000-0000-0000-000000000001') on conflict do nothing;
+
+alter table configuracoes_estoque enable row level security;
+
+drop policy if exists "staff le configuracoes estoque" on configuracoes_estoque;
+drop policy if exists "staff edita configuracoes estoque" on configuracoes_estoque;
+
+create policy "staff le configuracoes estoque" on configuracoes_estoque for select using (auth.uid() is not null);
+create policy "staff edita configuracoes estoque" on configuracoes_estoque for update using (auth.uid() is not null) with check (auth.uid() is not null);
+
 -- =====================================================================
 -- Gestão de estoque — impostos.
 --

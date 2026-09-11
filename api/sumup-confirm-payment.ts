@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
+import { baixarEstoqueDoPedido, fechamentoAutomaticoAtivo } from './_estoqueConsumo.js'
 
 const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -162,6 +163,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from('orders')
       .update({ status: 'recebido', forma_pagamento: paymentMethod })
       .eq('id', orderId)
+    if (await fechamentoAutomaticoAtivo(supabase)) await baixarEstoqueDoPedido(supabase, orderId)
     res.status(200).json({ status: 'recebido' })
     return
   }

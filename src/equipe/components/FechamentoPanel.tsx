@@ -6,9 +6,16 @@ import { dateKeyToDate, isoToDateKey } from '../dateUtils'
 interface Props {
   orders: OrderWithItems[]
   onCloseSelected: (selected: OrderWithItems[]) => void
+  fechamentoAutomatico: boolean
+  onToggleFechamentoAutomatico: (ativo: boolean) => void
 }
 
-export default function FechamentoPanel({ orders, onCloseSelected }: Props) {
+export default function FechamentoPanel({
+  orders,
+  onCloseSelected,
+  fechamentoAutomatico,
+  onToggleFechamentoAutomatico,
+}: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const groups = useMemo(() => {
@@ -58,10 +65,27 @@ export default function FechamentoPanel({ orders, onCloseSelected }: Props) {
         </button>
       </header>
 
-      <p className="admin-form__hint">
+      <p className="admin-form__hint admin-fechamento__hint">
         Pedidos pagos no cartão ou em dinheiro confirmado ficam aqui até serem fechados — o fechamento dá baixa nos
         insumos conforme a composição do produto e as misturas escolhidas. O quadro de pedidos da cozinha não muda.
       </p>
+
+      <label className="admin-fechamento__auto">
+        <span>
+          <strong>Fechamento automático</strong>
+          <span className="admin-form__hint">Dá baixa no estoque assim que o pedido é confirmado, sem esperar a revisão manual.</span>
+        </span>
+        <span className="admin-toggle">
+          <input
+            type="checkbox"
+            checked={fechamentoAutomatico}
+            onChange={(e) => onToggleFechamentoAutomatico(e.target.checked)}
+          />
+          <span className="admin-toggle__track">
+            <span className="admin-toggle__thumb" />
+          </span>
+        </span>
+      </label>
 
       <div className="admin-panel__body admin-product-list">
         {orders.length === 0 && <p className="admin-panel__empty">Nenhum pedido pendente de fechamento.</p>}

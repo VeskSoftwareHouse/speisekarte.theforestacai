@@ -18,6 +18,7 @@ import { useEstoqueMovimentos } from '../hooks/useEstoqueMovimentos'
 import { useInventarioAdmin } from '../hooks/useInventarioAdmin'
 import { usePerdasAdmin } from '../hooks/usePerdasAdmin'
 import { useFechamento } from '../hooks/useFechamento'
+import { useFechamentoAutomatico } from '../hooks/useFechamentoAutomatico'
 import { useImpostoAdmin } from '../hooks/useImpostoAdmin'
 import FornecedorPanel from './FornecedorPanel'
 import FornecedorFormModal from './FornecedorFormModal'
@@ -121,6 +122,7 @@ export default function EstoqueManager({ currentUserId }: Props) {
     calcularConsumo,
     fecharPedidos,
   } = useFechamento(currentUserId)
+  const { ativo: fechamentoAutomatico, alternar: alternarFechamentoAutomatico } = useFechamentoAutomatico()
 
   const [tab, setTab] = useState<Tab>('visaogeral')
   const [fornecedorForm, setFornecedorForm] = useState<'new' | Fornecedor | null>(null)
@@ -361,7 +363,12 @@ export default function EstoqueManager({ currentUserId }: Props) {
       {tab === 'fechamento' && fechamentoLoading && <p className="equipe-app__status">Carregando pedidos…</p>}
       {tab === 'fechamento' && !fechamentoLoading && (
         <div className="menu-manager__single">
-          <FechamentoPanel orders={pedidosParaFechar} onCloseSelected={setFechamentoSelecionados} />
+          <FechamentoPanel
+            orders={pedidosParaFechar}
+            onCloseSelected={setFechamentoSelecionados}
+            fechamentoAutomatico={fechamentoAutomatico}
+            onToggleFechamentoAutomatico={alternarFechamentoAutomatico}
+          />
         </div>
       )}
 

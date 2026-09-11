@@ -32,7 +32,7 @@ export default function App() {
 
   const { orders, orderCountByDate, loading, error, realtimeConnected, newOrderIds, markSeen, advanceStatus } =
     useOrders(selectedDateKey, viewedMonthKey)
-  const { orders: cashPendingOrders, confirmCash } = useCashPendingOrders()
+  const { orders: cashPendingOrders, confirmCash } = useCashPendingOrders(user?.id ?? '')
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 15000)

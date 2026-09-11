@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@shared/supabaseClient'
 import { retryLoad } from '@shared/retryLoad'
 import type { OrderItem, ReportOrder } from '@shared/types'
+import { baixarEstoqueDoPedido, fechamentoAutomaticoAtivo } from '../estoqueConsumo'
 
 interface CashOrderRow extends Omit<ReportOrder, 'items'> {
   order_items?: OrderItem[]
@@ -13,7 +14,7 @@ interface CashOrderRow extends Omit<ReportOrder, 'items'> {
  * "agora", não histórico: um cliente parado no caixa não espera a equipe
  * lembrar de olhar a data certa.
  */
-export function useCashPendingOrders() {
+export function useCashPendingOrders(currentUserId: string) {
   const [orders, setOrders] = useState<ReportOrder[]>([])
   const [error, setError] = useState<string | null>(null)
 
@@ -59,17 +60,32 @@ export function useCashPendingOrders() {
    * `pago_em` na mesma transição, então os relatórios não precisam saber que
    * este pedido tomou um caminho diferente até aqui.
    */
-  const confirmCash = useCallback(async (orderId: string, valorRecebidoDinheiro: number) => {
-    const { error: err } = await supabase
-      .from('orders')
-      .update({
-        status: 'recebido',
-        forma_pagamento: 'Dinheiro',
-        valor_recebido_dinheiro: valorRecebidoDinheiro,
-      })
-      .eq('id', orderId)
-    if (err) throw new Error(err.message)
-  }, [])
+  const confirmCash = useCallback(
+    async (orderId: string, valorRecebidoDinheiro: number) => {
+      const { error: err } = await supabase
+        .from('orders')
+        .update({
+          status: 'recebido',
+          forma_pagamento: 'Dinheiro',
+          valor_recebido_dinheiro: valorRecebidoDinheiro,
+        })
+        .eq('id', orderId)
+      if (err) throw new Error(err.message)
+
+      // Baixa automática é conveniência, não pode derrubar a confirmação de
+      // pagamento que já aconteceu de verdade — se falhar, a equipe sempre
+      // pode fechar esse pedido manualmente depois em Estoque → Fechamento.
+      try {
+        const order = orders.find((o) => o.id === orderId)
+        if (order && (await fechamentoAutomaticoAtivo(supabase))) {
+          await baixarEstoqueDoPedido(supabase, order, currentUserId)
+        }
+      } catch {
+        // silencioso, ver comentário acima
+      }
+    },
+    [orders, currentUserId],
+  )
 
   return { orders, error, confirmCash }
 }
