@@ -1789,7 +1789,12 @@ body {
   width: 420px;
   max-width: calc(100vw - var(--space-4) * 2);
   height: 560px;
+  /* `dvh` (não `vh`) porque no celular a barra de endereço do navegador
+     entra e sai da tela: `vh` conta a altura como se ela nunca estivesse
+     ali, então o painel podia se achar com mais espaço do que existe de
+     verdade e nascer com o topo cortado por trás da barra. */
   max-height: calc(100vh - 160px);
+  max-height: calc(100dvh - 160px);
   display: flex;
   flex-direction: column;
   background: var(--color-surface);
@@ -1801,9 +1806,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-2);
   padding: var(--space-4) var(--space-4) var(--space-3);
   border-bottom: 1px solid var(--color-border);
-      height: 68px;
+  /* `min`, não `height` fixo: um título mais comprido ("Tuco - Seu tucano
+     assistente") pode precisar de duas linhas, e altura fixa + o
+     overflow:hidden do painel cortavam o mascote embaixo do título. */
+  min-height: 68px;
+  flex-shrink: 0;
 }
 .assistant-panel__header h2 {
   margin: 0;
@@ -1968,8 +1978,26 @@ body {
 }
 @media (max-width: 500px) {
   .assistant-panel {
+    /* Preenche a largura da tela com uma margem de cada lado, em vez de
+       uma largura fixa + max-width calculado — mais robusto em telas bem
+       estreitas. */
+    left: var(--space-3);
     right: var(--space-3);
+    width: auto;
+    max-width: none;
     bottom: calc(var(--space-4) + 104px);
+    max-height: calc(100vh - 140px);
+    max-height: calc(100dvh - 140px);
+  }
+  /* O mascote encolhe: um título de duas linhas (ver .assistant-panel__header
+     h2) não pode empurrar o cabeçalho a ponto de sobrar pouca tela pra
+     conversa em si. */
+  .assistant-panel__mascote {
+    width: 64px;
+    height: 64px;
+  }
+  .assistant-panel__header h2 {
+    font-size: 1rem;
   }
   .assistant-fab {
     right: var(--space-3);
