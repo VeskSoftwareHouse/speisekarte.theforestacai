@@ -1716,7 +1716,7 @@ body {
    bolha neutra igual à do resto do chat. */
 .assistant-message {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: var(--space-2);
 }
 .assistant-message__avatar {
@@ -1731,17 +1731,17 @@ body {
   align-self: flex-start;
   background: var(--color-bg);
   color: var(--color-ink);
-  border-bottom-left-radius: 4px;
+  border-top-left-radius: 4px;
 }
 .assistant-bubble--assistant::before {
   content: '';
   position: absolute;
   left: -5px;
-  bottom: 0;
+  top: 0;
   width: 12px;
   height: 12px;
   background: var(--color-bg);
-  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
 }
 .assistant-panel__form {
   display: flex;

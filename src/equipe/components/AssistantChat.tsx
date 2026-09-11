@@ -129,10 +129,23 @@ export default function AssistantChat({ accessToken }: Props) {
               <div className="assistant-panel__messages" ref={listRef}>
                 {loadingHistorico && <p className="equipe-app__status">Carregando…</p>}
                 {!loadingHistorico && messages.length === 0 && (
-                  <p className="assistant-panel__hint">
-                    Oi, eu sou o Tuco! Pergunte sobre vendas, faturamento ou estoque — ex: &ldquo;quanto vendemos
-                    hoje?&rdquo; ou &ldquo;quanto temos de açaí?&rdquo;.
-                  </p>
+                  <div className="assistant-message">
+                    <video
+                      className="assistant-message__avatar"
+                      src="/brand/mascote-tuco.mp4"
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                    />
+                    <div className="assistant-bubble assistant-bubble--assistant">
+                      Oi, eu sou o Tuco! Conheço o painel inteiro e adoro ajudar: conto como estão as vendas e o
+                      lucro, consulto e atualizo o cardápio e o estoque, acompanho compras, perdas e fechamento, e
+                      até cadastro ou edito coisas pra você — sempre te mostrando um resumo antes de gravar
+                      qualquer coisa. Pergunta à vontade, tipo &ldquo;quanto vendemos hoje?&rdquo; ou &ldquo;cadastra
+                      um novo insumo&rdquo;.
+                    </div>
+                  </div>
                 )}
                 {messages.map((m, i) =>
                   m.role === 'assistant' ? (
