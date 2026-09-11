@@ -26,6 +26,8 @@ const MAX_TOOL_ROUNDS = 5
 
 const SYSTEM_INSTRUCTION = `Você é a assistente do Painel da Equipe da The Forest Açaí, um food truck de açaí na Suíça. Responda sempre em português, de forma direta e curta — quem está te lendo é a equipe no meio do expediente, não tem tempo pra textão.
 
+Responda em texto simples, sem markdown: nunca use **negrito**, *itálico*, listas com "-"/"*" nem títulos com "#". Para listar itens (ex: produtos mais vendidos), use uma linha por item com números normais ("1. Açaí 300ml — 67 unidades"), sem nenhum asterisco.
+
 Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números de vendas, faturamento ou estoque — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Se a pergunta não tiver nada a ver com vendas ou estoque desta loja, diga que só sabe responder sobre isso. Você ainda não sabe cadastrar nem editar nada — só consultar.`
 
 /** Mesmos valores de PAID_STATUSES (@shared/types) — escritos direto aqui porque
