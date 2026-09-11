@@ -36,7 +36,7 @@ Hoje é ${hoje} (AAAA-MM-DD). Quando a pergunta mencionar um dia específico (ex
 
 Responda em texto simples, sem markdown: nunca use **negrito**, *itálico*, listas com "-"/"*" nem títulos com "#". Para listar itens (ex: produtos mais vendidos), use uma linha por item com números normais ("1. Açaí 300ml — 67 unidades"), sem nenhum asterisco.
 
-Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a todo o painel da equipe: vendas/relatórios (consultar_vendas), estado atual dos pedidos (consultar_pedidos_atuais), cardápio e adicionais (consultar_cardapio), saldo de estoque (consultar_estoque), histórico de movimentações de estoque (consultar_movimentacoes_estoque), pedidos de compra (consultar_compras), fornecedores (consultar_fornecedores), perdas (consultar_perdas), contagens de inventário (consultar_inventarios), impostos (consultar_impostos), e gorjetas/usuários da equipe (consultar_configuracoes). Se o resultado de uma ferramenta não trouxer o dado que a pergunta pediu, isso significa que a informação não está disponível nessa ferramenta — nunca conclua "zero" ou "nenhum" por conta própria a partir disso; diga que não tem acesso a esse dado específico. Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso.
+Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a todo o painel da equipe: vendas/relatórios, incluindo lucro bruto e margem por produto (consultar_vendas), estado atual dos pedidos (consultar_pedidos_atuais), cardápio e adicionais (consultar_cardapio), saldo de estoque (consultar_estoque), histórico de movimentações de estoque (consultar_movimentacoes_estoque), pedidos de compra (consultar_compras), fornecedores (consultar_fornecedores), perdas (consultar_perdas), contagens de inventário (consultar_inventarios), impostos (consultar_impostos), e gorjetas/usuários da equipe/fechamento automático de estoque (consultar_configuracoes). Você é a especialista em tudo que está no painel — qualquer pergunta sobre o que ele mostra ou faz, tente responder chamando a ferramenta certa antes de dizer que não sabe. Se o resultado de uma ferramenta não trouxer o dado que a pergunta pediu, isso significa que a informação não está disponível nessa ferramenta — nunca conclua "zero" ou "nenhum" por conta própria a partir disso; diga que não tem acesso a esse dado específico. Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso.
 
 CADASTRO E EDIÇÃO (criar_categoria, criar_produto, criar_insumo, criar_grupo_adicional, criar_opcao_adicional, criar_fornecedor, criar_imposto, criar_gorjeta, registrar_movimentacao_estoque, registrar_perda): quando o usuário pedir pra cadastrar OU editar/alterar/atualizar algo (ex: "configura um alerta de saldo baixo no açaí", "muda o preço do X", "desativa o fornecedor Y"), use a ferramenta correspondente — a maioria serve tanto pra criar quanto pra editar: informando o campo "*_atual" (ex: nome_atual, valor_atual) você EDITA o registro existente daquele nome; sem isso, você CRIA um novo. Nunca diga que não sabe editar algo antes de checar se a ferramenta certa aceita isso. Pra ligar/desligar um grupo de adicionais num produto (ex: "coloca o Toppings no Açaí 500ml"), use vincular_grupo_adicional — não é a mesma coisa que criar o grupo ou a opção.
 
@@ -130,6 +130,7 @@ interface OrderItemRow {
   quantidade: number
   preco_unitario: number
   menu_item_id: string | null
+  modifiers_selecionados: { option_id: string }[] | null
 }
 interface OrderRow {
   valor_pago: number | null
@@ -139,6 +140,54 @@ interface OrderRow {
   order_items: OrderItemRow[] | null
 }
 
+interface ImpostoRow {
+  tipo: string
+  valor: number
+  insumo_id: string | null
+  ativo: boolean
+}
+
+function valorComImposto(valorUnitario: number, insumoId: string, impostos: ImpostoRow[]): number {
+  const doInsumo = impostos.filter((i) => i.ativo && i.insumo_id === insumoId)
+  const percentual = doInsumo.filter((i) => i.tipo === 'percentual').reduce((soma, i) => soma + i.valor, 0)
+  const fixo = doInsumo.filter((i) => i.tipo === 'fixo').reduce((soma, i) => soma + i.valor, 0)
+  return valorUnitario * (1 + percentual / 100) + fixo
+}
+
+/**
+ * Custo médio ponderado por insumo, a partir das compras já recebidas com o
+ * imposto vinculado de HOJE aplicado — mesmo cálculo do painel (ver
+ * src/equipe/lucroCalc.ts), duplicado aqui porque `api/*.ts` não importa de
+ * `src/` de forma confiável no build da Vercel. Um insumo nunca comprado
+ * fica de fora do mapa: custo desconhecido é diferente de custo zero.
+ */
+async function custoMedioPorInsumo(supabase: SupabaseClient): Promise<Map<string, number>> {
+  const [comprasRes, impostosRes] = await Promise.all([
+    supabase
+      .from('pedidos_compra')
+      .select('pedido_compra_itens(insumo_id, quantidade, valor_unitario)')
+      .eq('status', 'recebido'),
+    supabase.from('impostos').select('tipo, valor, insumo_id, ativo'),
+  ])
+  const itens = ((comprasRes.data ?? []) as { pedido_compra_itens: { insumo_id: string; quantidade: number; valor_unitario: number | null }[] | null }[]).flatMap(
+    (p) => p.pedido_compra_itens ?? [],
+  )
+  const impostos = (impostosRes.data ?? []) as ImpostoRow[]
+
+  const soma = new Map<string, { valor: number; quantidade: number }>()
+  for (const item of itens) {
+    if (item.valor_unitario == null || item.quantidade <= 0) continue
+    const custo = valorComImposto(item.valor_unitario, item.insumo_id, impostos)
+    const acc = soma.get(item.insumo_id) ?? { valor: 0, quantidade: 0 }
+    acc.valor += custo * item.quantidade
+    acc.quantidade += item.quantidade
+    soma.set(item.insumo_id, acc)
+  }
+  const custos = new Map<string, number>()
+  for (const [insumoId, { valor, quantidade }] of soma) custos.set(insumoId, valor / quantidade)
+  return custos
+}
+
 async function consultarVendas(
   supabase: SupabaseClient,
   args: { periodo?: string; data_inicio?: string; data_fim?: string },
@@ -146,7 +195,9 @@ async function consultarVendas(
   const { inicio, fim } = periodoParaIntervalo(args)
   const { data, error } = await supabase
     .from('orders')
-    .select('valor_pago, gorjeta, forma_pagamento, criado_em, order_items(nome_item, quantidade, preco_unitario, menu_item_id)')
+    .select(
+      'valor_pago, gorjeta, forma_pagamento, criado_em, order_items(nome_item, quantidade, preco_unitario, menu_item_id, modifiers_selecionados)',
+    )
     .in('status', PAID_STATUSES)
     .gte('criado_em', inicio.toISOString())
     .lte('criado_em', fim.toISOString())
@@ -193,12 +244,107 @@ async function consultarVendas(
     }
   }
 
+  // Margem/lucro bruto: precisa da composição atual dos produtos vendidos e
+  // do vínculo atual dos adicionais escolhidos, mais o custo médio pago nas
+  // compras já recebidas (nunca um valor congelado no passado — mesmo
+  // espírito de insumo_saldos). Um insumo nunca comprado, ou um produto sem
+  // composição cadastrada, tem custo DESCONHECIDO: fica de fora da conta do
+  // lucro bruto em vez de contar como zero, senão a margem apareceria
+  // inflada.
+  const optionIds = [
+    ...new Set(
+      pedidos.flatMap((p) => (p.order_items ?? []).flatMap((i) => (i.modifiers_selecionados ?? []).map((m) => m.option_id))),
+    ),
+  ]
+  const [composicaoRes, opcoesRes, custoPorInsumo] = await Promise.all([
+    menuItemIds.length > 0
+      ? supabase.from('menu_item_insumos').select('menu_item_id, insumo_id, quantidade').in('menu_item_id', menuItemIds)
+      : Promise.resolve({ data: [] as { menu_item_id: string; insumo_id: string; quantidade: number }[] }),
+    optionIds.length > 0
+      ? supabase.from('modifier_options').select('id, insumo_id, quantidade_padrao').in('id', optionIds)
+      : Promise.resolve({ data: [] as { id: string; insumo_id: string | null; quantidade_padrao: number | null }[] }),
+    custoMedioPorInsumo(supabase),
+  ])
+  const composicaoPorItem = new Map<string, { insumo_id: string; quantidade: number }[]>()
+  for (const row of composicaoRes.data ?? []) {
+    const lista = composicaoPorItem.get(row.menu_item_id) ?? []
+    lista.push(row)
+    composicaoPorItem.set(row.menu_item_id, lista)
+  }
+  const opcaoPorId = new Map((opcoesRes.data ?? []).map((o) => [o.id, o]))
+
+  const margemPorProduto = new Map<string, { receita: number; custo: number; completo: boolean }>()
+  let receitaComCustoCompleto = 0
+  let custoConhecido = 0
+  const produtosSemCusto = new Set<string>()
+
+  for (const pedido of pedidos) {
+    for (const item of pedido.order_items ?? []) {
+      const receitaItem = item.preco_unitario * item.quantidade
+      let custoUnitario = 0
+      let completo = true
+
+      const composicao = item.menu_item_id ? composicaoPorItem.get(item.menu_item_id) : undefined
+      if (!composicao || composicao.length === 0) {
+        completo = false
+      } else {
+        for (const linha of composicao) {
+          const custo = custoPorInsumo.get(linha.insumo_id)
+          if (custo == null) {
+            completo = false
+            continue
+          }
+          custoUnitario += custo * linha.quantidade
+        }
+      }
+      for (const mod of item.modifiers_selecionados ?? []) {
+        const opcao = opcaoPorId.get(mod.option_id)
+        if (!opcao?.insumo_id || !opcao.quantidade_padrao) continue
+        const custo = custoPorInsumo.get(opcao.insumo_id)
+        if (custo == null) {
+          completo = false
+          continue
+        }
+        custoUnitario += custo * opcao.quantidade_padrao
+      }
+
+      const custoItem = custoUnitario * item.quantidade
+      if (completo) {
+        receitaComCustoCompleto += receitaItem
+        custoConhecido += custoItem
+      } else {
+        produtosSemCusto.add(item.nome_item)
+      }
+
+      const row = margemPorProduto.get(item.nome_item) ?? { receita: 0, custo: 0, completo: true }
+      row.receita += receitaItem
+      row.custo += custoItem
+      if (!completo) row.completo = false
+      margemPorProduto.set(item.nome_item, row)
+    }
+  }
+
   return {
     periodo_consultado: `${inicio.toISOString().slice(0, 10)} a ${new Date(fim.getTime() - 1).toISOString().slice(0, 10)}`,
     pedidos: pedidos.length,
     faturamento_chf: Number(faturamento.toFixed(2)),
     gorjetas_chf: Number(gorjetas.toFixed(2)),
     ticket_medio_chf: pedidos.length > 0 ? Number((faturamento / pedidos.length).toFixed(2)) : 0,
+    // Lucro bruto = receita menos só o custo de insumos (aluguel, taxas e
+    // outras despesas fixas NÃO entram — isso não é lucro líquido).
+    lucro_bruto_chf: Number((receitaComCustoCompleto - custoConhecido).toFixed(2)),
+    custo_insumos_chf: Number(custoConhecido.toFixed(2)),
+    produtos_sem_custo_cadastrado: [...produtosSemCusto],
+    margem_por_produto: [...margemPorProduto.entries()]
+      .map(([nome, m]) => ({
+        nome,
+        receita_chf: Number(m.receita.toFixed(2)),
+        custo_chf: Number(m.custo.toFixed(2)),
+        margem_chf: Number((m.receita - m.custo).toFixed(2)),
+        margem_percentual: m.completo && m.receita > 0 ? Number((((m.receita - m.custo) / m.receita) * 100).toFixed(0)) : null,
+        custo_completo: m.completo,
+      }))
+      .sort((a, b) => b.receita_chf - a.receita_chf),
     produtos_vendidos: [...porProduto.entries()]
       .map(([nome, quantidade]) => ({ nome, quantidade }))
       .sort((a, b) => b.quantidade - a.quantidade),
@@ -547,9 +693,10 @@ async function consultarImpostos(supabase: SupabaseClient) {
 }
 
 async function consultarConfiguracoes(supabase: SupabaseClient) {
-  const [tipsRes, usersRes] = await Promise.all([
+  const [tipsRes, usersRes, estoqueRes] = await Promise.all([
     supabase.from('tip_options').select('tipo, valor, ativo').order('ordem'),
     supabase.auth.admin.listUsers(),
+    supabase.from('configuracoes_estoque').select('fechamento_automatico').maybeSingle(),
   ])
   if (tipsRes.error) return { error: tipsRes.error.message }
 
@@ -564,6 +711,7 @@ async function consultarConfiguracoes(supabase: SupabaseClient) {
       nome: (u.user_metadata as { nome?: string } | null)?.nome ?? null,
       email: u.email,
     })),
+    fechamento_automatico_de_estoque: estoqueRes.data?.fechamento_automatico ?? false,
   }
 }
 
@@ -1270,7 +1418,7 @@ const TOOLS = [
       {
         name: 'consultar_vendas',
         description:
-          'Consulta pedidos pagos num período: faturamento, gorjetas, ticket médio, produtos mais vendidos, faturamento por forma de pagamento e por categoria do cardápio, e quantidade de pedidos por hora do dia (já ordenado da hora mais cheia pra mais fraca). Para um dia ou intervalo específico (ex: "domingo passado"), use data_inicio/data_fim em vez de periodo.',
+          'Consulta pedidos pagos num período: faturamento, gorjetas, ticket médio, produtos mais vendidos, faturamento por forma de pagamento e por categoria do cardápio, quantidade de pedidos por hora do dia (já ordenado da hora mais cheia pra mais fraca), e lucro bruto + margem por produto (receita menos custo dos insumos, pela composição e pelo preço médio pago nas compras já recebidas — é lucro BRUTO, não conta aluguel/taxas/outras despesas fixas; produtos em produtos_sem_custo_cadastrado ficam fora dessa conta porque algum insumo usado nunca foi comprado ou o produto não tem composição cadastrada). Para um dia ou intervalo específico (ex: "domingo passado"), use data_inicio/data_fim em vez de periodo.',
         parametersJsonSchema: {
           type: 'object',
           properties: {
@@ -1387,7 +1535,8 @@ const TOOLS = [
       },
       {
         name: 'consultar_configuracoes',
-        description: 'Consulta as opções de gorjeta oferecidas no totem e a lista de usuários com acesso ao painel da equipe.',
+        description:
+          'Consulta as opções de gorjeta oferecidas no totem, a lista de usuários com acesso ao painel da equipe, e se o fechamento automático de estoque (baixa assim que um pedido é confirmado) está ligado.',
         parametersJsonSchema: { type: 'object', properties: {} },
       },
       {
