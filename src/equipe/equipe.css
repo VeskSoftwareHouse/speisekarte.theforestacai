@@ -1585,8 +1585,8 @@ body {
   bottom: var(--space-5);
   right: var(--space-5);
   z-index: 40;
-  width: 56px;
-  height: 56px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
   border: none;
   display: flex;
@@ -1600,14 +1600,40 @@ body {
 .assistant-fab--open {
   background: var(--color-primary-dark);
 }
+/* Mascote (o tucano da marca, animado) preenche o botão redondo — sem o
+   fundo roxo por trás, senão ele fica com cantos apagando o círculo. */
+.assistant-fab:has(.assistant-fab__mascote) {
+  background: var(--color-surface);
+  padding: 3px;
+  box-shadow: var(--shadow-glow-primary), 0 0 0 2px var(--color-primary);
+}
+.assistant-fab__mascote {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.assistant-panel__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.assistant-panel__mascote {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
 .assistant-panel {
   position: fixed;
-  bottom: calc(var(--space-5) + 68px);
+  bottom: calc(var(--space-5) + 80px);
   right: var(--space-5);
   z-index: 40;
-  width: 360px;
+  width: 380px;
   max-width: calc(100vw - var(--space-4) * 2);
-  height: 480px;
+  height: 500px;
   max-height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
@@ -1625,7 +1651,7 @@ body {
 }
 .assistant-panel__header h2 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.15rem;
 }
 .assistant-panel__header-actions {
   display: flex;
@@ -1677,14 +1703,41 @@ body {
   background: var(--color-primary);
   color: var(--color-primary-contrast);
 }
-.assistant-bubble--assistant {
-  align-self: flex-start;
-  background: var(--color-bg);
-  color: var(--color-ink);
-}
 .assistant-bubble--typing {
   color: var(--color-text-muted);
   font-style: italic;
+}
+/* Fala do Tuco: o avatar entra na própria conversa, do lado da bolha — que
+   ganha um "rabinho" de balão de fala apontando pra ele, em vez de uma
+   bolha neutra igual à do resto do chat. */
+.assistant-message {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+.assistant-message__avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.assistant-bubble--assistant {
+  position: relative;
+  align-self: flex-start;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  border-bottom-left-radius: 4px;
+}
+.assistant-bubble--assistant::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  bottom: 0;
+  width: 12px;
+  height: 12px;
+  background: var(--color-bg);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
 }
 .assistant-panel__form {
   display: flex;
@@ -1760,7 +1813,7 @@ body {
 @media (max-width: 500px) {
   .assistant-panel {
     right: var(--space-3);
-    bottom: calc(var(--space-4) + 68px);
+    bottom: calc(var(--space-4) + 80px);
   }
   .assistant-fab {
     right: var(--space-3);

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { History, MessageCircleMore, Plus, Send, Trash2, X } from 'lucide-react'
+import { History, Plus, Send, Trash2, X } from 'lucide-react'
 import { useAssistant, type ConversaResumo } from '../hooks/useAssistant'
 
 interface Props {
@@ -7,12 +7,12 @@ interface Props {
 }
 
 /**
- * Chat flutuante da assistente de IA, disponível em qualquer aba do painel
- * (montado uma vez em App.tsx, fora dos blocos de aba). Sem overlay que
- * escurece a tela — diferente de um modal de confirmação, um chat deve
- * deixar a equipe ver o resto da tela enquanto conversa. "Nova conversa"
- * não apaga nada — só troca pra uma em branco; a lista de conversas
- * antigas é como se volta pras anteriores.
+ * Chat flutuante do Tuco — o tucano da marca virou o mascote da assistente
+ * de IA, disponível em qualquer aba do painel (montado uma vez em App.tsx,
+ * fora dos blocos de aba). Sem overlay que escurece a tela — diferente de um
+ * modal de confirmação, um chat deve deixar a equipe ver o resto da tela
+ * enquanto conversa. "Nova conversa" não apaga nada — só troca pra uma em
+ * branco; a lista de conversas antigas é como se volta pras anteriores.
  */
 export default function AssistantChat({ accessToken }: Props) {
   const [open, setOpen] = useState(false)
@@ -63,15 +63,22 @@ export default function AssistantChat({ accessToken }: Props) {
       <button
         className={`assistant-fab ${open ? 'assistant-fab--open' : ''}`}
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? 'Fechar assistente' : 'Abrir assistente'}
+        aria-label={open ? 'Fechar assistente' : 'Abrir o Tuco, o assistente'}
       >
-        {open ? <X size={22} strokeWidth={2} aria-hidden /> : <MessageCircleMore size={22} strokeWidth={2} aria-hidden />}
+        {open ? (
+          <X size={22} strokeWidth={2} aria-hidden />
+        ) : (
+          <video className="assistant-fab__mascote" src="/brand/mascote-tuco.mp4" autoPlay loop muted playsInline />
+        )}
       </button>
 
       {open && (
         <div className="assistant-panel">
           <header className="assistant-panel__header">
-            <h2>Assistente</h2>
+            <div className="assistant-panel__brand">
+              <video className="assistant-panel__mascote" src="/brand/mascote-tuco.mp4" autoPlay loop muted playsInline />
+              <h2>Tuco</h2>
+            </div>
             <div className="assistant-panel__header-actions">
               <button
                 type="button"
@@ -123,16 +130,42 @@ export default function AssistantChat({ accessToken }: Props) {
                 {loadingHistorico && <p className="equipe-app__status">Carregando…</p>}
                 {!loadingHistorico && messages.length === 0 && (
                   <p className="assistant-panel__hint">
-                    Pergunte sobre vendas, faturamento ou estoque — ex: &ldquo;quanto vendemos hoje?&rdquo; ou &ldquo;quanto
-                    temos de açaí?&rdquo;.
+                    Oi, eu sou o Tuco! Pergunte sobre vendas, faturamento ou estoque — ex: &ldquo;quanto vendemos
+                    hoje?&rdquo; ou &ldquo;quanto temos de açaí?&rdquo;.
                   </p>
                 )}
-                {messages.map((m, i) => (
-                  <div key={i} className={`assistant-bubble assistant-bubble--${m.role}`}>
-                    {m.text}
+                {messages.map((m, i) =>
+                  m.role === 'assistant' ? (
+                    <div key={i} className="assistant-message">
+                      <video
+                        className="assistant-message__avatar"
+                        src="/brand/mascote-tuco.mp4"
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                      />
+                      <div className="assistant-bubble assistant-bubble--assistant">{m.text}</div>
+                    </div>
+                  ) : (
+                    <div key={i} className="assistant-bubble assistant-bubble--user">
+                      {m.text}
+                    </div>
+                  ),
+                )}
+                {sending && (
+                  <div className="assistant-message">
+                    <video
+                      className="assistant-message__avatar"
+                      src="/brand/mascote-tuco.mp4"
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                    />
+                    <div className="assistant-bubble assistant-bubble--assistant assistant-bubble--typing">Digitando…</div>
                   </div>
-                ))}
-                {sending && <div className="assistant-bubble assistant-bubble--assistant assistant-bubble--typing">Digitando…</div>}
+                )}
                 {error && <p className="admin-form__error">{error}</p>}
               </div>
 
