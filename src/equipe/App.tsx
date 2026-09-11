@@ -7,6 +7,8 @@ import OrderCard from './components/OrderCard'
 import CashPendingPanel from './components/CashPendingPanel'
 import DateStrip from './components/DateStrip'
 import MenuManager from './components/MenuManager'
+import EstoqueManager from './components/EstoqueManager'
+import AssistantChat from './components/AssistantChat'
 import LoginScreen from './components/LoginScreen'
 import ReportsPanel from './components/ReportsPanel'
 import PanelHeader, { type PanelTab } from './components/PanelHeader'
@@ -89,7 +91,11 @@ export default function App() {
         onSignOut={signOut}
       />
 
+      <AssistantChat accessToken={session.access_token} />
+
       {tab === 'cardapio' && <MenuManager accessToken={session.access_token} currentUserId={user!.id} />}
+
+      {tab === 'estoque' && <EstoqueManager currentUserId={user!.id} />}
 
       {tab === 'relatorios' && <ReportsPanel />}
 
