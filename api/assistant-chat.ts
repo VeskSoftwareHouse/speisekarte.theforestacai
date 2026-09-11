@@ -36,7 +36,7 @@ Hoje é ${hoje} (AAAA-MM-DD). Quando a pergunta mencionar um dia específico (ex
 
 Responda em texto simples, sem markdown: nunca use **negrito**, *itálico*, listas com "-"/"*" nem títulos com "#". Para listar itens (ex: produtos mais vendidos), use uma linha por item com números normais ("1. Açaí 300ml — 67 unidades"), sem nenhum asterisco.
 
-Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números de vendas, faturamento, estoque, cardápio ou pedidos — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a vendas/relatórios (consultar_vendas), estoque (consultar_estoque), cardápio e adicionais (consultar_cardapio) e o estado atual dos pedidos na cozinha/caixa (consultar_pedidos_atuais). Se o resultado de uma ferramenta não trouxer o dado que a pergunta pediu, isso significa que a informação não está disponível nessa ferramenta — nunca conclua "zero" ou "nenhum" por conta própria a partir disso; diga que não tem acesso a esse dado específico. Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso. Você ainda não sabe cadastrar nem editar nada — só consultar.`
+Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a todo o painel da equipe: vendas/relatórios (consultar_vendas), estado atual dos pedidos (consultar_pedidos_atuais), cardápio e adicionais (consultar_cardapio), saldo de estoque (consultar_estoque), histórico de movimentações de estoque (consultar_movimentacoes_estoque), pedidos de compra (consultar_compras), fornecedores (consultar_fornecedores), perdas (consultar_perdas), contagens de inventário (consultar_inventarios), impostos (consultar_impostos), e gorjetas/usuários da equipe (consultar_configuracoes). Se o resultado de uma ferramenta não trouxer o dado que a pergunta pediu, isso significa que a informação não está disponível nessa ferramenta — nunca conclua "zero" ou "nenhum" por conta própria a partir disso; diga que não tem acesso a esse dado específico. Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso. Você ainda não sabe cadastrar nem editar nada — só consultar.`
 }
 
 const RETRY_DELAYS_MS = [800, 2000]
@@ -344,6 +344,223 @@ async function consultarEstoque(supabase: SupabaseClient, args: { insumo?: strin
   }
 }
 
+interface MovimentacaoRow {
+  insumo_id: string
+  quantidade: number
+  tipo: string
+  criado_em: string
+}
+
+async function consultarMovimentacoesEstoque(
+  supabase: SupabaseClient,
+  args: { periodo?: string; insumo?: string },
+) {
+  const { inicio, fim } = periodoParaIntervalo(args)
+  const { data, error } = await supabase
+    .from('movimentacoes_estoque')
+    .select('insumo_id, quantidade, tipo, criado_em')
+    .gte('criado_em', inicio.toISOString())
+    .lte('criado_em', fim.toISOString())
+    .order('criado_em', { ascending: false })
+  if (error) return { error: error.message }
+
+  let movimentos = (data ?? []) as MovimentacaoRow[]
+  const insumoIds = [...new Set(movimentos.map((m) => m.insumo_id))]
+  const { data: insumosData } = insumoIds.length
+    ? await supabase.from('insumos').select('id, nome, unidade').in('id', insumoIds)
+    : { data: [] as { id: string; nome: string; unidade: string }[] }
+  const insumoPorId = new Map((insumosData ?? []).map((i: { id: string; nome: string; unidade: string }) => [i.id, i]))
+
+  if (args.insumo) {
+    const termo = args.insumo.toLowerCase()
+    movimentos = movimentos.filter((m) => insumoPorId.get(m.insumo_id)?.nome.toLowerCase().includes(termo))
+  }
+
+  const porTipo = new Map<string, number>()
+  for (const m of movimentos) porTipo.set(m.tipo, (porTipo.get(m.tipo) ?? 0) + 1)
+
+  return {
+    periodo_consultado: `${inicio.toISOString().slice(0, 10)} a ${new Date(fim.getTime() - 1).toISOString().slice(0, 10)}`,
+    total_movimentacoes: movimentos.length,
+    por_tipo: [...porTipo.entries()].map(([tipo, quantidade]) => ({ tipo, quantidade })),
+    movimentacoes_recentes: movimentos.slice(0, 20).map((m) => {
+      const insumo = insumoPorId.get(m.insumo_id)
+      return {
+        insumo: insumo?.nome ?? 'Insumo removido',
+        quantidade: m.quantidade,
+        unidade: insumo?.unidade,
+        tipo: m.tipo,
+        data: m.criado_em,
+      }
+    }),
+  }
+}
+
+interface PedidoCompraRow {
+  status: string
+  fornecedor_id: string
+  criado_em: string
+  pedido_compra_itens: { quantidade: number; valor_unitario: number | null }[] | null
+}
+
+async function consultarCompras(supabase: SupabaseClient, args: { status?: string }) {
+  let query = supabase
+    .from('pedidos_compra')
+    .select('status, fornecedor_id, criado_em, pedido_compra_itens(quantidade, valor_unitario)')
+    .order('criado_em', { ascending: false })
+    .limit(30)
+  if (args.status) query = query.eq('status', args.status)
+  const { data, error } = await query
+  if (error) return { error: error.message }
+
+  const pedidos = (data ?? []) as unknown as PedidoCompraRow[]
+  const fornecedorIds = [...new Set(pedidos.map((p) => p.fornecedor_id))]
+  const { data: fornecedoresData } = fornecedorIds.length
+    ? await supabase.from('fornecedores').select('id, nome').in('id', fornecedorIds)
+    : { data: [] as { id: string; nome: string }[] }
+  const nomeFornecedorPorId = new Map((fornecedoresData ?? []).map((f: { id: string; nome: string }) => [f.id, f.nome]))
+
+  const porStatus = new Map<string, number>()
+  for (const p of pedidos) porStatus.set(p.status, (porStatus.get(p.status) ?? 0) + 1)
+
+  return {
+    total_pedidos: pedidos.length,
+    por_status: [...porStatus.entries()].map(([status, quantidade]) => ({ status, quantidade })),
+    pedidos: pedidos.map((p) => ({
+      fornecedor: nomeFornecedorPorId.get(p.fornecedor_id) ?? 'Fornecedor removido',
+      status: p.status,
+      total_chf: Number(
+        (p.pedido_compra_itens ?? []).reduce((soma, it) => soma + (it.valor_unitario ?? 0) * it.quantidade, 0).toFixed(2),
+      ),
+      criado_em: p.criado_em,
+    })),
+  }
+}
+
+async function consultarFornecedores(supabase: SupabaseClient, args: { apenas_ativos?: boolean }) {
+  let query = supabase.from('fornecedores').select('nome, contato, telefone, email, ativo').order('nome')
+  if (args.apenas_ativos) query = query.eq('ativo', true)
+  const { data, error } = await query
+  if (error) return { error: error.message }
+  return { total: (data ?? []).length, fornecedores: data ?? [] }
+}
+
+interface PerdaRow {
+  insumo_id: string
+  quantidade: number
+  motivo: string
+  origem_tipo: string
+  criado_em: string
+}
+
+async function consultarPerdas(supabase: SupabaseClient, args: { periodo?: string }) {
+  const { inicio, fim } = periodoParaIntervalo(args)
+  const { data, error } = await supabase
+    .from('perdas')
+    .select('insumo_id, quantidade, motivo, origem_tipo, criado_em')
+    .gte('criado_em', inicio.toISOString())
+    .lte('criado_em', fim.toISOString())
+  if (error) return { error: error.message }
+
+  const perdas = (data ?? []) as PerdaRow[]
+  const insumoIds = [...new Set(perdas.map((p) => p.insumo_id))]
+  const { data: insumosData } = insumoIds.length
+    ? await supabase.from('insumos').select('id, nome, unidade').in('id', insumoIds)
+    : { data: [] as { id: string; nome: string; unidade: string }[] }
+  const insumoPorId = new Map((insumosData ?? []).map((i: { id: string; nome: string; unidade: string }) => [i.id, i]))
+
+  const porMotivo = new Map<string, number>()
+  for (const p of perdas) porMotivo.set(p.motivo, (porMotivo.get(p.motivo) ?? 0) + 1)
+
+  return {
+    periodo_consultado: `${inicio.toISOString().slice(0, 10)} a ${new Date(fim.getTime() - 1).toISOString().slice(0, 10)}`,
+    total_perdas: perdas.length,
+    por_motivo: [...porMotivo.entries()].map(([motivo, quantidade]) => ({ motivo, quantidade })),
+    perdas: perdas.map((p) => {
+      const insumo = insumoPorId.get(p.insumo_id)
+      return {
+        insumo: insumo?.nome ?? 'Insumo removido',
+        quantidade: p.quantidade,
+        unidade: insumo?.unidade,
+        motivo: p.motivo,
+        origem: p.origem_tipo,
+        data: p.criado_em,
+      }
+    }),
+  }
+}
+
+async function consultarInventarios(supabase: SupabaseClient) {
+  const { data, error } = await supabase
+    .from('inventarios')
+    .select('observacoes, criado_em, finalizado_em, inventario_itens(saldo_sistema, saldo_contado)')
+    .order('criado_em', { ascending: false })
+    .limit(10)
+  if (error) return { error: error.message }
+
+  const inventarios = (data ?? []) as {
+    observacoes: string | null
+    criado_em: string
+    finalizado_em: string | null
+    inventario_itens: { saldo_sistema: number; saldo_contado: number }[] | null
+  }[]
+
+  return {
+    total_contagens: inventarios.length,
+    contagens: inventarios.map((inv) => ({
+      data: inv.criado_em,
+      finalizada: !!inv.finalizado_em,
+      insumos_contados: (inv.inventario_itens ?? []).length,
+      divergencias: (inv.inventario_itens ?? []).filter((it) => it.saldo_contado !== it.saldo_sistema).length,
+      observacoes: inv.observacoes,
+    })),
+  }
+}
+
+async function consultarImpostos(supabase: SupabaseClient) {
+  const { data, error } = await supabase.from('impostos').select('nome, tipo, valor, insumo_id, ativo').order('nome')
+  if (error) return { error: error.message }
+
+  const impostos = (data ?? []) as { nome: string; tipo: string; valor: number; insumo_id: string | null; ativo: boolean }[]
+  const insumoIds = [...new Set(impostos.map((i) => i.insumo_id).filter((id): id is string => !!id))]
+  const { data: insumosData } = insumoIds.length
+    ? await supabase.from('insumos').select('id, nome').in('id', insumoIds)
+    : { data: [] as { id: string; nome: string }[] }
+  const nomeInsumoPorId = new Map((insumosData ?? []).map((i: { id: string; nome: string }) => [i.id, i.nome]))
+
+  return {
+    total: impostos.length,
+    impostos: impostos.map((i) => ({
+      nome: i.nome,
+      tipo: i.tipo,
+      valor: i.valor,
+      insumo_vinculado: i.insumo_id ? (nomeInsumoPorId.get(i.insumo_id) ?? 'Insumo removido') : null,
+      ativo: i.ativo,
+    })),
+  }
+}
+
+async function consultarConfiguracoes(supabase: SupabaseClient) {
+  const [tipsRes, usersRes] = await Promise.all([
+    supabase.from('tip_options').select('tipo, valor, ativo').order('ordem'),
+    supabase.auth.admin.listUsers(),
+  ])
+  if (tipsRes.error) return { error: tipsRes.error.message }
+
+  return {
+    gorjetas: (tipsRes.data ?? []).map((t: { tipo: string; valor: number; ativo: boolean }) => ({
+      tipo: t.tipo,
+      valor: t.valor,
+      ativo: t.ativo,
+    })),
+    total_usuarios_da_equipe: usersRes.data?.users?.length ?? null,
+    usuarios_da_equipe: (usersRes.data?.users ?? []).map((u) => ({
+      nome: (u.user_metadata as { nome?: string } | null)?.nome ?? null,
+      email: u.email,
+    })),
+  }
+}
+
 const TOOLS = [
   {
     functionDeclarations: [
@@ -408,6 +625,67 @@ const TOOLS = [
             },
           },
         },
+      },
+      {
+        name: 'consultar_movimentacoes_estoque',
+        description:
+          'Consulta o histórico de movimentações de estoque (entradas e saídas de insumos) num período: quantas aconteceram, de que tipo (compra, venda, ajuste de inventário, perda, manual) e as mais recentes.',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            periodo: { type: 'string', enum: ['hoje', 'ontem', 'semana', 'mes'], description: 'Período a consultar. Padrão: hoje.' },
+            insumo: { type: 'string', description: 'Nome (ou parte do nome) de um insumo específico.' },
+          },
+        },
+      },
+      {
+        name: 'consultar_compras',
+        description: 'Consulta pedidos de compra a fornecedores: quantos existem, em que status, e o valor de cada um.',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            status: {
+              type: 'string',
+              enum: ['rascunho', 'aguardando_recebimento', 'recebido', 'cancelado'],
+              description: 'Filtra por status. Deixe vazio para ver todos os pedidos recentes.',
+            },
+          },
+        },
+      },
+      {
+        name: 'consultar_fornecedores',
+        description: 'Consulta os fornecedores cadastrados (nome, contato, ativo/inativo).',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            apenas_ativos: { type: 'boolean', description: 'Se true, lista só os fornecedores ativos.' },
+          },
+        },
+      },
+      {
+        name: 'consultar_perdas',
+        description: 'Consulta as perdas de estoque registradas num período: quantas, por qual motivo, e de qual insumo.',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            periodo: { type: 'string', enum: ['hoje', 'ontem', 'semana', 'mes'], description: 'Período a consultar. Padrão: hoje.' },
+          },
+        },
+      },
+      {
+        name: 'consultar_inventarios',
+        description: 'Consulta o histórico de contagens de inventário (contagem física de estoque): quando, quantos insumos contados e quantas divergências encontradas.',
+        parametersJsonSchema: { type: 'object', properties: {} },
+      },
+      {
+        name: 'consultar_impostos',
+        description: 'Consulta os impostos cadastrados: nome, tipo (fixo/percentual), valor, e a qual insumo (se algum) estão vinculados.',
+        parametersJsonSchema: { type: 'object', properties: {} },
+      },
+      {
+        name: 'consultar_configuracoes',
+        description: 'Consulta as opções de gorjeta oferecidas no totem e a lista de usuários com acesso ao painel da equipe.',
+        parametersJsonSchema: { type: 'object', properties: {} },
       },
     ],
   },
@@ -476,6 +754,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           else if (call.name === 'consultar_estoque') resultado = await consultarEstoque(supabase, args)
           else if (call.name === 'consultar_cardapio') resultado = await consultarCardapio(supabase, args)
           else if (call.name === 'consultar_pedidos_atuais') resultado = await consultarPedidosAtuais(supabase, args)
+          else if (call.name === 'consultar_movimentacoes_estoque') resultado = await consultarMovimentacoesEstoque(supabase, args)
+          else if (call.name === 'consultar_compras') resultado = await consultarCompras(supabase, args)
+          else if (call.name === 'consultar_fornecedores') resultado = await consultarFornecedores(supabase, args)
+          else if (call.name === 'consultar_perdas') resultado = await consultarPerdas(supabase, args)
+          else if (call.name === 'consultar_inventarios') resultado = await consultarInventarios(supabase)
+          else if (call.name === 'consultar_impostos') resultado = await consultarImpostos(supabase)
+          else if (call.name === 'consultar_configuracoes') resultado = await consultarConfiguracoes(supabase)
           else resultado = { error: `Ferramenta desconhecida: ${call.name}` }
           return createPartFromFunctionResponse(
             call.id ?? call.name ?? '',
