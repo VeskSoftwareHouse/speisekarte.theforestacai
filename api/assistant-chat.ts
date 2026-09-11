@@ -36,13 +36,13 @@ Hoje é ${hoje} (AAAA-MM-DD). Quando a pergunta mencionar um dia específico (ex
 
 Responda em texto simples, sem markdown: nunca use **negrito**, *itálico*, listas com "-"/"*" nem títulos com "#". Para listar itens (ex: produtos mais vendidos), use uma linha por item com números normais ("1. Açaí 300ml — 67 unidades"), sem nenhum asterisco.
 
-Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a todo o painel da equipe: vendas/relatórios, incluindo lucro bruto e margem por produto (consultar_vendas), estado atual dos pedidos (consultar_pedidos_atuais), cardápio e adicionais (consultar_cardapio), saldo de estoque (consultar_estoque), histórico de movimentações de estoque (consultar_movimentacoes_estoque), pedidos de compra (consultar_compras), fornecedores (consultar_fornecedores), perdas (consultar_perdas), contagens de inventário (consultar_inventarios), impostos (consultar_impostos), e gorjetas/usuários da equipe/fechamento automático de estoque (consultar_configuracoes). Você é a especialista em tudo que está no painel — qualquer pergunta sobre o que ele mostra ou faz, tente responder chamando a ferramenta certa antes de dizer que não sabe. Se o resultado de uma ferramenta não trouxer o dado que a pergunta pediu, isso significa que a informação não está disponível nessa ferramenta — nunca conclua "zero" ou "nenhum" por conta própria a partir disso; diga que não tem acesso a esse dado específico. Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso.
+Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a todo o painel da equipe: vendas/relatórios, incluindo lucro bruto e margem por produto (consultar_vendas), estado atual dos pedidos (consultar_pedidos_atuais), cardápio e adicionais (consultar_cardapio), saldo de estoque (consultar_estoque), histórico de movimentações de estoque (consultar_movimentacoes_estoque), pedidos de compra (consultar_compras), fornecedores (consultar_fornecedores), perdas (consultar_perdas), contagens de inventário (consultar_inventarios), fila de pedidos pendentes de fechamento de estoque (consultar_fechamento), impostos (consultar_impostos), e gorjetas/usuários da equipe/fechamento automático de estoque (consultar_configuracoes). Você é a especialista em tudo que está no painel — qualquer pergunta sobre o que ele mostra ou faz, tente responder chamando a ferramenta certa antes de dizer que não sabe. Se o resultado de uma ferramenta não trouxer o dado que a pergunta pediu, isso significa que a informação não está disponível nessa ferramenta — nunca conclua "zero" ou "nenhum" por conta própria a partir disso; diga que não tem acesso a esse dado específico. Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso.
 
 CADASTRO E EDIÇÃO (criar_categoria, criar_produto, criar_insumo, criar_grupo_adicional, criar_opcao_adicional, criar_fornecedor, criar_imposto, criar_gorjeta, registrar_movimentacao_estoque, registrar_perda): quando o usuário pedir pra cadastrar OU editar/alterar/atualizar algo (ex: "configura um alerta de saldo baixo no açaí", "muda o preço do X", "desativa o fornecedor Y"), use a ferramenta correspondente — a maioria serve tanto pra criar quanto pra editar: informando o campo "*_atual" (ex: nome_atual, valor_atual) você EDITA o registro existente daquele nome; sem isso, você CRIA um novo. Nunca diga que não sabe editar algo antes de checar se a ferramenta certa aceita isso. Pra ligar/desligar um grupo de adicionais num produto (ex: "coloca o Toppings no Açaí 500ml"), use vincular_grupo_adicional — não é a mesma coisa que criar o grupo ou a opção.
 
 Faça perguntas UMA DE CADA VEZ, como numa conversa normal — nunca liste todos os campos de uma vez feito um formulário. Ao editar, peça só os campos que o usuário quer mudar (não pergunte os que não mudam). Ao criar, peça só o que for obrigatório; campos opcionais (disponível, destaque, descrição, estoque mínimo, preço adicional...) só pergunte se fizer sentido, senão use o padrão da própria ferramenta. Quando tiver o necessário, chame a ferramenta SEM confirmado=true — ela devolve um resumo do que será criado ou alterado. Mostre esse resumo pro usuário em português e pergunte se pode confirmar. SÓ chame a mesma ferramenta de novo com confirmado=true depois que o usuário disser explicitamente que sim na mensagem mais recente dele — nunca marque confirmado=true por conta própria, nem generalize uma confirmação anterior para uma criação/edição nova. Se a ferramenta devolver "erro" (ex: item não encontrado), explique o problema ao usuário e pergunte como prosseguir — não insista repetindo a mesma chamada.
 
-Fora do seu alcance (fica pra a equipe fazer direto no painel): usuários com acesso ao painel (segurança de contas), pedidos de compra a fornecedores, contagens de inventário e fechamento de estoque.`
+Fora do seu alcance (fica pra a equipe fazer direto no painel): gerenciar usuários com acesso ao painel (segurança de contas), cadastrar pedidos de compra a fornecedores, registrar contagens de inventário, e executar o fechamento de estoque em si (bater os insumos em lote) — mas você PODE consultar a fila de pendentes de fechamento (consultar_fechamento), os pedidos de compra já cadastrados (consultar_compras) e as contagens já feitas (consultar_inventarios).`
 }
 
 const RETRY_DELAYS_MS = [800, 2000]
@@ -666,6 +666,45 @@ async function consultarInventarios(supabase: SupabaseClient) {
       divergencias: (inv.inventario_itens ?? []).filter((it) => it.saldo_contado !== it.saldo_sistema).length,
       observacoes: inv.observacoes,
     })),
+  }
+}
+
+interface PedidoPendenteFechamentoRow {
+  criado_em: string
+  valor_pago: number | null
+  gorjeta: number | null
+  forma_pagamento: string | null
+}
+
+/** Fila do Fechamento: pedidos já pagos que ainda não tiveram o estoque
+ * baixado — mesma consulta do painel (ver useFechamento.ts). Fechar de fato
+ * (bater os insumos em lote) continua sendo uma ação manual da equipe; isto
+ * é só a consulta de quantos/quais pedidos estão esperando. */
+async function consultarFechamento(supabase: SupabaseClient) {
+  const { data, error } = await supabase
+    .from('orders')
+    .select('criado_em, valor_pago, gorjeta, forma_pagamento')
+    .not('status', 'in', '(aguardando_pagamento,aguardando_dinheiro,cancelado)')
+    .eq('estoque_baixado', false)
+    .order('criado_em', { ascending: false })
+  if (error) return { error: error.message }
+
+  const pedidos = (data ?? []) as PedidoPendenteFechamentoRow[]
+  const porDia = new Map<string, { pedidos: number; total_chf: number }>()
+  for (const p of pedidos) {
+    const dia = p.criado_em.slice(0, 10)
+    const acc = porDia.get(dia) ?? { pedidos: 0, total_chf: 0 }
+    acc.pedidos += 1
+    acc.total_chf += p.valor_pago ?? 0
+    porDia.set(dia, acc)
+  }
+
+  return {
+    total_pedidos_pendentes: pedidos.length,
+    total_chf_pendente: Number(pedidos.reduce((soma, p) => soma + (p.valor_pago ?? 0), 0).toFixed(2)),
+    por_dia: [...porDia.entries()]
+      .map(([data, v]) => ({ data, pedidos: v.pedidos, total_chf: Number(v.total_chf.toFixed(2)) }))
+      .sort((a, b) => (a.data < b.data ? 1 : -1)),
   }
 }
 
@@ -1529,6 +1568,12 @@ const TOOLS = [
         parametersJsonSchema: { type: 'object', properties: {} },
       },
       {
+        name: 'consultar_fechamento',
+        description:
+          'Consulta a fila do Fechamento de estoque: quantos pedidos já pagos ainda não tiveram o estoque baixado, agrupados por dia, com o total em CHF de cada dia. Fechar de fato (bater os insumos em lote) é uma ação manual da equipe no painel, fora do seu alcance — isto é só a consulta de quantos/quais pedidos estão esperando.',
+        parametersJsonSchema: { type: 'object', properties: {} },
+      },
+      {
         name: 'consultar_impostos',
         description: 'Consulta os impostos cadastrados: nome, tipo (fixo/percentual), valor, e a qual insumo (se algum) estão vinculados.',
         parametersJsonSchema: { type: 'object', properties: {} },
@@ -1889,6 +1934,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           else if (call.name === 'consultar_fornecedores') resultado = await consultarFornecedores(supabase, args)
           else if (call.name === 'consultar_perdas') resultado = await consultarPerdas(supabase, args)
           else if (call.name === 'consultar_inventarios') resultado = await consultarInventarios(supabase)
+          else if (call.name === 'consultar_fechamento') resultado = await consultarFechamento(supabase)
           else if (call.name === 'consultar_impostos') resultado = await consultarImpostos(supabase)
           else if (call.name === 'consultar_configuracoes') resultado = await consultarConfiguracoes(supabase)
           else if (call.name === 'criar_categoria') resultado = await criarCategoria(supabase, args)
