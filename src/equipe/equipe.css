@@ -1585,8 +1585,8 @@ body {
   bottom: var(--space-5);
   right: var(--space-5);
   z-index: 40;
-  width: 68px;
-  height: 68px;
+  width: 92px;
+  height: 92px;
   border-radius: 50%;
   border: none;
   display: flex;
@@ -1624,20 +1624,20 @@ body {
   gap: var(--space-2);
 }
 .assistant-panel__mascote {
-  width: 60px;
-  height: 60px;
+  width: 84px;
+  height: 84px;
   border-radius: 50%;
   object-fit: contain;
   flex-shrink: 0;
 }
 .assistant-panel {
   position: fixed;
-  bottom: calc(var(--space-5) + 80px);
+  bottom: calc(var(--space-5) + 104px);
   right: var(--space-5);
   z-index: 40;
-  width: 380px;
+  width: 400px;
   max-width: calc(100vw - var(--space-4) * 2);
-  height: 500px;
+  height: 520px;
   max-height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
@@ -1720,8 +1720,8 @@ body {
   gap: var(--space-2);
 }
 .assistant-message__avatar {
-  width: 42px;
-  height: 42px;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
   object-fit: contain;
   flex-shrink: 0;
@@ -1817,7 +1817,7 @@ body {
 @media (max-width: 500px) {
   .assistant-panel {
     right: var(--space-3);
-    bottom: calc(var(--space-4) + 80px);
+    bottom: calc(var(--space-4) + 104px);
   }
   .assistant-fab {
     right: var(--space-3);
