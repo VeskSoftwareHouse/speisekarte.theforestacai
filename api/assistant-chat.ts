@@ -451,6 +451,11 @@ async function consultarPedidosAtuais(supabase: SupabaseClient, args: { nome_cli
   const resultado: Record<string, unknown> = {
     pedidos_hoje_por_status: contagemPorStatus,
     aguardando_confirmacao_dinheiro: (dinheiroRes.data ?? []).length,
+    // Lista completa de hoje, com nome do cliente — pra perguntas tipo "quem
+    // comprou hoje?" sem precisar já saber um nome pra filtrar.
+    pedidos_hoje: hoje
+      .map((p) => ({ nome_cliente: p.nome_cliente, status: p.status, valor_chf: p.valor_pago, criado_em: p.criado_em }))
+      .sort((a, b) => (a.criado_em < b.criado_em ? 1 : -1)),
   }
 
   if (args.nome_cliente) {
@@ -1510,7 +1515,7 @@ const TOOLS = [
       {
         name: 'consultar_pedidos_atuais',
         description:
-          'Consulta o estado operacional agora: quantos pedidos estão em cada etapa da cozinha hoje (recebido/em preparo/pronto/entregue) e quantos aguardam confirmação de pagamento em dinheiro. Também busca um pedido específico pelo nome do cliente.',
+          'Consulta o estado operacional agora: quantos pedidos estão em cada etapa da cozinha hoje (recebido/em preparo/pronto/entregue), quantos aguardam confirmação de pagamento em dinheiro, e a lista completa de pedidos pagos hoje com nome do cliente, status e valor (pedidos_hoje) — use isso pra perguntas tipo "quem comprou hoje?" ou "quais os nomes dos clientes de hoje?". Informe nome_cliente só quando quiser filtrar por um cliente específico.',
         parametersJsonSchema: {
           type: 'object',
           properties: {
