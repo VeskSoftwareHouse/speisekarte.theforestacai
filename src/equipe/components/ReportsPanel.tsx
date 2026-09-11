@@ -241,31 +241,6 @@ function ReportsBody() {
               />
             </div>
 
-            <Block title="Faturamento mês a mês" hint={`Últimos ${TREND_MONTHS} meses, sem gorjeta`}>
-              <ReportTrendChart points={report.tendencia} />
-            </Block>
-          </Section>
-
-          <Section title="Cardápio" hint="O que sai, o que encalha e onde está a margem.">
-            <div className="reports__pair">
-              <Block title="O que mais sai" hint="Por unidades vendidas — um pedido pode levar vários itens">
-                <ReportBarList rows={report.itens} limit={TOP_ITENS} />
-              </Block>
-              <Block title="O que está encalhando" hint="Candidatos a sair do cardápio ou a entrar em promoção">
-                {/* Os que não venderam nada abrem a lista, com a barra zerada e
-                    "nenhuma venda" escrito — antes viviam num quadro à parte,
-                    embaixo, sendo eles os candidatos mais óbvios de todos. */}
-                <ReportBarList
-                  rows={encalhados}
-                  reference={report.itens}
-                  limit={TOP_ITENS}
-                  tone="low"
-                  order="asc"
-                  empty="Todo produto disponível vendeu no período."
-                />
-              </Block>
-            </div>
-
             <Block
               title="Margem por produto"
               hint="Receita menos o custo dos insumos, pela composição e pelos preços de compra atuais"
@@ -298,6 +273,31 @@ function ReportsBody() {
               </div>
               <ReportMarginList rows={margin.linhas} limit={TOP_ITENS} empty="Sem vendas no período." />
             </Block>
+
+            <Block title="Faturamento mês a mês" hint={`Últimos ${TREND_MONTHS} meses, sem gorjeta`}>
+              <ReportTrendChart points={report.tendencia} />
+            </Block>
+          </Section>
+
+          <Section title="Cardápio" hint="O que sai, o que encalha.">
+            <div className="reports__pair">
+              <Block title="O que mais sai" hint="Por unidades vendidas — um pedido pode levar vários itens">
+                <ReportBarList rows={report.itens} limit={TOP_ITENS} />
+              </Block>
+              <Block title="O que está encalhando" hint="Candidatos a sair do cardápio ou a entrar em promoção">
+                {/* Os que não venderam nada abrem a lista, com a barra zerada e
+                    "nenhuma venda" escrito — antes viviam num quadro à parte,
+                    embaixo, sendo eles os candidatos mais óbvios de todos. */}
+                <ReportBarList
+                  rows={encalhados}
+                  reference={report.itens}
+                  limit={TOP_ITENS}
+                  tone="low"
+                  order="asc"
+                  empty="Todo produto disponível vendeu no período."
+                />
+              </Block>
+            </div>
 
             <div className="reports__pair">
               <Block title="Adicionais mais escolhidos" hint="Quantas vezes cada um entrou num pedido">
