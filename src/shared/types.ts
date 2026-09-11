@@ -219,6 +219,25 @@ export interface MenuItemInsumo {
   quantidade: number
 }
 
+export type ImpostoTipo = 'fixo' | 'percentual'
+
+/**
+ * Um imposto cadastrado — opcionalmente vinculado a um insumo específico
+ * (ex: taxa de importação do açaí). Quando vinculado, entra no cálculo do
+ * custo de uma compra desse insumo (ver valorUnitarioComImposto). Sem
+ * vínculo (insumo_id null), é só um registro genérico.
+ */
+export interface Imposto {
+  id: string
+  nome: string
+  tipo: ImpostoTipo
+  /** Francos quando `fixo` (por unidade); pontos percentuais quando `percentual`. */
+  valor: number
+  insumo_id: string | null
+  ativo: boolean
+  criado_em: string
+}
+
 export type PedidoCompraStatus = 'rascunho' | 'aguardando_recebimento' | 'recebido' | 'cancelado'
 
 export interface PedidoCompra {

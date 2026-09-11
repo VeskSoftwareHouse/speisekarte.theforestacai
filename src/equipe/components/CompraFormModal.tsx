@@ -1,17 +1,20 @@
 import { useState } from 'react'
 import { X, Trash2 } from 'lucide-react'
-import type { Fornecedor, Insumo, PedidoCompraStatus, PedidoCompraWithItens } from '@shared/types'
+import type { Fornecedor, Imposto, Insumo, PedidoCompraStatus, PedidoCompraWithItens } from '@shared/types'
+import { formatCHF } from '@shared/format'
+import { valorUnitarioComImposto } from '../estoqueCalc'
 import type { PedidoCompraInput, PedidoCompraItemInput } from '../hooks/useComprasAdmin'
 
 interface Props {
   pedido: PedidoCompraWithItens | null
   fornecedores: Fornecedor[]
   insumos: Insumo[]
+  impostos: Imposto[]
   onClose: () => void
   onSave: (input: PedidoCompraInput, itens: PedidoCompraItemInput[]) => Promise<void>
 }
 
-export default function CompraFormModal({ pedido, fornecedores, insumos, onClose, onSave }: Props) {
+export default function CompraFormModal({ pedido, fornecedores, insumos, impostos, onClose, onSave }: Props) {
   const [fornecedorId, setFornecedorId] = useState(pedido?.fornecedor_id ?? fornecedores[0]?.id ?? '')
   const [status, setStatus] = useState<PedidoCompraStatus>(pedido?.status ?? 'rascunho')
   const [observacoes, setObservacoes] = useState(pedido?.observacoes ?? '')
@@ -98,42 +101,51 @@ export default function CompraFormModal({ pedido, fornecedores, insumos, onClose
               <div className="admin-composition-list">
                 {itens.map((row, idx) => {
                   const insumo = insumos.find((i) => i.id === row.insumo_id)
+                  const valorComImposto = row.valor_unitario
+                    ? valorUnitarioComImposto(row.valor_unitario, row.insumo_id, impostos)
+                    : null
+                  const temImposto = valorComImposto != null && row.valor_unitario != null && valorComImposto !== row.valor_unitario
                   return (
-                    <div key={idx} className="admin-composition-list__row">
-                      <select value={row.insumo_id} onChange={(e) => updateRow(idx, { insumo_id: e.target.value })}>
-                        {insumos.map((i) => (
-                          <option key={i.id} value={i.id}>
-                            {i.nome}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        type="number"
-                        min={0}
-                        step="0.001"
-                        value={row.quantidade || ''}
-                        onChange={(e) => updateRow(idx, { quantidade: Number(e.target.value) })}
-                        placeholder="Qtd."
-                      />
-                      <span>{insumo?.unidade ?? ''}</span>
-                      <input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={row.valor_unitario ?? ''}
-                        onChange={(e) =>
-                          updateRow(idx, { valor_unitario: e.target.value === '' ? null : Number(e.target.value) })
-                        }
-                        placeholder="CHF/un."
-                      />
-                      <button
-                        type="button"
-                        className="admin-composition-list__remove"
-                        onClick={() => removeRow(idx)}
-                        aria-label="Remover item"
-                      >
-                        <Trash2 size={16} strokeWidth={2} />
-                      </button>
+                    <div key={idx} className="admin-inventario-row">
+                      <div className="admin-composition-list__row">
+                        <select value={row.insumo_id} onChange={(e) => updateRow(idx, { insumo_id: e.target.value })}>
+                          {insumos.map((i) => (
+                            <option key={i.id} value={i.id}>
+                              {i.nome}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          type="number"
+                          min={0}
+                          step="0.001"
+                          value={row.quantidade || ''}
+                          onChange={(e) => updateRow(idx, { quantidade: Number(e.target.value) })}
+                          placeholder="Qtd."
+                        />
+                        <span>{insumo?.unidade ?? ''}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={row.valor_unitario ?? ''}
+                          onChange={(e) =>
+                            updateRow(idx, { valor_unitario: e.target.value === '' ? null : Number(e.target.value) })
+                          }
+                          placeholder="CHF/un."
+                        />
+                        <button
+                          type="button"
+                          className="admin-composition-list__remove"
+                          onClick={() => removeRow(idx)}
+                          aria-label="Remover item"
+                        >
+                          <Trash2 size={16} strokeWidth={2} />
+                        </button>
+                      </div>
+                      {temImposto && (
+                        <p className="admin-form__hint">Com imposto: {formatCHF(valorComImposto)}/un.</p>
+                      )}
                     </div>
                   )
                 })}
@@ -143,6 +155,17 @@ export default function CompraFormModal({ pedido, fornecedores, insumos, onClose
               <button type="button" className="btn btn-outline" onClick={addRow}>
                 + Adicionar item
               </button>
+            )}
+            {itens.length > 0 && itens.some((r) => r.valor_unitario) && (
+              <p className="admin-form__hint">
+                Total com imposto:{' '}
+                {formatCHF(
+                  itens.reduce(
+                    (soma, r) => soma + valorUnitarioComImposto(r.valor_unitario ?? 0, r.insumo_id, impostos) * r.quantidade,
+                    0,
+                  ),
+                )}
+              </p>
             )}
           </div>
 

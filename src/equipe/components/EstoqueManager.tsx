@@ -1,6 +1,16 @@
 import { useMemo, useState } from 'react'
-import { ArrowLeftRight, CheckCheck, ClipboardList, LayoutDashboard, ShoppingCart, Skull, Truck, Wheat } from 'lucide-react'
-import type { Fornecedor, Insumo, InventarioWithItens, OrderWithItems, PedidoCompraWithItens } from '@shared/types'
+import {
+  ArrowLeftRight,
+  CheckCheck,
+  ClipboardList,
+  LayoutDashboard,
+  Percent,
+  ShoppingCart,
+  Skull,
+  Truck,
+  Wheat,
+} from 'lucide-react'
+import type { Fornecedor, Imposto, Insumo, InventarioWithItens, OrderWithItems, PedidoCompraWithItens } from '@shared/types'
 import { useFornecedorAdmin } from '../hooks/useFornecedorAdmin'
 import { useInsumoAdmin } from '../hooks/useInsumoAdmin'
 import { useComprasAdmin } from '../hooks/useComprasAdmin'
@@ -8,6 +18,7 @@ import { useEstoqueMovimentos } from '../hooks/useEstoqueMovimentos'
 import { useInventarioAdmin } from '../hooks/useInventarioAdmin'
 import { usePerdasAdmin } from '../hooks/usePerdasAdmin'
 import { useFechamento } from '../hooks/useFechamento'
+import { useImpostoAdmin } from '../hooks/useImpostoAdmin'
 import FornecedorPanel from './FornecedorPanel'
 import FornecedorFormModal from './FornecedorFormModal'
 import InsumoPanel from './InsumoPanel'
@@ -23,6 +34,8 @@ import PerdaFormModal from './PerdaFormModal'
 import FechamentoPanel from './FechamentoPanel'
 import FechamentoPreviewModal from './FechamentoPreviewModal'
 import VisaoGeralPanel from './VisaoGeralPanel'
+import ImpostoPanel from './ImpostoPanel'
+import ImpostoFormModal from './ImpostoFormModal'
 import ConfirmDialog from './ConfirmDialog'
 
 type DeleteTarget =
@@ -30,9 +43,10 @@ type DeleteTarget =
   | { kind: 'insumo'; item: Insumo }
   | { kind: 'pedidoCompra'; item: PedidoCompraWithItens }
   | { kind: 'inventario'; item: InventarioWithItens }
+  | { kind: 'imposto'; item: Imposto }
 
-// Fase 4: Visão Geral, Fornecedores, Insumos, Compras, Movimentações,
-// Inventário, Perdas, Fechamento — módulo completo do plano de estoque.
+// Visão Geral, Fornecedores, Insumos, Compras, Movimentações, Inventário,
+// Perdas, Fechamento, Impostos — módulo completo do plano de estoque.
 type Tab =
   | 'visaogeral'
   | 'fornecedores'
@@ -42,6 +56,7 @@ type Tab =
   | 'inventario'
   | 'perdas'
   | 'fechamento'
+  | 'impostos'
 
 interface Props {
   currentUserId: string
@@ -91,6 +106,15 @@ export default function EstoqueManager({ currentUserId }: Props) {
   const { perdas, loading: perdasLoading, error: perdasError, lancarPerdaManual } = usePerdasAdmin(currentUserId)
 
   const {
+    impostos,
+    loading: impostosLoading,
+    error: impostosError,
+    createImposto,
+    updateImposto,
+    deleteImposto,
+  } = useImpostoAdmin()
+
+  const {
     orders: pedidosParaFechar,
     loading: fechamentoLoading,
     error: fechamentoError,
@@ -105,6 +129,7 @@ export default function EstoqueManager({ currentUserId }: Props) {
   const [movimentoForm, setMovimentoForm] = useState(false)
   const [inventarioForm, setInventarioForm] = useState(false)
   const [perdaForm, setPerdaForm] = useState(false)
+  const [impostoForm, setImpostoForm] = useState<'new' | Imposto | null>(null)
   const [fechamentoSelecionados, setFechamentoSelecionados] = useState<OrderWithItems[] | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
@@ -128,7 +153,8 @@ export default function EstoqueManager({ currentUserId }: Props) {
       if (deleteTarget.kind === 'fornecedor') await deleteFornecedor(deleteTarget.item.id)
       else if (deleteTarget.kind === 'insumo') await deleteInsumo(deleteTarget.item.id)
       else if (deleteTarget.kind === 'pedidoCompra') await deletePedido(deleteTarget.item.id)
-      else await deleteInventario(deleteTarget.item.id)
+      else if (deleteTarget.kind === 'inventario') await deleteInventario(deleteTarget.item.id)
+      else await deleteImposto(deleteTarget.item.id)
       setDeleteTarget(null)
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Não foi possível excluir.')
@@ -214,6 +240,13 @@ export default function EstoqueManager({ currentUserId }: Props) {
           <CheckCheck size={16} strokeWidth={2} aria-hidden />
           Fechamento
         </button>
+        <button
+          className={`menu-manager__tab ${tab === 'impostos' ? 'menu-manager__tab--active' : ''}`}
+          onClick={() => setTab('impostos')}
+        >
+          <Percent size={16} strokeWidth={2} aria-hidden />
+          Impostos
+        </button>
       </div>
 
       {tab === 'fornecedores' && fornecedoresError && (
@@ -231,22 +264,27 @@ export default function EstoqueManager({ currentUserId }: Props) {
       {tab === 'fechamento' && fechamentoError && (
         <p className="equipe-app__error">Erro ao carregar pedidos: {fechamentoError}</p>
       )}
+      {tab === 'impostos' && impostosError && (
+        <p className="equipe-app__error">Erro ao carregar impostos: {impostosError}</p>
+      )}
       {actionError && (
         <p className="equipe-app__error" role="alert">
           {actionError}
         </p>
       )}
 
-      {tab === 'visaogeral' && (insumosLoading || movimentosLoading || perdasLoading || comprasLoading) && (
+      {tab === 'visaogeral' && (insumosLoading || movimentosLoading || perdasLoading || comprasLoading || impostosLoading) && (
         <p className="equipe-app__status">Carregando visão geral…</p>
       )}
-      {tab === 'visaogeral' && !(insumosLoading || movimentosLoading || perdasLoading || comprasLoading) && (
+      {tab === 'visaogeral' &&
+        !(insumosLoading || movimentosLoading || perdasLoading || comprasLoading || impostosLoading) && (
         <VisaoGeralPanel
           insumos={insumos}
           saldoPorInsumo={saldoPorInsumo}
           movimentos={movimentos}
           perdas={perdas}
           pedidosCompra={pedidos}
+          impostos={impostos}
         />
       )}
 
@@ -280,6 +318,7 @@ export default function EstoqueManager({ currentUserId }: Props) {
           <CompraPanel
             pedidos={pedidos}
             fornecedoresById={fornecedoresById}
+            impostos={impostos}
             onAdd={() => setCompraForm('new')}
             onEdit={(p) => setCompraForm(p)}
             onReceive={handleReceive}
@@ -326,6 +365,19 @@ export default function EstoqueManager({ currentUserId }: Props) {
         </div>
       )}
 
+      {tab === 'impostos' && impostosLoading && <p className="equipe-app__status">Carregando impostos…</p>}
+      {tab === 'impostos' && !impostosLoading && (
+        <div className="menu-manager__single">
+          <ImpostoPanel
+            impostos={impostos}
+            insumosById={insumosById}
+            onAdd={() => setImpostoForm('new')}
+            onEdit={(i) => setImpostoForm(i)}
+            onDelete={(i) => setDeleteTarget({ kind: 'imposto', item: i })}
+          />
+        </div>
+      )}
+
       {fornecedorForm && (
         <FornecedorFormModal
           fornecedor={fornecedorForm === 'new' ? null : fornecedorForm}
@@ -354,6 +406,7 @@ export default function EstoqueManager({ currentUserId }: Props) {
           pedido={compraForm === 'new' ? null : compraForm}
           fornecedores={fornecedores}
           insumos={insumos}
+          impostos={impostos}
           onClose={() => setCompraForm(null)}
           onSave={async (input, itens) => {
             if (compraForm === 'new') await createPedido(input, itens)
@@ -389,6 +442,18 @@ export default function EstoqueManager({ currentUserId }: Props) {
         />
       )}
 
+      {impostoForm && (
+        <ImpostoFormModal
+          imposto={impostoForm === 'new' ? null : impostoForm}
+          insumos={insumos}
+          onClose={() => setImpostoForm(null)}
+          onSave={async (input) => {
+            if (impostoForm === 'new') await createImposto(input)
+            else await updateImposto(impostoForm.id, input)
+          }}
+        />
+      )}
+
       {fechamentoSelecionados && (
         <FechamentoPreviewModal
           selecionados={fechamentoSelecionados}
@@ -411,7 +476,9 @@ export default function EstoqueManager({ currentUserId }: Props) {
                 ? 'Excluir insumo?'
                 : deleteTarget.kind === 'pedidoCompra'
                   ? 'Excluir pedido de compra?'
-                  : 'Excluir inventário?'
+                  : deleteTarget.kind === 'inventario'
+                    ? 'Excluir inventário?'
+                    : 'Excluir imposto?'
           }
           message={
             deleteTarget.kind === 'fornecedor'
@@ -422,7 +489,9 @@ export default function EstoqueManager({ currentUserId }: Props) {
                   ? deleteTarget.item.status === 'recebido'
                     ? 'Este pedido já foi recebido — excluir aqui NÃO desfaz a entrada no estoque, ela continua registrada nas movimentações. Essa ação não pode ser desfeita.'
                     : 'Este pedido será removido. Essa ação não pode ser desfeita.'
-                  : 'Excluir aqui NÃO desfaz os ajustes de estoque nem as perdas geradas por esta contagem — eles continuam registrados. Essa ação não pode ser desfeita.'
+                  : deleteTarget.kind === 'inventario'
+                    ? 'Excluir aqui NÃO desfaz os ajustes de estoque nem as perdas geradas por esta contagem — eles continuam registrados. Essa ação não pode ser desfeita.'
+                    : `"${deleteTarget.item.nome}" será removido. Essa ação não pode ser desfeita.`
           }
           onConfirm={handleDeleteConfirmed}
           onCancel={() => setDeleteTarget(null)}

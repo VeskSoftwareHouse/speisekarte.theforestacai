@@ -1037,3 +1037,39 @@ alter table orders add column if not exists estoque_baixado boolean not null def
 alter table orders add column if not exists baixado_em timestamptz;
 
 create index if not exists idx_orders_estoque_baixado on orders(estoque_baixado);
+
+-- =====================================================================
+-- Gestão de estoque — impostos.
+--
+-- Um imposto pode ser vinculado a um insumo específico (ex: taxa de
+-- importação do açaí) ou ficar solto (insumo_id null — um imposto
+-- genérico, só de registro). Quando vinculado, o valor entra no cálculo
+-- de custo de uma compra desse insumo (ver valorUnitarioComImposto no
+-- painel da equipe) — sempre calculado na hora a partir da taxa atual,
+-- nunca gravado dentro do pedido, mesmo espírito de insumo_saldos: a fonte
+-- da verdade é o cadastro, não um valor congelado.
+-- =====================================================================
+
+create table if not exists impostos (
+  id        uuid primary key default gen_random_uuid(),
+  nome      text not null,
+  tipo      text not null check (tipo in ('fixo', 'percentual')),
+  valor     numeric(10,2) not null check (valor > 0),
+  insumo_id uuid references insumos(id) on delete cascade,
+  ativo     boolean not null default true,
+  criado_em timestamptz not null default now()
+);
+
+create index if not exists idx_impostos_insumo on impostos(insumo_id);
+
+alter table impostos enable row level security;
+
+drop policy if exists "authenticated read impostos"   on impostos;
+drop policy if exists "authenticated insert impostos" on impostos;
+drop policy if exists "authenticated update impostos" on impostos;
+drop policy if exists "authenticated delete impostos" on impostos;
+
+create policy "authenticated read impostos"   on impostos for select using (auth.uid() is not null);
+create policy "authenticated insert impostos" on impostos for insert with check (auth.uid() is not null);
+create policy "authenticated update impostos" on impostos for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete impostos" on impostos for delete using (auth.uid() is not null);

@@ -1,6 +1,7 @@
 import { Plus, Pencil, Trash2, PackageCheck, Ban } from 'lucide-react'
-import type { Fornecedor, PedidoCompraStatus, PedidoCompraWithItens } from '@shared/types'
+import type { Fornecedor, Imposto, PedidoCompraStatus, PedidoCompraWithItens } from '@shared/types'
 import { formatCHF } from '@shared/format'
+import { valorUnitarioComImposto } from '../estoqueCalc'
 
 const STATUS_LABEL: Record<PedidoCompraStatus, string> = {
   rascunho: 'Rascunho',
@@ -12,6 +13,7 @@ const STATUS_LABEL: Record<PedidoCompraStatus, string> = {
 interface Props {
   pedidos: PedidoCompraWithItens[]
   fornecedoresById: Record<string, Fornecedor>
+  impostos: Imposto[]
   onAdd: () => void
   onEdit: (pedido: PedidoCompraWithItens) => void
   onReceive: (pedido: PedidoCompraWithItens) => void
@@ -19,7 +21,16 @@ interface Props {
   onDelete: (pedido: PedidoCompraWithItens) => void
 }
 
-export default function CompraPanel({ pedidos, fornecedoresById, onAdd, onEdit, onReceive, onCancel, onDelete }: Props) {
+export default function CompraPanel({
+  pedidos,
+  fornecedoresById,
+  impostos,
+  onAdd,
+  onEdit,
+  onReceive,
+  onCancel,
+  onDelete,
+}: Props) {
   return (
     <section className="admin-panel admin-panel--products">
       <header className="admin-panel__header">
@@ -34,7 +45,10 @@ export default function CompraPanel({ pedidos, fornecedoresById, onAdd, onEdit, 
         {pedidos.length === 0 && <p className="admin-panel__empty">Nenhum pedido de compra cadastrado.</p>}
 
         {pedidos.map((pedido) => {
-          const total = pedido.itens.reduce((sum, it) => sum + (it.valor_unitario ?? 0) * it.quantidade, 0)
+          const total = pedido.itens.reduce(
+            (sum, it) => sum + valorUnitarioComImposto(it.valor_unitario ?? 0, it.insumo_id, impostos) * it.quantidade,
+            0,
+          )
           const podeEditar = pedido.status === 'rascunho'
           const podeReceberOuCancelar = pedido.status === 'rascunho' || pedido.status === 'aguardando_recebimento'
           return (

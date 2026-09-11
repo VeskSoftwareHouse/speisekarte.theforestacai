@@ -1,6 +1,7 @@
-import type { Insumo, MovimentacaoEstoque, PedidoCompraWithItens, Perda } from '@shared/types'
+import type { Imposto, Insumo, MovimentacaoEstoque, PedidoCompraWithItens, Perda } from '@shared/types'
 import { MOTIVO_PERDA_LABEL, MOVIMENTACAO_TIPO_LABEL } from '@shared/types'
 import { formatCHF } from '@shared/format'
+import { valorUnitarioComImposto } from '../estoqueCalc'
 
 const RECENTES_LIMIT = 8
 
@@ -10,6 +11,7 @@ interface Props {
   movimentos: MovimentacaoEstoque[]
   perdas: Perda[]
   pedidosCompra: PedidoCompraWithItens[]
+  impostos: Imposto[]
 }
 
 /**
@@ -17,7 +19,7 @@ interface Props {
  * própria, só reorganiza o que os outros hooks (useEstoqueMovimentos,
  * usePerdasAdmin, useComprasAdmin) já carregam, num resumo rápido de ler.
  */
-export default function VisaoGeralPanel({ insumos, saldoPorInsumo, movimentos, perdas, pedidosCompra }: Props) {
+export default function VisaoGeralPanel({ insumos, saldoPorInsumo, movimentos, perdas, pedidosCompra, impostos }: Props) {
   const insumosBaixos = insumos.filter(
     (i) => i.ativo && i.estoque_minimo != null && (saldoPorInsumo[i.id] ?? 0) < i.estoque_minimo,
   )
@@ -27,7 +29,15 @@ export default function VisaoGeralPanel({ insumos, saldoPorInsumo, movimentos, p
   inicioMes.setHours(0, 0, 0, 0)
   const totalComprasDoMes = pedidosCompra
     .filter((p) => p.status === 'recebido' && p.recebido_em && new Date(p.recebido_em) >= inicioMes)
-    .reduce((sum, p) => sum + p.itens.reduce((s, it) => s + (it.valor_unitario ?? 0) * it.quantidade, 0), 0)
+    .reduce(
+      (sum, p) =>
+        sum +
+        p.itens.reduce(
+          (s, it) => s + valorUnitarioComImposto(it.valor_unitario ?? 0, it.insumo_id, impostos) * it.quantidade,
+          0,
+        ),
+      0,
+    )
 
   const insumosById: Record<string, Insumo> = {}
   for (const i of insumos) insumosById[i.id] = i
