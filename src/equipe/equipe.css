@@ -1618,13 +1618,7 @@ body {
   object-fit: contain;
   pointer-events: none;
 }
-/* O cabeçalho é uma faixa fina de 70px, mas o Tuco é maior que isso de
-   propósito — ancorado no topo do cabeçalho, ele "vaza" pra baixo, por
-   cima do início da conversa (por isso o z-index no header e o respiro
-   extra no topo de .assistant-panel__messages, pra nenhuma mensagem
-   nascer escondida atrás dele). */
 .assistant-panel__brand {
-  align-self: flex-start;
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -1643,7 +1637,7 @@ body {
   z-index: 40;
   width: 420px;
   max-width: calc(100vw - var(--space-4) * 2);
-  height: 520px;
+  height: 560px;
   max-height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
@@ -1653,14 +1647,10 @@ body {
   overflow: hidden;
 }
 .assistant-panel__header {
-  position: relative;
-  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 70px;
-  flex-shrink: 0;
-  padding: 0 var(--space-4);
+  padding: var(--space-4) var(--space-4) var(--space-3);
   border-bottom: 1px solid var(--color-border);
 }
 .assistant-panel__header h2 {
@@ -1695,10 +1685,7 @@ body {
 .assistant-panel__messages {
   flex: 1;
   overflow-y: auto;
-  /* Topo com respiro extra: o Tuco vaza ~40px por cima daqui (ver
-     .assistant-panel__brand), então nenhuma mensagem pode nascer logo
-     no topo, senão nasce escondida atrás dele. */
-  padding: calc(var(--space-4) + 40px) var(--space-4) var(--space-4);
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
