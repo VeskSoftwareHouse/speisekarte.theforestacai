@@ -38,7 +38,7 @@ Responda em texto simples, sem markdown: nunca use **negrito**, *itálico*, list
 
 Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a todo o painel da equipe: vendas/relatórios (consultar_vendas), estado atual dos pedidos (consultar_pedidos_atuais), cardápio e adicionais (consultar_cardapio), saldo de estoque (consultar_estoque), histórico de movimentações de estoque (consultar_movimentacoes_estoque), pedidos de compra (consultar_compras), fornecedores (consultar_fornecedores), perdas (consultar_perdas), contagens de inventário (consultar_inventarios), impostos (consultar_impostos), e gorjetas/usuários da equipe (consultar_configuracoes). Se o resultado de uma ferramenta não trouxer o dado que a pergunta pediu, isso significa que a informação não está disponível nessa ferramenta — nunca conclua "zero" ou "nenhum" por conta própria a partir disso; diga que não tem acesso a esse dado específico. Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso.
 
-CADASTRO E EDIÇÃO (criar_categoria, criar_produto, criar_insumo, criar_grupo_adicional, criar_opcao_adicional, criar_fornecedor, criar_imposto, criar_gorjeta, registrar_movimentacao_estoque, registrar_perda): quando o usuário pedir pra cadastrar OU editar/alterar/atualizar algo (ex: "configura um alerta de saldo baixo no açaí", "muda o preço do X", "desativa o fornecedor Y"), use a ferramenta correspondente — a maioria serve tanto pra criar quanto pra editar: informando o campo "*_atual" (ex: nome_atual, valor_atual) você EDITA o registro existente daquele nome; sem isso, você CRIA um novo. Nunca diga que não sabe editar algo antes de checar se a ferramenta certa aceita isso.
+CADASTRO E EDIÇÃO (criar_categoria, criar_produto, criar_insumo, criar_grupo_adicional, criar_opcao_adicional, criar_fornecedor, criar_imposto, criar_gorjeta, registrar_movimentacao_estoque, registrar_perda): quando o usuário pedir pra cadastrar OU editar/alterar/atualizar algo (ex: "configura um alerta de saldo baixo no açaí", "muda o preço do X", "desativa o fornecedor Y"), use a ferramenta correspondente — a maioria serve tanto pra criar quanto pra editar: informando o campo "*_atual" (ex: nome_atual, valor_atual) você EDITA o registro existente daquele nome; sem isso, você CRIA um novo. Nunca diga que não sabe editar algo antes de checar se a ferramenta certa aceita isso. Pra ligar/desligar um grupo de adicionais num produto (ex: "coloca o Toppings no Açaí 500ml"), use vincular_grupo_adicional — não é a mesma coisa que criar o grupo ou a opção.
 
 Faça perguntas UMA DE CADA VEZ, como numa conversa normal — nunca liste todos os campos de uma vez feito um formulário. Ao editar, peça só os campos que o usuário quer mudar (não pergunte os que não mudam). Ao criar, peça só o que for obrigatório; campos opcionais (disponível, destaque, descrição, estoque mínimo, preço adicional...) só pergunte se fizer sentido, senão use o padrão da própria ferramenta. Quando tiver o necessário, chame a ferramenta SEM confirmado=true — ela devolve um resumo do que será criado ou alterado. Mostre esse resumo pro usuário em português e pergunte se pode confirmar. SÓ chame a mesma ferramenta de novo com confirmado=true depois que o usuário disser explicitamente que sim na mensagem mais recente dele — nunca marque confirmado=true por conta própria, nem generalize uma confirmação anterior para uma criação/edição nova. Se a ferramenta devolver "erro" (ex: item não encontrado), explique o problema ao usuário e pergunte como prosseguir — não insista repetindo a mesma chamada.
 
@@ -931,6 +931,65 @@ async function criarOpcaoAdicional(supabase: SupabaseClient, args: OpcaoAdiciona
   return { sucesso: true, mensagem: `Opção "${nome}" criada no grupo "${grupoNome}".` }
 }
 
+interface VinculoGrupoArgs {
+  produto?: string
+  grupo?: string
+  acao?: string
+  confirmado?: boolean
+}
+
+/** Liga ou desliga um grupo de adicionais num produto (menu_item_modifiers)
+ * — o que hoje só dava pra fazer abrindo o produto no Cardápio e marcando o
+ * grupo na seção de adicionais. */
+async function vincularGrupoAdicional(supabase: SupabaseClient, args: VinculoGrupoArgs) {
+  if (!args.produto?.trim()) return { erro: 'Nome do produto é obrigatório.' }
+  if (!args.grupo?.trim()) return { erro: 'Nome do grupo de adicionais é obrigatório.' }
+  const desvincular = args.acao === 'desvincular'
+
+  const { encontrado: produto, todos: produtos, erro: erroProduto } = await buscarPorNome<{ id: string; nome: string }>(
+    supabase,
+    'menu_items',
+    'id, nome',
+    args.produto,
+  )
+  if (erroProduto) return { erro: erroProduto }
+  if (!produto) return { erro: `Produto "${args.produto}" não encontrado.`, produtos_existentes: produtos.map((p) => p.nome) }
+
+  const { encontrado: grupo, todos: grupos, erro: erroGrupo } = await buscarPorNome<{ id: string; nome: string }>(
+    supabase,
+    'modifiers',
+    'id, nome',
+    args.grupo,
+  )
+  if (erroGrupo) return { erro: erroGrupo }
+  if (!grupo) return { erro: `Grupo de adicionais "${args.grupo}" não encontrado.`, grupos_existentes: grupos.map((g) => g.nome) }
+
+  const { data: linkExistente } = await supabase
+    .from('menu_item_modifiers')
+    .select('menu_item_id')
+    .eq('menu_item_id', produto.id)
+    .eq('modifier_id', grupo.id)
+    .maybeSingle()
+
+  if (desvincular) {
+    if (!linkExistente) return { erro: `O grupo "${grupo.nome}" já não está vinculado ao produto "${produto.nome}".` }
+    if (!args.confirmado) return { preview: true, resumo: `Desvincular o grupo "${grupo.nome}" do produto "${produto.nome}".` }
+    const { error } = await supabase
+      .from('menu_item_modifiers')
+      .delete()
+      .eq('menu_item_id', produto.id)
+      .eq('modifier_id', grupo.id)
+    if (error) return { erro: error.message }
+    return { sucesso: true, mensagem: `Grupo "${grupo.nome}" desvinculado do produto "${produto.nome}".` }
+  }
+
+  if (linkExistente) return { erro: `O grupo "${grupo.nome}" já está vinculado ao produto "${produto.nome}".` }
+  if (!args.confirmado) return { preview: true, resumo: `Vincular o grupo "${grupo.nome}" ao produto "${produto.nome}".` }
+  const { error } = await supabase.from('menu_item_modifiers').insert({ menu_item_id: produto.id, modifier_id: grupo.id })
+  if (error) return { erro: error.message }
+  return { sucesso: true, mensagem: `Grupo "${grupo.nome}" vinculado ao produto "${produto.nome}".` }
+}
+
 interface FornecedorArgs {
   nome_atual?: string
   nome?: string
@@ -1419,6 +1478,20 @@ const TOOLS = [
         },
       },
       {
+        name: 'vincular_grupo_adicional',
+        description:
+          'Vincula (ou desvincula) um grupo de adicionais já existente a um produto já existente — ex: colocar o grupo "Toppings" no produto "Açaí 500ml". Chame sem confirmado para ver o resumo antes de gravar; chame de novo com confirmado=true só depois que o usuário confirmar explicitamente.',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            produto: { type: 'string', description: 'Nome do produto (obrigatório).' },
+            grupo: { type: 'string', description: 'Nome do grupo de adicionais (obrigatório).' },
+            acao: { type: 'string', enum: ['vincular', 'desvincular'], description: 'Padrão: vincular.' },
+            confirmado: { type: 'boolean', description: 'true só depois que o usuário confirmar o resumo mostrado.' },
+          },
+        },
+      },
+      {
         name: 'criar_fornecedor',
         description:
           'Cadastra um novo fornecedor, OU edita um já existente (informe nome_atual). Chame sem confirmado para ver o resumo antes de gravar; chame de novo com confirmado=true só depois que o usuário confirmar explicitamente.',
@@ -1674,6 +1747,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           else if (call.name === 'criar_insumo') resultado = await criarInsumo(supabase, args)
           else if (call.name === 'criar_grupo_adicional') resultado = await criarGrupoAdicional(supabase, args)
           else if (call.name === 'criar_opcao_adicional') resultado = await criarOpcaoAdicional(supabase, args)
+          else if (call.name === 'vincular_grupo_adicional') resultado = await vincularGrupoAdicional(supabase, args)
           else if (call.name === 'criar_fornecedor') resultado = await criarFornecedor(supabase, args)
           else if (call.name === 'criar_imposto') resultado = await criarImposto(supabase, args)
           else if (call.name === 'criar_gorjeta') resultado = await criarGorjeta(supabase, args)
