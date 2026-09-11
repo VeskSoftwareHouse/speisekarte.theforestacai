@@ -77,7 +77,7 @@ export default function AssistantChat({ accessToken }: Props) {
           <header className="assistant-panel__header">
             <div className="assistant-panel__brand">
               <video className="assistant-panel__mascote" src="/brand/mascote-tuco.mp4" autoPlay loop muted playsInline />
-              <h2>Tuco</h2>
+              <h2>Tuco - Seu tucano assistente</h2>
             </div>
             <div className="assistant-panel__header-actions">
               <button
