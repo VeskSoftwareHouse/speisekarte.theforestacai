@@ -1611,7 +1611,12 @@ body {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  object-fit: cover;
+  object-fit: contain;
+  /* O vídeo enquadra o tucano rente à borda do quadro (o bico chega perto
+     do canto) — um círculo inscrito nesse quadro corta os cantos, cortando
+     o bico junto. Encolher um pouco o conteúdo (sem mudar o tamanho do
+     círculo) sobra margem suficiente pra ele nunca ser cortado. */
+  transform: scale(0.78);
   pointer-events: none;
 }
 .assistant-panel__brand {
@@ -1623,7 +1628,8 @@ body {
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  object-fit: cover;
+  object-fit: contain;
+  transform: scale(0.78);
   flex-shrink: 0;
 }
 .assistant-panel {
@@ -1719,7 +1725,8 @@ body {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  object-fit: cover;
+  object-fit: contain;
+  transform: scale(0.78);
   flex-shrink: 0;
 }
 .assistant-bubble--assistant {
