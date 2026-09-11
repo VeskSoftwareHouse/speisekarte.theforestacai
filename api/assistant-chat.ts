@@ -36,7 +36,7 @@ Hoje é ${hoje} (AAAA-MM-DD). Quando a pergunta mencionar um dia específico (ex
 
 Responda em texto simples, sem markdown: nunca use **negrito**, *itálico*, listas com "-"/"*" nem títulos com "#". Para listar itens (ex: produtos mais vendidos), use uma linha por item com números normais ("1. Açaí 300ml — 67 unidades"), sem nenhum asterisco.
 
-Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números de vendas, faturamento, estoque, cardápio ou pedidos — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a vendas/relatórios (consultar_vendas), estoque (consultar_estoque), cardápio cadastrado (consultar_cardapio) e o estado atual dos pedidos na cozinha/caixa (consultar_pedidos_atuais). Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso. Você ainda não sabe cadastrar nem editar nada — só consultar.`
+Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números de vendas, faturamento, estoque, cardápio ou pedidos — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a vendas/relatórios (consultar_vendas), estoque (consultar_estoque), cardápio e adicionais (consultar_cardapio) e o estado atual dos pedidos na cozinha/caixa (consultar_pedidos_atuais). Se o resultado de uma ferramenta não trouxer o dado que a pergunta pediu, isso significa que a informação não está disponível nessa ferramenta — nunca conclua "zero" ou "nenhum" por conta própria a partir disso; diga que não tem acesso a esse dado específico. Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso. Você ainda não sabe cadastrar nem editar nada — só consultar.`
 }
 
 const RETRY_DELAYS_MS = [800, 2000]
@@ -129,6 +129,7 @@ interface OrderRow {
   valor_pago: number | null
   gorjeta: number | null
   forma_pagamento: string | null
+  criado_em: string
   order_items: OrderItemRow[] | null
 }
 
@@ -139,7 +140,7 @@ async function consultarVendas(
   const { inicio, fim } = periodoParaIntervalo(args)
   const { data, error } = await supabase
     .from('orders')
-    .select('valor_pago, gorjeta, forma_pagamento, order_items(nome_item, quantidade, preco_unitario, menu_item_id)')
+    .select('valor_pago, gorjeta, forma_pagamento, criado_em, order_items(nome_item, quantidade, preco_unitario, menu_item_id)')
     .in('status', PAID_STATUSES)
     .gte('criado_em', inicio.toISOString())
     .lte('criado_em', fim.toISOString())
@@ -151,9 +152,12 @@ async function consultarVendas(
 
   const porProduto = new Map<string, number>()
   const porFormaPagamento = new Map<string, number>()
+  const porHora = new Map<number, number>()
   for (const pedido of pedidos) {
     const forma = pedido.forma_pagamento ?? 'Não informado'
     porFormaPagamento.set(forma, (porFormaPagamento.get(forma) ?? 0) + (pedido.valor_pago ?? 0))
+    const hora = new Date(pedido.criado_em).getHours()
+    porHora.set(hora, (porHora.get(hora) ?? 0) + 1)
     for (const item of pedido.order_items ?? []) {
       porProduto.set(item.nome_item, (porProduto.get(item.nome_item) ?? 0) + item.quantidade)
     }
@@ -199,6 +203,11 @@ async function consultarVendas(
     faturamento_por_categoria: [...porCategoria.entries()]
       .map(([categoria, chf]) => ({ categoria, faturamento_chf: Number(chf.toFixed(2)) }))
       .sort((a, b) => b.faturamento_chf - a.faturamento_chf),
+    // Ordenado da hora mais cheia para a mais fraca — o modelo não precisa
+    // comparar os 24 valores sozinho pra achar o pico.
+    pedidos_por_hora: [...porHora.entries()]
+      .map(([hora, pedidos]) => ({ hora: `${String(hora).padStart(2, '0')}h`, pedidos }))
+      .sort((a, b) => b.pedidos - a.pedidos),
   }
 }
 
@@ -224,11 +233,35 @@ async function consultarCardapio(supabase: SupabaseClient, args: { categoria?: s
     produtos = produtos.filter((p) => p.categoria.toLowerCase().includes(termo))
   }
 
+  const [gruposRes, opcoesRes] = await Promise.all([
+    supabase.from('modifiers').select('id, nome, tipo, selecao').order('nome'),
+    supabase.from('modifier_options').select('modifier_id, nome, preco_adicional').order('ordem'),
+  ])
+  if (gruposRes.error) return { error: gruposRes.error.message }
+  if (opcoesRes.error) return { error: opcoesRes.error.message }
+
+  const opcoesPorGrupo = new Map<string, { nome: string; preco_adicional_chf: number }[]>()
+  for (const o of (opcoesRes.data ?? []) as { modifier_id: string; nome: string; preco_adicional: number }[]) {
+    const lista = opcoesPorGrupo.get(o.modifier_id) ?? []
+    lista.push({ nome: o.nome, preco_adicional_chf: o.preco_adicional })
+    opcoesPorGrupo.set(o.modifier_id, lista)
+  }
+  const gruposAdicionais = ((gruposRes.data ?? []) as { id: string; nome: string; tipo: string; selecao: string }[]).map(
+    (g) => ({
+      grupo: g.nome,
+      obrigatorio: g.tipo === 'obrigatorio',
+      selecao_multipla: g.selecao === 'multipla',
+      opcoes: opcoesPorGrupo.get(g.id) ?? [],
+    }),
+  )
+
   return {
     total_produtos: produtos.length,
     total_disponiveis: produtos.filter((p) => p.disponivel).length,
     categorias: (categorias ?? []).map((c: { nome: string }) => c.nome),
     produtos,
+    total_adicionais: gruposAdicionais.reduce((soma, g) => soma + g.opcoes.length, 0),
+    grupos_adicionais: gruposAdicionais,
   }
 }
 
@@ -317,7 +350,7 @@ const TOOLS = [
       {
         name: 'consultar_vendas',
         description:
-          'Consulta pedidos pagos num período: faturamento, gorjetas, ticket médio, produtos mais vendidos, faturamento por forma de pagamento e por categoria do cardápio. Para um dia ou intervalo específico (ex: "domingo passado"), use data_inicio/data_fim em vez de periodo.',
+          'Consulta pedidos pagos num período: faturamento, gorjetas, ticket médio, produtos mais vendidos, faturamento por forma de pagamento e por categoria do cardápio, e quantidade de pedidos por hora do dia (já ordenado da hora mais cheia pra mais fraca). Para um dia ou intervalo específico (ex: "domingo passado"), use data_inicio/data_fim em vez de periodo.',
         parametersJsonSchema: {
           type: 'object',
           properties: {
@@ -353,7 +386,7 @@ const TOOLS = [
       {
         name: 'consultar_cardapio',
         description:
-          'Consulta o cardápio cadastrado: produtos, categorias, preços, disponibilidade e destaque. Não tem relação com vendas — é o catálogo, vendido ou não.',
+          'Consulta o cardápio cadastrado: produtos, categorias, preços, disponibilidade, destaque, e também os grupos de adicionais/misturas (ex: Frutas, Toppings) com suas opções e preço adicional. Não tem relação com vendas — é o catálogo, vendido ou não.',
         parametersJsonSchema: {
           type: 'object',
           properties: {
