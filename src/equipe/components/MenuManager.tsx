@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Coins, Sparkles, UtensilsCrossed, Users } from 'lucide-react'
+import { Coins, Menu, Sparkles, UtensilsCrossed, Users, X, type LucideIcon } from 'lucide-react'
 import type { Category, MenuItem, Modifier, ModifierOption, TipOption } from '@shared/types'
 import { useMenuAdmin, DeleteBlockedError } from '../hooks/useMenuAdmin'
 import { useUserAdmin, type AdminUser } from '../hooks/useUserAdmin'
@@ -30,6 +30,13 @@ type DeleteTarget =
   | { kind: 'tip'; item: TipOption }
 
 type Tab = 'cardapio' | 'adicionais' | 'gorjetas' | 'usuarios'
+
+const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
+  { id: 'cardapio', label: 'Cardápio', icon: UtensilsCrossed },
+  { id: 'adicionais', label: 'Adicionais', icon: Sparkles },
+  { id: 'gorjetas', label: 'Gorjetas', icon: Coins },
+  { id: 'usuarios', label: 'Usuários', icon: Users },
+]
 
 interface Props {
   accessToken: string
@@ -93,6 +100,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
   } = useTipAdmin()
 
   const [tab, setTab] = useState<Tab>('cardapio')
+  const [menuOpen, setMenuOpen] = useState(false)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
   const [categoryForm, setCategoryForm] = useState<'new' | Category | null>(null)
@@ -189,35 +197,47 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
 
   return (
     <main className="menu-manager">
-      <div className="menu-manager__tabs">
+      <div className="menu-manager__tabs menu-manager__tabs--cardapio">
+        {TABS.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            className={`menu-manager__tab ${tab === id ? 'menu-manager__tab--active' : ''}`}
+            onClick={() => setTab(id)}
+          >
+            <Icon size={16} strokeWidth={2} aria-hidden />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Mesmas abas de cima, num menu que abre por cima em telas estreitas. */}
+      <div className="submenu-hamburger">
         <button
-          className={`menu-manager__tab ${tab === 'cardapio' ? 'menu-manager__tab--active' : ''}`}
-          onClick={() => setTab('cardapio')}
+          className="submenu-hamburger__toggle"
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-label={menuOpen ? 'Fechar menu de seções' : 'Abrir menu de seções'}
+          aria-expanded={menuOpen}
         >
-          <UtensilsCrossed size={16} strokeWidth={2} aria-hidden />
-          Cardápio
+          {menuOpen ? <X size={16} strokeWidth={2} aria-hidden /> : <Menu size={16} strokeWidth={2} aria-hidden />}
+          {TABS.find((t) => t.id === tab)?.label}
         </button>
-        <button
-          className={`menu-manager__tab ${tab === 'adicionais' ? 'menu-manager__tab--active' : ''}`}
-          onClick={() => setTab('adicionais')}
-        >
-          <Sparkles size={16} strokeWidth={2} aria-hidden />
-          Adicionais
-        </button>
-        <button
-          className={`menu-manager__tab ${tab === 'gorjetas' ? 'menu-manager__tab--active' : ''}`}
-          onClick={() => setTab('gorjetas')}
-        >
-          <Coins size={16} strokeWidth={2} aria-hidden />
-          Gorjetas
-        </button>
-        <button
-          className={`menu-manager__tab ${tab === 'usuarios' ? 'menu-manager__tab--active' : ''}`}
-          onClick={() => setTab('usuarios')}
-        >
-          <Users size={16} strokeWidth={2} aria-hidden />
-          Usuários
-        </button>
+        {menuOpen && (
+          <nav className="submenu-hamburger__menu" aria-label="Seções do cardápio">
+            {TABS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                className={`submenu-hamburger__item ${tab === id ? 'submenu-hamburger__item--active' : ''}`}
+                onClick={() => {
+                  setTab(id)
+                  setMenuOpen(false)
+                }}
+              >
+                <Icon size={16} strokeWidth={2} aria-hidden />
+                {label}
+              </button>
+            ))}
+          </nav>
+        )}
       </div>
 
       {tab === 'cardapio' && error && <p className="equipe-app__error">Erro ao carregar cardápio: {error}</p>}

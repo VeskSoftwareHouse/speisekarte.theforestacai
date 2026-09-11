@@ -924,14 +924,14 @@ body {
   margin: 0 auto var(--space-6);
   border-bottom: 1px solid var(--color-border);
 }
-/* --- Menu hamburguer das sub-abas do Estoque (9 seções) --- */
-.estoque-hamburger {
+/* --- Menu hamburguer das sub-abas (Cardápio e Estoque) --- */
+.submenu-hamburger {
   display: none;
   position: relative;
   max-width: 1360px;
   margin: 0 auto var(--space-6);
 }
-.estoque-hamburger__toggle {
+.submenu-hamburger__toggle {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -946,7 +946,7 @@ body {
   font-size: 0.9rem;
   cursor: pointer;
 }
-.estoque-hamburger__menu {
+.submenu-hamburger__menu {
   position: absolute;
   top: calc(100% + var(--space-2));
   left: 0;
@@ -963,7 +963,7 @@ body {
   max-height: 60vh;
   overflow-y: auto;
 }
-.estoque-hamburger__item {
+.submenu-hamburger__item {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -978,30 +978,22 @@ body {
   text-align: left;
   cursor: pointer;
 }
-.estoque-hamburger__item:hover {
+.submenu-hamburger__item:hover {
   background: var(--color-bg);
 }
-.estoque-hamburger__item--active {
+.submenu-hamburger__item--active {
   background: var(--color-bg);
   color: var(--color-primary);
 }
 
-/* As quatro abas juntas passam de 500px — bem mais que a largura de um
-   celular. Em vez de espremer ou quebrar em duas linhas, a fileira vira
-   rolável: cada aba mantém seu tamanho de sempre e o dedo arrasta pra ver
-   as de trás. Sem isto elas ficariam cortadas e inacessíveis, porque
-   html/body está com overflow:hidden. */
+/* Abaixo de 700px, tanto as 4 abas do Cardápio quanto as 9 do Estoque
+   viram o menu acima em vez de uma fileira apertada/rolando. */
 @media (max-width: 700px) {
-  .menu-manager__tabs {
-    gap: var(--space-4);
-    overflow-x: auto;
-  }
-  /* As nove abas do Estoque nem rolando direito cabem confortavelmente —
-     essa fileira específica vira um menu (ver .estoque-hamburger). */
+  .menu-manager__tabs--cardapio,
   .menu-manager__tabs--estoque {
     display: none;
   }
-  .estoque-hamburger {
+  .submenu-hamburger {
     display: block;
   }
 }

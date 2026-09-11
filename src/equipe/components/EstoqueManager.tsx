@@ -216,9 +216,9 @@ export default function EstoqueManager({ currentUserId }: Props) {
 
       {/* Mesmas 9 abas de cima, só que num menu que abre por cima em telas
           estreitas — nove abas lado a lado não cabem nem rolando direito. */}
-      <div className="estoque-hamburger">
+      <div className="submenu-hamburger">
         <button
-          className="estoque-hamburger__toggle"
+          className="submenu-hamburger__toggle"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label={menuOpen ? 'Fechar menu de seções' : 'Abrir menu de seções'}
           aria-expanded={menuOpen}
@@ -227,11 +227,11 @@ export default function EstoqueManager({ currentUserId }: Props) {
           {TABS.find((t) => t.id === tab)?.label}
         </button>
         {menuOpen && (
-          <nav className="estoque-hamburger__menu" aria-label="Seções do estoque">
+          <nav className="submenu-hamburger__menu" aria-label="Seções do estoque">
             {TABS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
-                className={`estoque-hamburger__item ${tab === id ? 'estoque-hamburger__item--active' : ''}`}
+                className={`submenu-hamburger__item ${tab === id ? 'submenu-hamburger__item--active' : ''}`}
                 onClick={() => {
                   setTab(id)
                   setMenuOpen(false)
