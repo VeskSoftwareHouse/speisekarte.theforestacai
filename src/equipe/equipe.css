@@ -155,39 +155,85 @@ body {
   color: #fff;
 }
 
+/* --- Menu hamburguer: mesmos destinos do .banner-tabs, escondido em telas
+   largas e trocado de lugar com ele em telas estreitas (ver media query
+   abaixo) — evita a fileira de abas rolando ou espremendo texto. */
+.banner-hamburger {
+  display: none;
+  position: relative;
+}
+.banner-hamburger__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  cursor: pointer;
+}
+.banner-hamburger__toggle:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.banner-hamburger__menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 200px;
+  padding: 6px;
+  border-radius: var(--radius-md, 12px);
+  background: var(--color-ink);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-lg);
+}
+.banner-hamburger__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: #cabce6;
+  font-family: var(--font-ui);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.banner-hamburger__item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.banner-hamburger__item--active {
+  background: #fff;
+  color: var(--color-ink);
+}
+
 @media (max-width: 1000px) {
+  /* Rede de segurança: se mesmo assim título + botão de menu + conta não
+     couberem numa linha só (nomes de usuário longos, telas bem estreitas),
+     quebra pra uma segunda linha em vez de cortar ou espremer. */
   .brand-banner {
     flex-wrap: wrap;
   }
-  /* As abas passam para uma linha inteira só delas. O logo encolhe junto: o
-     cabeçalho ganhou uma segunda linha, e a tela da cozinha não tem altura
-     sobrando para gastar com moldura. */
+  /* O logo encolhe: o cabeçalho não precisa de espaço extra pra caber o
+     título e o botão de menu numa linha só. */
   .equipe-app .brand-banner__logo {
     height: 56px;
     width: 56px;
   }
   .banner-tabs {
-    order: 3;
-    width: 100%;
-    justify-content: center;
-    /* Rede de segurança: "Pedidos"+"Cardápio"+"Relatórios" com texto
-       nowrap não encolhem abaixo do próprio conteúdo (flex-shrink não
-       reduz um item além do seu tamanho mínimo automático), então em
-       telas bem estreitas a soma ainda pode passar da largura — aí a
-       fileira rola em vez de vazar cortada pelo overflow:hidden do
-       html/body. */
-    overflow-x: auto;
+    display: none;
   }
-  .banner-tabs__item {
-    flex: 1;
-    justify-content: center;
-  }
-}
-@media (max-width: 420px) {
-  .banner-tabs__item {
-    padding: 0 var(--space-2);
-    gap: 6px;
-    font-size: 0.82rem;
+  .banner-hamburger {
+    display: flex;
   }
 }
 
@@ -878,6 +924,68 @@ body {
   margin: 0 auto var(--space-6);
   border-bottom: 1px solid var(--color-border);
 }
+/* --- Menu hamburguer das sub-abas do Estoque (9 seções) --- */
+.estoque-hamburger {
+  display: none;
+  position: relative;
+  max-width: 1360px;
+  margin: 0 auto var(--space-6);
+}
+.estoque-hamburger__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.estoque-hamburger__menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border-radius: var(--radius-md, 12px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.estoque-hamburger__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text-muted);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+.estoque-hamburger__item:hover {
+  background: var(--color-bg);
+}
+.estoque-hamburger__item--active {
+  background: var(--color-bg);
+  color: var(--color-primary);
+}
+
 /* As quatro abas juntas passam de 500px — bem mais que a largura de um
    celular. Em vez de espremer ou quebrar em duas linhas, a fileira vira
    rolável: cada aba mantém seu tamanho de sempre e o dedo arrasta pra ver
@@ -887,6 +995,14 @@ body {
   .menu-manager__tabs {
     gap: var(--space-4);
     overflow-x: auto;
+  }
+  /* As nove abas do Estoque nem rolando direito cabem confortavelmente —
+     essa fileira específica vira um menu (ver .estoque-hamburger). */
+  .menu-manager__tabs--estoque {
+    display: none;
+  }
+  .estoque-hamburger {
+    display: block;
   }
 }
 .menu-manager__tab {

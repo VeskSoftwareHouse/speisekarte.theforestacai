@@ -4,11 +4,14 @@ import {
   CheckCheck,
   ClipboardList,
   LayoutDashboard,
+  Menu,
   Percent,
   ShoppingCart,
   Skull,
   Truck,
   Wheat,
+  X,
+  type LucideIcon,
 } from 'lucide-react'
 import type { Fornecedor, Imposto, Insumo, InventarioWithItens, OrderWithItems, PedidoCompraWithItens } from '@shared/types'
 import { useFornecedorAdmin } from '../hooks/useFornecedorAdmin'
@@ -58,6 +61,18 @@ type Tab =
   | 'perdas'
   | 'fechamento'
   | 'impostos'
+
+const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
+  { id: 'visaogeral', label: 'Visão Geral', icon: LayoutDashboard },
+  { id: 'fornecedores', label: 'Fornecedores', icon: Truck },
+  { id: 'insumos', label: 'Insumos', icon: Wheat },
+  { id: 'compras', label: 'Compras', icon: ShoppingCart },
+  { id: 'movimentacoes', label: 'Movimentações', icon: ArrowLeftRight },
+  { id: 'inventario', label: 'Inventário', icon: ClipboardList },
+  { id: 'perdas', label: 'Perdas', icon: Skull },
+  { id: 'fechamento', label: 'Fechamento', icon: CheckCheck },
+  { id: 'impostos', label: 'Impostos', icon: Percent },
+]
 
 interface Props {
   currentUserId: string
@@ -125,6 +140,7 @@ export default function EstoqueManager({ currentUserId }: Props) {
   const { ativo: fechamentoAutomatico, alternar: alternarFechamentoAutomatico } = useFechamentoAutomatico()
 
   const [tab, setTab] = useState<Tab>('visaogeral')
+  const [menuOpen, setMenuOpen] = useState(false)
   const [fornecedorForm, setFornecedorForm] = useState<'new' | Fornecedor | null>(null)
   const [insumoForm, setInsumoForm] = useState<'new' | Insumo | null>(null)
   const [compraForm, setCompraForm] = useState<'new' | PedidoCompraWithItens | null>(null)
@@ -185,70 +201,48 @@ export default function EstoqueManager({ currentUserId }: Props) {
 
   return (
     <main className="menu-manager">
-      <div className="menu-manager__tabs">
+      <div className="menu-manager__tabs menu-manager__tabs--estoque">
+        {TABS.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            className={`menu-manager__tab ${tab === id ? 'menu-manager__tab--active' : ''}`}
+            onClick={() => setTab(id)}
+          >
+            <Icon size={16} strokeWidth={2} aria-hidden />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Mesmas 9 abas de cima, só que num menu que abre por cima em telas
+          estreitas — nove abas lado a lado não cabem nem rolando direito. */}
+      <div className="estoque-hamburger">
         <button
-          className={`menu-manager__tab ${tab === 'visaogeral' ? 'menu-manager__tab--active' : ''}`}
-          onClick={() => setTab('visaogeral')}
+          className="estoque-hamburger__toggle"
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-label={menuOpen ? 'Fechar menu de seções' : 'Abrir menu de seções'}
+          aria-expanded={menuOpen}
         >
-          <LayoutDashboard size={16} strokeWidth={2} aria-hidden />
-          Visão Geral
+          {menuOpen ? <X size={16} strokeWidth={2} aria-hidden /> : <Menu size={16} strokeWidth={2} aria-hidden />}
+          {TABS.find((t) => t.id === tab)?.label}
         </button>
-        <button
-          className={`menu-manager__tab ${tab === 'fornecedores' ? 'menu-manager__tab--active' : ''}`}
-          onClick={() => setTab('fornecedores')}
-        >
-          <Truck size={16} strokeWidth={2} aria-hidden />
-          Fornecedores
-        </button>
-        <button
-          className={`menu-manager__tab ${tab === 'insumos' ? 'menu-manager__tab--active' : ''}`}
-          onClick={() => setTab('insumos')}
-        >
-          <Wheat size={16} strokeWidth={2} aria-hidden />
-          Insumos
-        </button>
-        <button
-          className={`menu-manager__tab ${tab === 'compras' ? 'menu-manager__tab--active' : ''}`}
-          onClick={() => setTab('compras')}
-        >
-          <ShoppingCart size={16} strokeWidth={2} aria-hidden />
-          Compras
-        </button>
-        <button
-          className={`menu-manager__tab ${tab === 'movimentacoes' ? 'menu-manager__tab--active' : ''}`}
-          onClick={() => setTab('movimentacoes')}
-        >
-          <ArrowLeftRight size={16} strokeWidth={2} aria-hidden />
-          Movimentações
-        </button>
-        <button
-          className={`menu-manager__tab ${tab === 'inventario' ? 'menu-manager__tab--active' : ''}`}
-          onClick={() => setTab('inventario')}
-        >
-          <ClipboardList size={16} strokeWidth={2} aria-hidden />
-          Inventário
-        </button>
-        <button
-          className={`menu-manager__tab ${tab === 'perdas' ? 'menu-manager__tab--active' : ''}`}
-          onClick={() => setTab('perdas')}
-        >
-          <Skull size={16} strokeWidth={2} aria-hidden />
-          Perdas
-        </button>
-        <button
-          className={`menu-manager__tab ${tab === 'fechamento' ? 'menu-manager__tab--active' : ''}`}
-          onClick={() => setTab('fechamento')}
-        >
-          <CheckCheck size={16} strokeWidth={2} aria-hidden />
-          Fechamento
-        </button>
-        <button
-          className={`menu-manager__tab ${tab === 'impostos' ? 'menu-manager__tab--active' : ''}`}
-          onClick={() => setTab('impostos')}
-        >
-          <Percent size={16} strokeWidth={2} aria-hidden />
-          Impostos
-        </button>
+        {menuOpen && (
+          <nav className="estoque-hamburger__menu" aria-label="Seções do estoque">
+            {TABS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                className={`estoque-hamburger__item ${tab === id ? 'estoque-hamburger__item--active' : ''}`}
+                onClick={() => {
+                  setTab(id)
+                  setMenuOpen(false)
+                }}
+              >
+                <Icon size={16} strokeWidth={2} aria-hidden />
+                {label}
+              </button>
+            ))}
+          </nav>
+        )}
       </div>
 
       {tab === 'fornecedores' && fornecedoresError && (

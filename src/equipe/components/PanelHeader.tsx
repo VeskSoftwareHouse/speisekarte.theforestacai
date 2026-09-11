@@ -1,4 +1,5 @@
-import { ChartColumn, ClipboardList, LogOut, Package, UtensilsCrossed, type LucideIcon } from 'lucide-react'
+import { useState } from 'react'
+import { ChartColumn, ClipboardList, LogOut, Menu, Package, UtensilsCrossed, X, type LucideIcon } from 'lucide-react'
 
 export type PanelTab = 'pedidos' | 'cardapio' | 'estoque' | 'relatorios'
 
@@ -35,6 +36,8 @@ export default function PanelHeader({
   userEmail,
   onSignOut,
 }: Props) {
+  const [menuOpen, setMenuOpen] = useState(false)
+
   return (
     <header className="brand-banner">
       <img src="/brand/logo.png" alt="Forest Açaí" className="brand-banner__logo" />
@@ -62,6 +65,38 @@ export default function PanelHeader({
           </button>
         ))}
       </nav>
+
+      {/* Mesmos destinos do .banner-tabs acima, só que num menu que abre por
+          cima em vez de uma fileira que precisa rolar — a troca acontece só
+          no CSS (ver @media em equipe.css), os dois convivem no DOM. */}
+      <div className="banner-hamburger">
+        <button
+          className="banner-hamburger__toggle"
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}
+          aria-expanded={menuOpen}
+        >
+          {menuOpen ? <X size={20} strokeWidth={2} aria-hidden /> : <Menu size={20} strokeWidth={2} aria-hidden />}
+        </button>
+        {menuOpen && (
+          <nav className="banner-hamburger__menu" aria-label="Seções do painel">
+            {PANEL_TABS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                className={`banner-hamburger__item ${tab === id ? 'banner-hamburger__item--active' : ''}`}
+                aria-current={tab === id ? 'page' : undefined}
+                onClick={() => {
+                  onTabChange(id)
+                  setMenuOpen(false)
+                }}
+              >
+                <Icon size={18} strokeWidth={2} aria-hidden />
+                {label}
+              </button>
+            ))}
+          </nav>
+        )}
+      </div>
 
       <div className="banner-account">
         {/* Uma bolinha verde sozinha não diz o que significa; com a palavra ao
