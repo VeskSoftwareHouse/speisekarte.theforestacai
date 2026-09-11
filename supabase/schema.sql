@@ -1073,3 +1073,33 @@ create policy "authenticated read impostos"   on impostos for select using (auth
 create policy "authenticated insert impostos" on impostos for insert with check (auth.uid() is not null);
 create policy "authenticated update impostos" on impostos for update using (auth.uid() is not null) with check (auth.uid() is not null);
 create policy "authenticated delete impostos" on impostos for delete using (auth.uid() is not null);
+
+-- =====================================================================
+-- Assistente de IA — histórico de conversa.
+--
+-- Uma linha por usuário (a "conversa" é sempre uma só, sem múltiplas
+-- threads nomeadas). `contents` é o histórico bruto no formato do Gemini
+-- (o mesmo que viaja entre cliente e servidor em api/assistant-chat.ts) —
+-- reenviado inteiro a cada turno pro modelo ter memória, e reconstituído
+-- na tela ao carregar a aba/o widget. RLS aqui é defesa em profundidade:
+-- o endpoint sempre usa a chave de serviço, mas mantém cada usuário só
+-- lendo/escrevendo a própria linha caso algo um dia consulte direto.
+-- =====================================================================
+
+create table if not exists assistente_conversas (
+  usuario_id    uuid primary key references auth.users(id) on delete cascade,
+  contents      jsonb not null default '[]'::jsonb,
+  atualizado_em timestamptz not null default now()
+);
+
+alter table assistente_conversas enable row level security;
+
+drop policy if exists "own conversa read"   on assistente_conversas;
+drop policy if exists "own conversa insert" on assistente_conversas;
+drop policy if exists "own conversa update" on assistente_conversas;
+drop policy if exists "own conversa delete" on assistente_conversas;
+
+create policy "own conversa read"   on assistente_conversas for select using (auth.uid() = usuario_id);
+create policy "own conversa insert" on assistente_conversas for insert with check (auth.uid() = usuario_id);
+create policy "own conversa update" on assistente_conversas for update using (auth.uid() = usuario_id) with check (auth.uid() = usuario_id);
+create policy "own conversa delete" on assistente_conversas for delete using (auth.uid() = usuario_id);

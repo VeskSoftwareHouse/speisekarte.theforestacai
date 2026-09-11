@@ -1505,11 +1505,16 @@ const TOOLS = [
   },
 ]
 
+/** Sobrescreve a conversa salva do usuário com o histórico atual — chamada
+ * depois de qualquer resposta bem-sucedida, pra próxima vez (aba nova,
+ * recarregar a página) continuar de onde parou. */
+async function salvarConversa(supabase: SupabaseClient, usuarioId: string, contents: Content[]) {
+  await supabase
+    .from('assistente_conversas')
+    .upsert({ usuario_id: usuarioId, contents, atualizado_em: new Date().toISOString() })
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Método não permitido.' })
-    return
-  }
   if (!geminiApiKey || !supabaseUrl || !serviceRoleKey) {
     res.status(500).json({ error: 'Servidor não configurado.' })
     return
@@ -1520,6 +1525,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
+  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+
+  // Carrega a conversa salva — usado quando a aba/o widget abre.
+  if (req.method === 'GET') {
+    const { data, error } = await supabase
+      .from('assistente_conversas')
+      .select('contents')
+      .eq('usuario_id', caller.id)
+      .maybeSingle()
+    if (error) {
+      res.status(500).json({ error: error.message })
+      return
+    }
+    res.status(200).json({ contents: data?.contents ?? [] })
+    return
+  }
+
+  // Apaga a conversa salva — "nova conversa".
+  if (req.method === 'DELETE') {
+    const { error } = await supabase.from('assistente_conversas').delete().eq('usuario_id', caller.id)
+    if (error) {
+      res.status(500).json({ error: error.message })
+      return
+    }
+    res.status(200).json({ ok: true })
+    return
+  }
+
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Método não permitido.' })
+    return
+  }
+
   const message = typeof req.body?.message === 'string' ? req.body.message.trim() : ''
   const history = Array.isArray(req.body?.contents) ? (req.body.contents as Content[]) : []
   if (!message) {
@@ -1527,9 +1567,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const supabase = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  })
   const client = new GoogleGenAI({ apiKey: geminiApiKey })
   const contents: Content[] = [...history, createUserContent(message)]
   const systemInstruction = buildSystemInstruction()
@@ -1546,6 +1583,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!calls || calls.length === 0) {
         const reply = stripMarkdown(response.text ?? 'Não consegui responder isso agora.')
         contents.push(createModelContent(reply))
+        await salvarConversa(supabase, caller.id, contents)
         res.status(200).json({ reply, contents })
         return
       }
@@ -1598,6 +1636,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       contents.push({ role: 'user', parts: responseParts })
     }
 
+    await salvarConversa(supabase, caller.id, contents)
     res.status(200).json({
       reply: 'Essa pergunta ficou grande demais pra eu responder agora — tenta ser mais específico?',
       contents,

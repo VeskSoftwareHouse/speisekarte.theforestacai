@@ -9,6 +9,7 @@ import DateStrip from './components/DateStrip'
 import MenuManager from './components/MenuManager'
 import EstoqueManager from './components/EstoqueManager'
 import AssistantChat from './components/AssistantChat'
+import AssistantPanel from './components/AssistantPanel'
 import LoginScreen from './components/LoginScreen'
 import ReportsPanel from './components/ReportsPanel'
 import PanelHeader, { type PanelTab } from './components/PanelHeader'
@@ -91,13 +92,15 @@ export default function App() {
         onSignOut={signOut}
       />
 
-      <AssistantChat accessToken={session.access_token} />
+      {tab !== 'assistente' && <AssistantChat onOpen={() => setTab('assistente')} />}
 
       {tab === 'cardapio' && <MenuManager accessToken={session.access_token} currentUserId={user!.id} />}
 
       {tab === 'estoque' && <EstoqueManager currentUserId={user!.id} />}
 
       {tab === 'relatorios' && <ReportsPanel />}
+
+      {tab === 'assistente' && <AssistantPanel accessToken={session.access_token} />}
 
       {tab === 'pedidos' && (
         <>
