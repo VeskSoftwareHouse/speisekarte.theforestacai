@@ -1,9 +1,14 @@
 import { useRef, useState } from 'react'
 import { X, ImagePlus, Loader2, Trash2 } from 'lucide-react'
-import type { Category, MenuItem, Modifier } from '@shared/types'
+import type { Category, Insumo, MenuItem, MenuItemInsumo, Modifier } from '@shared/types'
 import CurrencyInput from '@shared/components/CurrencyInput'
 import { translationsFor } from '../autoTranslate'
 import type { ProductInput } from '../hooks/useMenuAdmin'
+
+interface CompositionRow {
+  insumo_id: string
+  quantidade: number
+}
 
 interface Props {
   product: MenuItem | null
@@ -11,9 +16,11 @@ interface Props {
   defaultCategoryId: string | null
   modifierGroups: Modifier[]
   linkedModifierIds: string[]
+  insumos: Insumo[]
+  composition: MenuItemInsumo[]
   accessToken: string
   onClose: () => void
-  onSave: (input: ProductInput, modifierIds: string[]) => Promise<void>
+  onSave: (input: ProductInput, modifierIds: string[], composition: CompositionRow[]) => Promise<void>
   onUploadImage: (file: File) => Promise<string>
 }
 
@@ -23,6 +30,8 @@ export default function ProductFormModal({
   defaultCategoryId,
   modifierGroups,
   linkedModifierIds,
+  insumos,
+  composition,
   accessToken,
   onClose,
   onSave,
@@ -38,10 +47,28 @@ export default function ProductFormModal({
   const [ordem, setOrdem] = useState(product?.ordem ?? 0)
   const [fotoUrl, setFotoUrl] = useState(product?.foto_url ?? '')
   const [selectedModifierIds, setSelectedModifierIds] = useState<string[]>(linkedModifierIds)
+  const [compositionRows, setCompositionRows] = useState<CompositionRow[]>(
+    composition.map((c) => ({ insumo_id: c.insumo_id, quantidade: c.quantidade })),
+  )
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  function addCompositionRow() {
+    const used = new Set(compositionRows.map((r) => r.insumo_id))
+    const next = insumos.find((i) => !used.has(i.id))
+    if (!next) return
+    setCompositionRows((prev) => [...prev, { insumo_id: next.id, quantidade: 0 }])
+  }
+
+  function updateCompositionRow(idx: number, patch: Partial<CompositionRow>) {
+    setCompositionRows((prev) => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)))
+  }
+
+  function removeCompositionRow(idx: number) {
+    setCompositionRows((prev) => prev.filter((_, i) => i !== idx))
+  }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -62,6 +89,10 @@ export default function ProductFormModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!nome.trim() || !categoriaId) return
+    if (compositionRows.some((r) => !r.insumo_id || !(r.quantidade > 0))) {
+      setError('Toda linha da composição precisa de um insumo e uma quantidade maior que zero.')
+      return
+    }
     setSaving(true)
     setError(null)
     try {
@@ -85,6 +116,7 @@ export default function ProductFormModal({
           ordem,
         },
         selectedModifierIds,
+        compositionRows,
       )
       onClose()
     } catch (err) {
@@ -233,6 +265,58 @@ export default function ProductFormModal({
                 )
               })}
             </div>
+          </div>
+
+          <div className="admin-form__field">
+            <span>Composição (receita fixa, consumida em toda venda)</span>
+            {insumos.length === 0 && (
+              <p className="admin-form__hint">
+                Nenhum insumo cadastrado ainda — cadastre em Estoque → Insumos para poder ligar uma receita aqui.
+              </p>
+            )}
+            {insumos.length > 0 && (
+              <div className="admin-composition-list">
+                {compositionRows.map((row, idx) => {
+                  const insumo = insumos.find((i) => i.id === row.insumo_id)
+                  return (
+                    <div key={idx} className="admin-composition-list__row">
+                      <select
+                        value={row.insumo_id}
+                        onChange={(e) => updateCompositionRow(idx, { insumo_id: e.target.value })}
+                      >
+                        {insumos.map((i) => (
+                          <option key={i.id} value={i.id}>
+                            {i.nome}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.001"
+                        value={row.quantidade || ''}
+                        onChange={(e) => updateCompositionRow(idx, { quantidade: Number(e.target.value) })}
+                        placeholder="0"
+                      />
+                      <span>{insumo?.unidade ?? ''}</span>
+                      <button
+                        type="button"
+                        className="admin-composition-list__remove"
+                        onClick={() => removeCompositionRow(idx)}
+                        aria-label="Remover insumo da composição"
+                      >
+                        <Trash2 size={16} strokeWidth={2} />
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+            {insumos.length > compositionRows.length && (
+              <button type="button" className="btn btn-outline" onClick={addCompositionRow}>
+                + Adicionar insumo
+              </button>
+            )}
           </div>
 
           {error && <p className="admin-form__error">{error}</p>}

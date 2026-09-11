@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { X, ImagePlus, Loader2, Trash2 } from 'lucide-react'
-import type { Modifier, ModifierOption } from '@shared/types'
+import type { Insumo, Modifier, ModifierOption } from '@shared/types'
 import CurrencyInput from '@shared/components/CurrencyInput'
 import { translationsFor } from '../autoTranslate'
 import type { ModifierOptionInput } from '../hooks/useModifierAdmin'
@@ -9,6 +9,7 @@ interface Props {
   option: ModifierOption | null
   groups: Modifier[]
   defaultGroupId: string | null
+  insumos: Insumo[]
   accessToken: string
   onClose: () => void
   onSave: (input: ModifierOptionInput) => Promise<void>
@@ -19,6 +20,7 @@ export default function ModifierOptionFormModal({
   option,
   groups,
   defaultGroupId,
+  insumos,
   accessToken,
   onClose,
   onSave,
@@ -29,6 +31,8 @@ export default function ModifierOptionFormModal({
   const [precoAdicional, setPrecoAdicional] = useState(option?.preco_adicional ?? 0)
   const [ordem, setOrdem] = useState(option?.ordem ?? 0)
   const [fotoUrl, setFotoUrl] = useState(option?.foto_url ?? '')
+  const [insumoId, setInsumoId] = useState(option?.insumo_id ?? '')
+  const [quantidadePadrao, setQuantidadePadrao] = useState(option?.quantidade_padrao ?? '')
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -52,6 +56,10 @@ export default function ModifierOptionFormModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!nome.trim() || !modifierId) return
+    if (insumoId && !(Number(quantidadePadrao) > 0)) {
+      setError('Informe uma quantidade maior que zero para o insumo vinculado.')
+      return
+    }
     setSaving(true)
     setError(null)
     try {
@@ -63,6 +71,8 @@ export default function ModifierOptionFormModal({
         preco_adicional: precoAdicional,
         ordem,
         foto_url: fotoUrl.trim() || null,
+        insumo_id: insumoId || null,
+        quantidade_padrao: insumoId ? Number(quantidadePadrao) : null,
       })
       onClose()
     } catch (err) {
@@ -152,6 +162,36 @@ export default function ModifierOptionFormModal({
               <input type="number" min={0} value={ordem} onChange={(e) => setOrdem(Number(e.target.value))} />
             </label>
           </div>
+
+          <label className="admin-form__field">
+            <span>Insumo consumido (opcional)</span>
+            <select value={insumoId} onChange={(e) => setInsumoId(e.target.value)}>
+              <option value="">Nenhum — fora da baixa automática de estoque</option>
+              {insumos.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.nome}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {insumoId && (
+            <label className="admin-form__field">
+              <span>Quantidade padrão ({insumos.find((i) => i.id === insumoId)?.unidade})</span>
+              <input
+                type="number"
+                min={0}
+                step="0.001"
+                value={quantidadePadrao}
+                onChange={(e) => setQuantidadePadrao(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="Ex: 200"
+                required
+              />
+              <p className="admin-form__hint">
+                Consumido a cada vez que esta opção é escolhida (mesma unidade do insumo).
+              </p>
+            </label>
+          )}
 
           {error && <p className="admin-form__error">{error}</p>}
 

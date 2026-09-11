@@ -707,3 +707,333 @@ where descricao like '%—%';
 update menu_items
 set descricao_i18n = replace(descricao_i18n::text, ' — ', ', ')::jsonb
 where descricao_i18n::text like '%—%';
+
+-- =====================================================================
+-- Gestão de estoque — Fase 0: fornecedores, insumos, composição dos
+-- produtos e vínculo de insumo nas misturas (modifier_options).
+--
+-- Estas tabelas são só de back-office (controle de compras/estoque pela
+-- equipe) — ninguém no totem ou no cardápio público precisa ler nada
+-- daqui, por isso a RLS abaixo é autenticado-only tanto pra leitura
+-- quanto pra escrita, diferente de categories/menu_items/modifiers (que
+-- o totem lê sem login).
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- fornecedores
+-- ---------------------------------------------------------------------
+create table if not exists fornecedores (
+  id          uuid primary key default gen_random_uuid(),
+  nome        text not null,
+  contato     text,
+  telefone    text,
+  email       text,
+  observacoes text,
+  -- desativar em vez de excluir preserva o histórico de compras já
+  -- registradas com este fornecedor.
+  ativo       boolean not null default true,
+  criado_em   timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------
+-- insumos (ingredientes/matérias-primas controladas em estoque)
+-- ---------------------------------------------------------------------
+create table if not exists insumos (
+  id             uuid primary key default gen_random_uuid(),
+  nome           text not null,
+  unidade        text not null check (unidade in ('kg', 'g', 'l', 'ml', 'unidade')),
+  -- abaixo deste saldo, o insumo aparece como "saldo baixo" no dashboard
+  -- de estoque (Fase 4). null = sem alerta configurado.
+  estoque_minimo numeric(10,3),
+  -- desativar em vez de excluir preserva compras/movimentações/perdas já
+  -- registradas com este insumo.
+  ativo          boolean not null default true,
+  ordem          int not null default 0,
+  criado_em      timestamptz not null default now()
+);
+
+create index if not exists idx_insumos_ordem on insumos(ordem);
+
+-- ---------------------------------------------------------------------
+-- modifier_options: vínculo opcional com o insumo que a opção consome, e
+-- quanto (na mesma unidade do insumo, ex: insumo "Banana" em 'g',
+-- quantidade_padrao 200 na opção "Banane"). Uma opção sem vínculo (null)
+-- simplesmente fica fora da baixa automática de estoque no fechamento —
+-- não bloqueia a venda nem o fechamento dos demais itens.
+-- ---------------------------------------------------------------------
+alter table modifier_options add column if not exists insumo_id uuid references insumos(id) on delete set null;
+alter table modifier_options add column if not exists quantidade_padrao numeric(10,3);
+
+create index if not exists idx_modifier_options_insumo on modifier_options(insumo_id);
+
+-- ---------------------------------------------------------------------
+-- menu_item_insumos (composição/receita fixa do produto, ex: Açaí 500ml
+-- = 400g de açaí + 1 copo + 1 colher — consumida em toda venda,
+-- independente das misturas escolhidas pelo cliente)
+-- ---------------------------------------------------------------------
+create table if not exists menu_item_insumos (
+  menu_item_id uuid not null references menu_items(id) on delete cascade,
+  insumo_id    uuid not null references insumos(id) on delete cascade,
+  quantidade   numeric(10,3) not null check (quantidade > 0),
+  primary key (menu_item_id, insumo_id)
+);
+
+-- =====================================================================
+-- RLS — fornecedores/insumos/menu_item_insumos: só a equipe logada lê e
+-- escreve (sem policy pública).
+-- =====================================================================
+
+alter table fornecedores      enable row level security;
+alter table insumos           enable row level security;
+alter table menu_item_insumos enable row level security;
+
+drop policy if exists "authenticated read fornecedores"   on fornecedores;
+drop policy if exists "authenticated insert fornecedores" on fornecedores;
+drop policy if exists "authenticated update fornecedores" on fornecedores;
+drop policy if exists "authenticated delete fornecedores" on fornecedores;
+
+create policy "authenticated read fornecedores"   on fornecedores for select using (auth.uid() is not null);
+create policy "authenticated insert fornecedores" on fornecedores for insert with check (auth.uid() is not null);
+create policy "authenticated update fornecedores" on fornecedores for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete fornecedores" on fornecedores for delete using (auth.uid() is not null);
+
+drop policy if exists "authenticated read insumos"   on insumos;
+drop policy if exists "authenticated insert insumos" on insumos;
+drop policy if exists "authenticated update insumos" on insumos;
+drop policy if exists "authenticated delete insumos" on insumos;
+
+create policy "authenticated read insumos"   on insumos for select using (auth.uid() is not null);
+create policy "authenticated insert insumos" on insumos for insert with check (auth.uid() is not null);
+create policy "authenticated update insumos" on insumos for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete insumos" on insumos for delete using (auth.uid() is not null);
+
+drop policy if exists "authenticated read menu_item_insumos"   on menu_item_insumos;
+drop policy if exists "authenticated insert menu_item_insumos" on menu_item_insumos;
+drop policy if exists "authenticated delete menu_item_insumos" on menu_item_insumos;
+
+create policy "authenticated read menu_item_insumos"   on menu_item_insumos for select using (auth.uid() is not null);
+create policy "authenticated insert menu_item_insumos" on menu_item_insumos for insert with check (auth.uid() is not null);
+create policy "authenticated delete menu_item_insumos" on menu_item_insumos for delete using (auth.uid() is not null);
+
+-- =====================================================================
+-- Gestão de estoque — Fase 1: pedidos de compra e movimentações de
+-- estoque.
+--
+-- O saldo de um insumo nunca é gravado numa coluna própria: é sempre a
+-- soma de `movimentacoes_estoque.quantidade` (positiva = entrada, negativa
+-- = saída), exposta pela view `insumo_saldos`. Isso evita todo o problema
+-- de manter um saldo cacheado sincronizado com o histórico — para o volume
+-- desta loja, somar as movimentações na hora é instantâneo.
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- pedidos_compra / pedido_compra_itens
+-- ---------------------------------------------------------------------
+create table if not exists pedidos_compra (
+  id            uuid primary key default gen_random_uuid(),
+  fornecedor_id uuid not null references fornecedores(id),
+  status        text not null default 'rascunho'
+                  check (status in ('rascunho', 'aguardando_recebimento', 'recebido', 'cancelado')),
+  observacoes   text,
+  criado_em     timestamptz not null default now(),
+  recebido_em   timestamptz
+);
+
+create index if not exists idx_pedidos_compra_fornecedor on pedidos_compra(fornecedor_id);
+create index if not exists idx_pedidos_compra_status on pedidos_compra(status);
+
+create table if not exists pedido_compra_itens (
+  id               uuid primary key default gen_random_uuid(),
+  pedido_compra_id uuid not null references pedidos_compra(id) on delete cascade,
+  insumo_id        uuid not null references insumos(id),
+  quantidade       numeric(10,3) not null check (quantidade > 0),
+  valor_unitario   numeric(10,2)
+);
+
+create index if not exists idx_pedido_compra_itens_pedido on pedido_compra_itens(pedido_compra_id);
+
+-- ---------------------------------------------------------------------
+-- movimentacoes_estoque — trilha de auditoria imutável (só insert/select,
+-- ver policies abaixo). `quantidade` é sempre assinada: positiva numa
+-- entrada, negativa numa saída, para que a soma dê o saldo direto.
+-- `origem_tipo`/`origem_id` são uma referência solta (não FK) para o que
+-- gerou o movimento — pedido de compra, pedido de venda (Fase 3),
+-- inventário ou perda (Fase 2) — ou nulos num lançamento manual.
+-- ---------------------------------------------------------------------
+create table if not exists movimentacoes_estoque (
+  id          uuid primary key default gen_random_uuid(),
+  insumo_id   uuid not null references insumos(id),
+  quantidade  numeric(10,3) not null check (quantidade <> 0),
+  tipo        text not null check (tipo in (
+                'entrada_compra', 'entrada_manual', 'entrada_ajuste_inventario',
+                'saida_manual', 'saida_ajuste_inventario', 'saida_venda', 'saida_perda'
+              )),
+  origem_tipo text,
+  origem_id   uuid,
+  observacoes text,
+  criado_em   timestamptz not null default now(),
+  criado_por  uuid references auth.users(id)
+);
+
+create index if not exists idx_movimentacoes_estoque_insumo on movimentacoes_estoque(insumo_id);
+create index if not exists idx_movimentacoes_estoque_criado_em on movimentacoes_estoque(criado_em);
+
+-- security_invoker: sem isto, uma view no Postgres/Supabase roda com o
+-- privilégio de quem a criou, não de quem consulta — o que bypassaria a
+-- RLS de movimentacoes_estoque e deixaria o saldo legível sem login.
+create or replace view insumo_saldos
+  with (security_invoker = true) as
+  select insumo_id, coalesce(sum(quantidade), 0) as saldo_atual
+  from movimentacoes_estoque
+  group by insumo_id;
+
+-- =====================================================================
+-- RLS — pedidos_compra/pedido_compra_itens: CRUD completo pela equipe
+-- logada (mesmo padrão de fornecedores/insumos). movimentacoes_estoque:
+-- só insert + select — sem update/delete, igual order_items, pra manter a
+-- trilha de auditoria confiável.
+-- =====================================================================
+
+alter table pedidos_compra       enable row level security;
+alter table pedido_compra_itens  enable row level security;
+alter table movimentacoes_estoque enable row level security;
+
+drop policy if exists "authenticated read pedidos_compra"   on pedidos_compra;
+drop policy if exists "authenticated insert pedidos_compra" on pedidos_compra;
+drop policy if exists "authenticated update pedidos_compra" on pedidos_compra;
+drop policy if exists "authenticated delete pedidos_compra" on pedidos_compra;
+
+create policy "authenticated read pedidos_compra"   on pedidos_compra for select using (auth.uid() is not null);
+create policy "authenticated insert pedidos_compra" on pedidos_compra for insert with check (auth.uid() is not null);
+create policy "authenticated update pedidos_compra" on pedidos_compra for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete pedidos_compra" on pedidos_compra for delete using (auth.uid() is not null);
+
+drop policy if exists "authenticated read pedido_compra_itens"   on pedido_compra_itens;
+drop policy if exists "authenticated insert pedido_compra_itens" on pedido_compra_itens;
+drop policy if exists "authenticated update pedido_compra_itens" on pedido_compra_itens;
+drop policy if exists "authenticated delete pedido_compra_itens" on pedido_compra_itens;
+
+create policy "authenticated read pedido_compra_itens"   on pedido_compra_itens for select using (auth.uid() is not null);
+create policy "authenticated insert pedido_compra_itens" on pedido_compra_itens for insert with check (auth.uid() is not null);
+create policy "authenticated update pedido_compra_itens" on pedido_compra_itens for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete pedido_compra_itens" on pedido_compra_itens for delete using (auth.uid() is not null);
+
+drop policy if exists "authenticated read movimentacoes_estoque"   on movimentacoes_estoque;
+drop policy if exists "authenticated insert movimentacoes_estoque" on movimentacoes_estoque;
+
+create policy "authenticated read movimentacoes_estoque"   on movimentacoes_estoque for select using (auth.uid() is not null);
+create policy "authenticated insert movimentacoes_estoque" on movimentacoes_estoque for insert with check (auth.uid() is not null);
+
+-- =====================================================================
+-- Gestão de estoque — Fase 2: inventário (contagem física) e perdas.
+--
+-- Um inventário não tem rascunho: nasce e termina no mesmo lançamento (a
+-- equipe conta tudo de uma vez e confirma). Cada diferença encontrada vira
+-- uma movimentação de ajuste; toda diferença NEGATIVA (faltou estoque)
+-- também vira um registro em `perdas`, com o motivo.
+-- =====================================================================
+
+create table if not exists inventarios (
+  id            uuid primary key default gen_random_uuid(),
+  observacoes   text,
+  criado_em     timestamptz not null default now(),
+  finalizado_em timestamptz,
+  criado_por    uuid references auth.users(id)
+);
+
+create table if not exists inventario_itens (
+  id            uuid primary key default gen_random_uuid(),
+  inventario_id uuid not null references inventarios(id) on delete cascade,
+  insumo_id     uuid not null references insumos(id),
+  -- saldo no instante da contagem — congelado aqui, nunca recalculado depois.
+  saldo_sistema numeric(10,3) not null,
+  saldo_contado numeric(10,3) not null,
+  -- só preenchido quando saldo_contado < saldo_sistema (faltou estoque).
+  motivo        text check (motivo in (
+                  'desperdicio', 'perda', 'produto_danificado', 'produto_vencido',
+                  'erro_operacional', 'falta_de_controle', 'outros'
+                ))
+);
+
+create index if not exists idx_inventario_itens_inventario on inventario_itens(inventario_id);
+
+-- ---------------------------------------------------------------------
+-- perdas — trilha de auditoria imutável (só insert/select, ver policies).
+--
+-- Quando nasce de um inventário (origem_tipo='inventario'), é só metadado
+-- de categorização: quem já tirou o insumo do saldo foi o ajuste de
+-- inventário (movimentacoes_estoque tipo 'saida_ajuste_inventario').
+-- Quando é lançada solta (origem_tipo='manual', ver
+-- useEstoquePerdas.lancarPerdaManual), ELA MESMA precisa gerar a
+-- movimentação (tipo 'saida_perda') — senão o saldo não desce.
+-- ---------------------------------------------------------------------
+create table if not exists perdas (
+  id          uuid primary key default gen_random_uuid(),
+  insumo_id   uuid not null references insumos(id),
+  quantidade  numeric(10,3) not null check (quantidade > 0),
+  motivo      text not null check (motivo in (
+                'desperdicio', 'perda', 'produto_danificado', 'produto_vencido',
+                'erro_operacional', 'falta_de_controle', 'outros'
+              )),
+  observacoes text,
+  origem_tipo text not null default 'manual' check (origem_tipo in ('manual', 'inventario')),
+  origem_id   uuid,
+  criado_em   timestamptz not null default now(),
+  criado_por  uuid references auth.users(id)
+);
+
+create index if not exists idx_perdas_insumo on perdas(insumo_id);
+create index if not exists idx_perdas_criado_em on perdas(criado_em);
+
+-- =====================================================================
+-- RLS — inventarios/inventario_itens: CRUD completo pela equipe logada
+-- (mesmo padrão de fornecedores/insumos/compras). perdas: só insert +
+-- select — sem update/delete, mesma trilha de auditoria imutável de
+-- movimentacoes_estoque.
+-- =====================================================================
+
+alter table inventarios      enable row level security;
+alter table inventario_itens enable row level security;
+alter table perdas           enable row level security;
+
+drop policy if exists "authenticated read inventarios"   on inventarios;
+drop policy if exists "authenticated insert inventarios" on inventarios;
+drop policy if exists "authenticated update inventarios" on inventarios;
+drop policy if exists "authenticated delete inventarios" on inventarios;
+
+create policy "authenticated read inventarios"   on inventarios for select using (auth.uid() is not null);
+create policy "authenticated insert inventarios" on inventarios for insert with check (auth.uid() is not null);
+create policy "authenticated update inventarios" on inventarios for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete inventarios" on inventarios for delete using (auth.uid() is not null);
+
+drop policy if exists "authenticated read inventario_itens"   on inventario_itens;
+drop policy if exists "authenticated insert inventario_itens" on inventario_itens;
+drop policy if exists "authenticated update inventario_itens" on inventario_itens;
+drop policy if exists "authenticated delete inventario_itens" on inventario_itens;
+
+create policy "authenticated read inventario_itens"   on inventario_itens for select using (auth.uid() is not null);
+create policy "authenticated insert inventario_itens" on inventario_itens for insert with check (auth.uid() is not null);
+create policy "authenticated update inventario_itens" on inventario_itens for update using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated delete inventario_itens" on inventario_itens for delete using (auth.uid() is not null);
+
+drop policy if exists "authenticated read perdas"   on perdas;
+drop policy if exists "authenticated insert perdas" on perdas;
+
+create policy "authenticated read perdas"   on perdas for select using (auth.uid() is not null);
+create policy "authenticated insert perdas" on perdas for insert with check (auth.uid() is not null);
+
+-- =====================================================================
+-- Gestão de estoque — Fase 3: fechamento (baixa automática de estoque a
+-- partir dos pedidos que já vêm do totem/mesa — sem tela de venda nova).
+--
+-- Não vira um status novo em `orders.status`/ORDER_STATUS_FLOW de
+-- propósito: o quadro da cozinha (useOrders) filtra por esse array, e um
+-- 5º status bagunçaria o quadro. `estoque_baixado` é um controle à parte,
+-- só do módulo de estoque — um pedido pode estar `entregue` há dias e
+-- ainda não ter sido fechado.
+-- =====================================================================
+
+alter table orders add column if not exists estoque_baixado boolean not null default false;
+alter table orders add column if not exists baixado_em timestamptz;
+
+create index if not exists idx_orders_estoque_baixado on orders(estoque_baixado);

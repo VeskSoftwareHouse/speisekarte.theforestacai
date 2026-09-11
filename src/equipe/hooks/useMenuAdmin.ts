@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@shared/supabaseClient'
 import { retryLoad } from '@shared/retryLoad'
-import type { Category, MenuItem } from '@shared/types'
+import type { Category, MenuItem, MenuItemInsumo } from '@shared/types'
 
 /** Lançado ao tentar excluir uma categoria/produto que já apareceu em algum pedido (viola FK com order_items). */
 export class DeleteBlockedError extends Error {
@@ -34,27 +34,34 @@ export interface ProductInput {
 export function useMenuAdmin() {
   const [categories, setCategories] = useState<Category[]>([])
   const [items, setItems] = useState<MenuItem[]>([])
+  const [compositionByItem, setCompositionByItem] = useState<Record<string, MenuItemInsumo[]>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
-    const [catsRes, itemsRes] = await retryLoad(
+    const [catsRes, itemsRes, compositionRes] = await retryLoad(
       () =>
         Promise.all([
           supabase.from('categories').select('*').order('ordem'),
           supabase.from('menu_items').select('*').order('ordem'),
+          supabase.from('menu_item_insumos').select('*'),
         ]),
-      ([c, i]) => !!(c.error ?? i.error),
+      ([c, i, comp]) => !!(c.error ?? i.error ?? comp.error),
     )
-    const firstError = catsRes.error ?? itemsRes.error
+    const firstError = catsRes.error ?? itemsRes.error ?? compositionRes.error
     if (firstError) {
       setError(firstError.message)
       setLoading(false)
       return
     }
+    const composition: Record<string, MenuItemInsumo[]> = {}
+    for (const row of compositionRes.data ?? []) {
+      ;(composition[row.menu_item_id] ??= []).push(row)
+    }
     setCategories(catsRes.data ?? [])
     setItems(itemsRes.data ?? [])
+    setCompositionByItem(composition)
     setError(null)
     setLoading(false)
   }, [])
@@ -106,6 +113,19 @@ export function useMenuAdmin() {
     await fetchAll()
   }
 
+  /** Substitui a composição/receita fixa de um produto (ver menu_item_insumos). */
+  async function setProductComposition(menuItemId: string, rows: { insumo_id: string; quantidade: number }[]) {
+    const { error: delErr } = await supabase.from('menu_item_insumos').delete().eq('menu_item_id', menuItemId)
+    if (delErr) throw new Error(delErr.message)
+    if (rows.length > 0) {
+      const { error: insErr } = await supabase
+        .from('menu_item_insumos')
+        .insert(rows.map((r) => ({ menu_item_id: menuItemId, insumo_id: r.insumo_id, quantidade: r.quantidade })))
+      if (insErr) throw new Error(insErr.message)
+    }
+    await fetchAll()
+  }
+
   /** Sobe uma imagem do cardápio (produto ou adicional) e devolve a URL pública. */
   async function uploadImage(file: File): Promise<string> {
     const ext = file.name.split('.').pop() || 'jpg'
@@ -121,6 +141,7 @@ export function useMenuAdmin() {
   return {
     categories,
     items,
+    compositionByItem,
     loading,
     error,
     createCategory,
@@ -129,6 +150,7 @@ export function useMenuAdmin() {
     createProduct,
     updateProduct,
     deleteProduct,
+    setProductComposition,
     uploadImage,
   }
 }

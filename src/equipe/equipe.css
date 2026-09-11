@@ -594,6 +594,22 @@ body {
   white-space: nowrap;
   width: fit-content;
 }
+.status-pill--rascunho {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+}
+.status-pill--aguardando_recebimento {
+  background: color-mix(in srgb, var(--color-warning) 15%, white);
+  color: var(--color-warning);
+}
+.status-pill--recebido {
+  background: color-mix(in srgb, var(--color-success) 15%, white);
+  color: var(--color-success);
+}
+.status-pill--cancelado {
+  background: color-mix(in srgb, var(--color-danger) 12%, white);
+  color: var(--color-danger);
+}
 .status-pill--entregue {
   background: var(--color-bg);
   color: var(--color-text-muted);
@@ -1370,6 +1386,301 @@ body {
   width: 15px;
   height: 15px;
   accent-color: var(--color-primary);
+}
+
+/* Composição/receita do produto (ProductFormModal) e vínculo de insumo nas
+   misturas (ModifierOptionFormModal) — uma linha por insumo, com quantidade. */
+.admin-composition-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.admin-composition-list__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.admin-composition-list__row select {
+  flex: 1;
+}
+.admin-composition-list__row input[type='number'] {
+  width: 90px;
+}
+.admin-composition-list__row span {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  min-width: 2.5ch;
+}
+.admin-composition-list__remove {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+}
+.admin-composition-list__remove:hover {
+  color: var(--color-danger, #c0392b);
+}
+
+/* Linha de contagem no InventarioFormModal — quando falta estoque, o
+   motivo aparece logo abaixo da própria linha, não solto no formulário. */
+.admin-inventario-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.admin-inventario-row__motivo {
+  margin-left: var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  background: color-mix(in srgb, var(--color-danger) 6%, transparent);
+  border-radius: var(--radius-sm, 8px);
+}
+
+/* Fechamento — pedidos agrupados por dia, cada um com checkbox de seleção. */
+.admin-fechamento-day {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.admin-fechamento-day__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+}
+.admin-fechamento-order {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+}
+
+/* Visão Geral — dashboard do módulo de estoque. */
+.visao-geral {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.visao-geral__stats {
+  display: flex;
+  gap: var(--space-4);
+}
+.visao-geral__stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 12px);
+}
+.visao-geral__stat span {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+.visao-geral__stat strong {
+  font-size: 1.6rem;
+  font-family: var(--font-display);
+}
+.visao-geral__stat strong.visao-geral__stat--warn {
+  color: var(--color-warning);
+}
+.visao-geral__columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  align-items: start;
+}
+.visao-geral__insumos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.visao-geral__insumos-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.visao-geral__insumos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-3);
+}
+.visao-geral__insumo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+.visao-geral__insumo-card--warn {
+  border-color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 8%, var(--color-bg));
+}
+.visao-geral__insumo-card__nome {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.visao-geral__insumo-card__saldo {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+}
+.visao-geral__insumo-card__saldo small {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+.visao-geral__insumo-card__badge {
+  align-self: flex-start;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-warning);
+}
+@media (max-width: 900px) {
+  .visao-geral__columns {
+    grid-template-columns: 1fr;
+  }
+  .visao-geral__stats {
+    flex-direction: column;
+  }
+}
+
+/* Assistente de IA — botão fixo no canto inferior direito (o superior
+   esquerdo já é do cash-pending-fab) + painel de chat que abre por cima,
+   sem escurecer o resto da tela. */
+.assistant-fab {
+  position: fixed;
+  bottom: var(--space-5);
+  right: var(--space-5);
+  z-index: 40;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+  box-shadow: var(--shadow-glow-primary);
+  cursor: pointer;
+}
+.assistant-fab--open {
+  background: var(--color-primary-dark);
+}
+.assistant-panel {
+  position: fixed;
+  bottom: calc(var(--space-5) + 68px);
+  right: var(--space-5);
+  z-index: 40;
+  width: 360px;
+  max-width: calc(100vw - var(--space-4) * 2);
+  height: 480px;
+  max-height: calc(100vh - 160px);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.assistant-panel__header {
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+.assistant-panel__header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+.assistant-panel__messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.assistant-panel__hint {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+.assistant-bubble {
+  max-width: 85%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+.assistant-bubble--user {
+  align-self: flex-end;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+.assistant-bubble--assistant {
+  align-self: flex-start;
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+.assistant-bubble--typing {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+.assistant-panel__form {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+.assistant-panel__form input {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+}
+.assistant-panel__form button {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+}
+@media (max-width: 500px) {
+  .assistant-panel {
+    right: var(--space-3);
+    bottom: calc(var(--space-4) + 68px);
+  }
+  .assistant-fab {
+    right: var(--space-3);
+    bottom: var(--space-4);
+  }
+}
+
+/* Prévia de consumo do fechamento (FechamentoPreviewModal). */
+.admin-consumo-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.admin-consumo-list__row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .admin-modifier-tag {

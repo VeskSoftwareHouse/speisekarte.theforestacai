@@ -5,6 +5,7 @@ import { useMenuAdmin, DeleteBlockedError } from '../hooks/useMenuAdmin'
 import { useUserAdmin, type AdminUser } from '../hooks/useUserAdmin'
 import { useModifierAdmin } from '../hooks/useModifierAdmin'
 import { useTipAdmin } from '../hooks/useTipAdmin'
+import { useInsumoAdmin } from '../hooks/useInsumoAdmin'
 import CategoryPanel from './CategoryPanel'
 import ProductPanel from './ProductPanel'
 import CategoryFormModal from './CategoryFormModal'
@@ -39,6 +40,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
   const {
     categories,
     items,
+    compositionByItem,
     loading,
     error,
     createCategory,
@@ -47,8 +49,14 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
     createProduct,
     updateProduct,
     deleteProduct,
+    setProductComposition,
     uploadImage,
   } = useMenuAdmin()
+
+  // Insumos entram aqui só para alimentar os seletores de composição
+  // (ProductFormModal) e de vínculo de misturas (ModifierOptionFormModal) —
+  // o cadastro em si mora na aba Estoque (EstoqueManager).
+  const { insumos } = useInsumoAdmin()
 
   const {
     users,
@@ -319,12 +327,15 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
           defaultCategoryId={selectedCategoryId}
           modifierGroups={groups}
           linkedModifierIds={productForm === 'new' ? [] : (linksByItem[productForm.id] ?? [])}
+          insumos={insumos}
+          composition={productForm === 'new' ? [] : (compositionByItem[productForm.id] ?? [])}
           accessToken={accessToken}
           onClose={() => setProductForm(null)}
-          onSave={async (input, modifierIds) => {
+          onSave={async (input, modifierIds, composition) => {
             const id = productForm === 'new' ? (await createProduct(input)).id : productForm.id
             if (productForm !== 'new') await updateProduct(productForm.id, input)
             await setProductModifiers(id, modifierIds)
+            await setProductComposition(id, composition)
           }}
           onUploadImage={uploadImage}
         />
@@ -370,6 +381,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
           option={modifierOptionForm === 'new' ? null : modifierOptionForm}
           groups={groups}
           defaultGroupId={selectedGroupId}
+          insumos={insumos}
           accessToken={accessToken}
           onClose={() => setModifierOptionForm(null)}
           onSave={async (input) => {

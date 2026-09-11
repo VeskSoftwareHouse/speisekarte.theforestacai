@@ -78,6 +78,10 @@ export interface ModifierOption {
   foto_url: string | null
   /** Traduções manuais do nome por idioma (chaves: fr, it, en, pt, es). Alemão vem de `nome`. */
   nome_i18n: Record<string, string>
+  /** Insumo consumido quando esta opção é escolhida. null = fora da baixa automática de estoque. */
+  insumo_id: string | null
+  /** Quanto desse insumo é consumido por unidade do item, na unidade do próprio insumo (ver Insumo.unidade). null quando `insumo_id` é null. */
+  quantidade_padrao: number | null
 }
 
 export interface MenuItemModifier {
@@ -123,6 +127,10 @@ export interface Order {
   pago_em: string | null
   /** Instante em que o pedido foi entregue. Com `pago_em`, dá o tempo de preparo. */
   entregue_em: string | null
+  /** Se os insumos deste pedido já foram baixados do estoque (ver módulo de Fechamento). Não é um status da cozinha. */
+  estoque_baixado: boolean
+  /** Instante do fechamento. null enquanto `estoque_baixado` for false. */
+  baixado_em: string | null
 }
 
 /**
@@ -171,4 +179,160 @@ export interface ModifierGroup extends Modifier {
 /** Pedido "achatado" com itens, usado no App da Equipe */
 export interface OrderWithItems extends Order {
   items: OrderItem[]
+}
+
+// ---------------------------------------------------------------------
+// Gestão de estoque — só o Painel da Equipe usa isto (nada aqui é lido
+// pelo totem/cardápio público).
+// ---------------------------------------------------------------------
+
+export type Unidade = 'kg' | 'g' | 'l' | 'ml' | 'unidade'
+
+export interface Fornecedor {
+  id: string
+  nome: string
+  contato: string | null
+  telefone: string | null
+  email: string | null
+  observacoes: string | null
+  /** Desativado em vez de excluído: preserva compras já registradas com este fornecedor. */
+  ativo: boolean
+  criado_em: string
+}
+
+export interface Insumo {
+  id: string
+  nome: string
+  unidade: Unidade
+  /** Abaixo deste saldo, o insumo aparece como "saldo baixo" no dashboard de estoque. null = sem alerta. */
+  estoque_minimo: number | null
+  /** Desativado em vez de excluído: preserva compras/movimentações/perdas já registradas com este insumo. */
+  ativo: boolean
+  ordem: number
+  criado_em: string
+}
+
+/** Linha da composição/receita fixa de um produto (ex: Açaí 500ml = 400g de açaí + 1 copo + 1 colher). */
+export interface MenuItemInsumo {
+  menu_item_id: string
+  insumo_id: string
+  quantidade: number
+}
+
+export type PedidoCompraStatus = 'rascunho' | 'aguardando_recebimento' | 'recebido' | 'cancelado'
+
+export interface PedidoCompra {
+  id: string
+  fornecedor_id: string
+  status: PedidoCompraStatus
+  observacoes: string | null
+  criado_em: string
+  recebido_em: string | null
+}
+
+export interface PedidoCompraItem {
+  id: string
+  pedido_compra_id: string
+  insumo_id: string
+  quantidade: number
+  valor_unitario: number | null
+}
+
+export interface PedidoCompraWithItens extends PedidoCompra {
+  itens: PedidoCompraItem[]
+}
+
+export type MovimentacaoTipo =
+  | 'entrada_compra'
+  | 'entrada_manual'
+  | 'entrada_ajuste_inventario'
+  | 'saida_manual'
+  | 'saida_ajuste_inventario'
+  | 'saida_venda'
+  | 'saida_perda'
+
+/** Uma linha da trilha de estoque — imutável depois de gravada (ver RLS em schema.sql). */
+export interface MovimentacaoEstoque {
+  id: string
+  insumo_id: string
+  /** Assinada: positiva numa entrada, negativa numa saída — a soma dá o saldo (ver view `insumo_saldos`). */
+  quantidade: number
+  tipo: MovimentacaoTipo
+  /** O que gerou o movimento (referência solta, não FK): 'pedido_compra' | 'order' | 'inventario' | 'perda' | null (lançamento manual). */
+  origem_tipo: string | null
+  origem_id: string | null
+  observacoes: string | null
+  criado_em: string
+  criado_por: string | null
+}
+
+export const MOVIMENTACAO_TIPO_LABEL: Record<MovimentacaoTipo, string> = {
+  entrada_compra: 'Compra recebida',
+  entrada_manual: 'Entrada manual',
+  entrada_ajuste_inventario: 'Ajuste de inventário (entrada)',
+  saida_manual: 'Saída manual',
+  saida_ajuste_inventario: 'Ajuste de inventário (saída)',
+  saida_venda: 'Baixa por venda',
+  saida_perda: 'Perda',
+}
+
+export type MotivoPerda =
+  | 'desperdicio'
+  | 'perda'
+  | 'produto_danificado'
+  | 'produto_vencido'
+  | 'erro_operacional'
+  | 'falta_de_controle'
+  | 'outros'
+
+export const MOTIVO_PERDA_LABEL: Record<MotivoPerda, string> = {
+  desperdicio: 'Desperdício',
+  perda: 'Perda',
+  produto_danificado: 'Produto danificado',
+  produto_vencido: 'Produto vencido',
+  erro_operacional: 'Erro operacional',
+  falta_de_controle: 'Falta de controle',
+  outros: 'Outros',
+}
+
+/** Uma sessão de contagem física: nasce e termina no mesmo lançamento (sem rascunho). */
+export interface Inventario {
+  id: string
+  observacoes: string | null
+  criado_em: string
+  finalizado_em: string | null
+  criado_por: string | null
+}
+
+export interface InventarioItem {
+  id: string
+  inventario_id: string
+  insumo_id: string
+  /** Saldo no instante da contagem — congelado, não recalculado depois. */
+  saldo_sistema: number
+  saldo_contado: number
+  /** Só preenchido quando saldo_contado < saldo_sistema (faltou estoque). */
+  motivo: MotivoPerda | null
+}
+
+export interface InventarioWithItens extends Inventario {
+  itens: InventarioItem[]
+}
+
+/**
+ * Uma perda registrada. Quando `origem_tipo` é 'inventario', é só
+ * categorização de uma diferença já ajustada no estoque; quando é
+ * 'manual', ela mesma dispara a movimentação que tira o insumo do saldo
+ * (ver useEstoquePerdas.lancarPerdaManual).
+ */
+export interface Perda {
+  id: string
+  insumo_id: string
+  quantidade: number
+  motivo: MotivoPerda
+  observacoes: string | null
+  origem_tipo: 'manual' | 'inventario'
+  origem_id: string | null
+  criado_em: string
+  criado_por: string | null
 }

@@ -19,6 +19,10 @@ export interface ModifierOptionInput {
   preco_adicional: number
   ordem: number
   foto_url: string | null
+  /** Insumo consumido quando esta opção é escolhida. null = fora da baixa automática de estoque. */
+  insumo_id: string | null
+  /** Quanto desse insumo é consumido por unidade do item, na unidade do próprio insumo. null quando `insumo_id` é null. */
+  quantidade_padrao: number | null
 }
 
 export function useModifierAdmin() {
