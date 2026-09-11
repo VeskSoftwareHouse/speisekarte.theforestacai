@@ -36,7 +36,7 @@ Hoje é ${hoje} (AAAA-MM-DD). Quando a pergunta mencionar um dia específico (ex
 
 Responda em texto simples, sem markdown: nunca use **negrito**, *itálico*, listas com "-"/"*" nem títulos com "#". Para listar itens (ex: produtos mais vendidos), use uma linha por item com números normais ("1. Açaí 300ml — 67 unidades"), sem nenhum asterisco.
 
-Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números de vendas, faturamento ou estoque — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Se a pergunta não tiver nada a ver com vendas ou estoque desta loja, diga que só sabe responder sobre isso. Você ainda não sabe cadastrar nem editar nada — só consultar.`
+Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números de vendas, faturamento, estoque, cardápio ou pedidos — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a vendas/relatórios (consultar_vendas), estoque (consultar_estoque), cardápio cadastrado (consultar_cardapio) e o estado atual dos pedidos na cozinha/caixa (consultar_pedidos_atuais). Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso. Você ainda não sabe cadastrar nem editar nada — só consultar.`
 }
 
 const RETRY_DELAYS_MS = [800, 2000]
@@ -122,10 +122,13 @@ function periodoParaIntervalo(args: { periodo?: string; data_inicio?: string; da
 interface OrderItemRow {
   nome_item: string
   quantidade: number
+  preco_unitario: number
+  menu_item_id: string | null
 }
 interface OrderRow {
   valor_pago: number | null
   gorjeta: number | null
+  forma_pagamento: string | null
   order_items: OrderItemRow[] | null
 }
 
@@ -136,7 +139,7 @@ async function consultarVendas(
   const { inicio, fim } = periodoParaIntervalo(args)
   const { data, error } = await supabase
     .from('orders')
-    .select('valor_pago, gorjeta, order_items(nome_item, quantidade)')
+    .select('valor_pago, gorjeta, forma_pagamento, order_items(nome_item, quantidade, preco_unitario, menu_item_id)')
     .in('status', PAID_STATUSES)
     .gte('criado_em', inicio.toISOString())
     .lte('criado_em', fim.toISOString())
@@ -147,9 +150,36 @@ async function consultarVendas(
   const gorjetas = pedidos.reduce((soma, p) => soma + (p.gorjeta ?? 0), 0)
 
   const porProduto = new Map<string, number>()
+  const porFormaPagamento = new Map<string, number>()
   for (const pedido of pedidos) {
+    const forma = pedido.forma_pagamento ?? 'Não informado'
+    porFormaPagamento.set(forma, (porFormaPagamento.get(forma) ?? 0) + (pedido.valor_pago ?? 0))
     for (const item of pedido.order_items ?? []) {
       porProduto.set(item.nome_item, (porProduto.get(item.nome_item) ?? 0) + item.quantidade)
+    }
+  }
+
+  // Faturamento por categoria: precisa de mais uma volta pra descobrir a
+  // categoria de cada menu_item_id — só dispara se houve venda no período.
+  const menuItemIds = [
+    ...new Set(pedidos.flatMap((p) => (p.order_items ?? []).map((i) => i.menu_item_id).filter((id): id is string => !!id))),
+  ]
+  const porCategoria = new Map<string, number>()
+  if (menuItemIds.length > 0) {
+    const { data: itemsData } = await supabase.from('menu_items').select('id, categoria_id').in('id', menuItemIds)
+    const categoriaIds = [...new Set((itemsData ?? []).map((i: { categoria_id: string }) => i.categoria_id))]
+    const { data: catsData } = await supabase.from('categories').select('id, nome').in('id', categoriaIds)
+    const nomeCategoriaPorItemId = new Map<string, string>()
+    const nomeCategoriaPorId = new Map((catsData ?? []).map((c: { id: string; nome: string }) => [c.id, c.nome]))
+    for (const item of (itemsData ?? []) as { id: string; categoria_id: string }[]) {
+      nomeCategoriaPorItemId.set(item.id, nomeCategoriaPorId.get(item.categoria_id) ?? 'Sem categoria')
+    }
+    for (const pedido of pedidos) {
+      for (const item of pedido.order_items ?? []) {
+        if (!item.menu_item_id) continue
+        const categoria = nomeCategoriaPorItemId.get(item.menu_item_id) ?? 'Sem categoria'
+        porCategoria.set(categoria, (porCategoria.get(categoria) ?? 0) + item.preco_unitario * item.quantidade)
+      }
     }
   }
 
@@ -158,10 +188,90 @@ async function consultarVendas(
     pedidos: pedidos.length,
     faturamento_chf: Number(faturamento.toFixed(2)),
     gorjetas_chf: Number(gorjetas.toFixed(2)),
+    ticket_medio_chf: pedidos.length > 0 ? Number((faturamento / pedidos.length).toFixed(2)) : 0,
     produtos_vendidos: [...porProduto.entries()]
       .map(([nome, quantidade]) => ({ nome, quantidade }))
       .sort((a, b) => b.quantidade - a.quantidade),
+    faturamento_por_forma_pagamento: [...porFormaPagamento.entries()].map(([forma, chf]) => ({
+      forma,
+      faturamento_chf: Number(chf.toFixed(2)),
+    })),
+    faturamento_por_categoria: [...porCategoria.entries()]
+      .map(([categoria, chf]) => ({ categoria, faturamento_chf: Number(chf.toFixed(2)) }))
+      .sort((a, b) => b.faturamento_chf - a.faturamento_chf),
   }
+}
+
+async function consultarCardapio(supabase: SupabaseClient, args: { categoria?: string; apenas_disponiveis?: boolean }) {
+  const { data: categorias, error: catErr } = await supabase.from('categories').select('id, nome').order('ordem')
+  if (catErr) return { error: catErr.message }
+
+  let query = supabase.from('menu_items').select('nome, preco, disponivel, destaque, categoria_id').order('ordem')
+  if (args.apenas_disponiveis) query = query.eq('disponivel', true)
+  const { data: itens, error: itensErr } = await query
+  if (itensErr) return { error: itensErr.message }
+
+  const nomeCategoriaPorId = new Map((categorias ?? []).map((c: { id: string; nome: string }) => [c.id, c.nome]))
+  let produtos = (itens ?? []).map((i: { nome: string; preco: number; disponivel: boolean; destaque: boolean; categoria_id: string }) => ({
+    nome: i.nome,
+    categoria: nomeCategoriaPorId.get(i.categoria_id) ?? 'Sem categoria',
+    preco_chf: i.preco,
+    disponivel: i.disponivel,
+    destaque: i.destaque,
+  }))
+  if (args.categoria) {
+    const termo = args.categoria.toLowerCase()
+    produtos = produtos.filter((p) => p.categoria.toLowerCase().includes(termo))
+  }
+
+  return {
+    total_produtos: produtos.length,
+    total_disponiveis: produtos.filter((p) => p.disponivel).length,
+    categorias: (categorias ?? []).map((c: { nome: string }) => c.nome),
+    produtos,
+  }
+}
+
+interface PedidoAtualRow {
+  status: string
+  nome_cliente: string | null
+  valor_pago: number | null
+  criado_em: string
+}
+
+async function consultarPedidosAtuais(supabase: SupabaseClient, args: { nome_cliente?: string }) {
+  const inicioHoje = new Date()
+  inicioHoje.setHours(0, 0, 0, 0)
+
+  const [hojeRes, dinheiroRes] = await Promise.all([
+    supabase
+      .from('orders')
+      .select('status, nome_cliente, valor_pago, criado_em')
+      .in('status', PAID_STATUSES)
+      .gte('criado_em', inicioHoje.toISOString()),
+    supabase.from('orders').select('status, nome_cliente, valor_pago, criado_em').eq('status', 'aguardando_dinheiro'),
+  ])
+  if (hojeRes.error) return { error: hojeRes.error.message }
+  if (dinheiroRes.error) return { error: dinheiroRes.error.message }
+
+  const hoje = (hojeRes.data ?? []) as PedidoAtualRow[]
+  const contagemPorStatus: Record<string, number> = {}
+  for (const p of hoje) contagemPorStatus[p.status] = (contagemPorStatus[p.status] ?? 0) + 1
+
+  const resultado: Record<string, unknown> = {
+    pedidos_hoje_por_status: contagemPorStatus,
+    aguardando_confirmacao_dinheiro: (dinheiroRes.data ?? []).length,
+  }
+
+  if (args.nome_cliente) {
+    const termo = args.nome_cliente.toLowerCase()
+    const todos = [...hoje, ...((dinheiroRes.data ?? []) as PedidoAtualRow[])]
+    resultado.pedidos_encontrados = todos
+      .filter((p) => p.nome_cliente?.toLowerCase().includes(termo))
+      .map((p) => ({ nome_cliente: p.nome_cliente, status: p.status, valor_chf: p.valor_pago, criado_em: p.criado_em }))
+  }
+
+  return resultado
 }
 
 interface InsumoRow {
@@ -207,7 +317,7 @@ const TOOLS = [
       {
         name: 'consultar_vendas',
         description:
-          'Consulta pedidos pagos, faturamento e quantidade vendida por produto num período. Para um dia ou intervalo específico (ex: "domingo passado"), use data_inicio/data_fim em vez de periodo.',
+          'Consulta pedidos pagos num período: faturamento, gorjetas, ticket médio, produtos mais vendidos, faturamento por forma de pagamento e por categoria do cardápio. Para um dia ou intervalo específico (ex: "domingo passado"), use data_inicio/data_fim em vez de periodo.',
         parametersJsonSchema: {
           type: 'object',
           properties: {
@@ -236,6 +346,32 @@ const TOOLS = [
             insumo: {
               type: 'string',
               description: 'Nome (ou parte do nome) de um insumo específico. Deixe vazio para listar todos.',
+            },
+          },
+        },
+      },
+      {
+        name: 'consultar_cardapio',
+        description:
+          'Consulta o cardápio cadastrado: produtos, categorias, preços, disponibilidade e destaque. Não tem relação com vendas — é o catálogo, vendido ou não.',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            categoria: { type: 'string', description: 'Nome (ou parte do nome) de uma categoria específica.' },
+            apenas_disponiveis: { type: 'boolean', description: 'Se true, lista só os produtos disponíveis no totem.' },
+          },
+        },
+      },
+      {
+        name: 'consultar_pedidos_atuais',
+        description:
+          'Consulta o estado operacional agora: quantos pedidos estão em cada etapa da cozinha hoje (recebido/em preparo/pronto/entregue) e quantos aguardam confirmação de pagamento em dinheiro. Também busca um pedido específico pelo nome do cliente.',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            nome_cliente: {
+              type: 'string',
+              description: 'Nome (ou parte do nome) de um cliente, para achar o(s) pedido(s) dele.',
             },
           },
         },
@@ -305,6 +441,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           let resultado: unknown
           if (call.name === 'consultar_vendas') resultado = await consultarVendas(supabase, args)
           else if (call.name === 'consultar_estoque') resultado = await consultarEstoque(supabase, args)
+          else if (call.name === 'consultar_cardapio') resultado = await consultarCardapio(supabase, args)
+          else if (call.name === 'consultar_pedidos_atuais') resultado = await consultarPedidosAtuais(supabase, args)
           else resultado = { error: `Ferramenta desconhecida: ${call.name}` }
           return createPartFromFunctionResponse(
             call.id ?? call.name ?? '',
