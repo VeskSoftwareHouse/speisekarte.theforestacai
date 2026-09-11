@@ -1832,6 +1832,7 @@ body {
      assistente") pode precisar de duas linhas, e altura fixa + o
      overflow:hidden do painel cortavam o mascote embaixo do título. */
   min-height: 68px;
+  height: 68px;
   flex-shrink: 0;
 }
 .assistant-panel__header h2 {
