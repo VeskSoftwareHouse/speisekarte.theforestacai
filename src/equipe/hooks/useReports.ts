@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@shared/supabaseClient'
-import type { OrderItem, ReportOrder } from '@shared/types'
+import type { Imposto, OrderItem, ReportOrder } from '@shared/types'
 import { addMonths, endOfDay, startOfMonth } from '../dateUtils'
+import { fetchReferenceMaps, type ReferenceMaps } from '../estoqueConsumo'
+import { custoMedioPorInsumo, type ItemCompraRecebida } from '../lucroCalc'
 import type { Period, ReportCategory, ReportMenuItem, TrendOrder } from '../reportMetrics'
 import { PAID_STATUSES, previousPeriod } from '../reportMetrics'
 import { fetchPaged } from './fetchPaged'
@@ -18,10 +20,23 @@ export interface ReportData {
   trendOrders: TrendOrder[]
   menuItems: ReportMenuItem[]
   categories: ReportCategory[]
+  /** Composição dos produtos e vínculo dos adicionais usados no período — a
+   * configuração ATUAL, não a de quando cada pedido foi feito (mesmo espírito
+   * do Fechamento). Alimenta a margem por produto. */
+  maps: ReferenceMaps
+  /** Custo médio por insumo, calculado das compras já recebidas com o
+   * imposto de hoje aplicado. Um insumo nunca comprado não aparece aqui. */
+  custoPorInsumo: Map<string, number>
   loading: boolean
   error: string | null
   /** Recarrega tudo. Os relatórios não escutam o Realtime: quem olha um mês fechado não quer a tela se mexendo sozinha. */
   reload: () => void
+}
+
+const EMPTY_MAPS: ReferenceMaps = {
+  composicaoPorItem: new Map(),
+  menuItemNomeById: new Map(),
+  optionById: new Map(),
 }
 
 interface OrderRow extends Omit<ReportOrder, 'items'> {
@@ -44,6 +59,8 @@ export function useReports(period: Period): ReportData {
   const [trendOrders, setTrendOrders] = useState<TrendOrder[]>([])
   const [menuItems, setMenuItems] = useState<ReportMenuItem[]>([])
   const [categories, setCategories] = useState<ReportCategory[]>([])
+  const [maps, setMaps] = useState<ReferenceMaps>(EMPTY_MAPS)
+  const [custoPorInsumo, setCustoPorInsumo] = useState<Map<string, number>>(new Map())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reloadToken, setReloadToken] = useState(0)
@@ -81,7 +98,7 @@ export function useReports(period: Period): ReportData {
         .range(from, to)
 
     try {
-      const [orderRows, previousRows, trendRows, itemRows, categoryRows] = await Promise.all([
+      const [orderRows, previousRows, trendRows, itemRows, categoryRows, impostoRows, comprasRows] = await Promise.all([
         fetchPaged<OrderRow>((from, to) => withItems(from, to, startIso, endIso)),
         // O período anterior também vem com itens: um pedido sem `valor_pago`
         // gravado só pode ser somado pelo que tem dentro, e sem isso ele
@@ -107,6 +124,16 @@ export function useReports(period: Period): ReportData {
         fetchPaged<ReportCategory>((from, to) =>
           supabase.from('categories').select('id, nome').order('ordem').range(from, to),
         ),
+        fetchPaged<Imposto>((from, to) => supabase.from('impostos').select('*').range(from, to)),
+        // Custo por insumo vem só das compras JÁ RECEBIDAS — um pedido de
+        // compra ainda em rascunho não é um preço pago de verdade.
+        fetchPaged<{ pedido_compra_itens: ItemCompraRecebida[] | null }>((from, to) =>
+          supabase
+            .from('pedidos_compra')
+            .select('pedido_compra_itens(insumo_id, quantidade, valor_unitario)')
+            .eq('status', 'recebido')
+            .range(from, to),
+        ),
       ])
 
       if (generation.current !== mine) return
@@ -114,11 +141,20 @@ export function useReports(period: Period): ReportData {
       const assemble = (rows: OrderRow[]): ReportOrder[] =>
         rows.map(({ order_items, ...order }) => ({ ...order, items: order_items ?? [] }))
 
-      setOrders(assemble(orderRows))
+      const assembledOrders = assemble(orderRows)
+      // Composição e vínculo de adicionais são a configuração ATUAL, aplicada
+      // a todo o período — mesmo espírito do Fechamento (nunca uma foto do
+      // que era no momento da venda).
+      const referenceMaps = await fetchReferenceMaps(supabase, assembledOrders)
+      const itensCompraRecebida = comprasRows.flatMap((p) => p.pedido_compra_itens ?? [])
+
+      setOrders(assembledOrders)
       setPreviousOrders(assemble(previousRows))
       setTrendOrders(trendRows)
       setMenuItems(itemRows)
       setCategories(categoryRows)
+      setMaps(referenceMaps)
+      setCustoPorInsumo(custoMedioPorInsumo(itensCompraRecebida, impostoRows))
       setError(null)
     } catch (err) {
       if (generation.current !== mine) return
@@ -134,5 +170,5 @@ export function useReports(period: Period): ReportData {
 
   const reload = useCallback(() => setReloadToken((n) => n + 1), [])
 
-  return { orders, previousOrders, trendOrders, menuItems, categories, loading, error, reload }
+  return { orders, previousOrders, trendOrders, menuItems, categories, maps, custoPorInsumo, loading, error, reload }
 }

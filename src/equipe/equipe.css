@@ -2277,6 +2277,12 @@ body {
   padding: var(--space-4) var(--space-5);
   background: var(--color-surface);
 }
+/* Faixa menor, dentro de um Block em vez de no topo da seção — usada pelo
+   par lucro bruto/cobertura de custo da margem por produto. */
+.stat-strip--pair {
+  grid-template-columns: repeat(2, 1fr);
+  margin-bottom: var(--space-4);
+}
 @media (max-width: 1000px) {
   .stat-strip {
     grid-template-columns: repeat(2, 1fr);
@@ -2416,6 +2422,63 @@ body {
 /* Na lista dos que menos saem a barra curta é a notícia, não a conquista. */
 .report-bar__fill--low {
   background: var(--color-gold);
+}
+
+/* --- Margem por produto --- */
+.report-margin-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.report-margin-row__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: 2px;
+}
+.report-margin-row__label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-ink);
+}
+.report-margin-row__badge {
+  flex: 0 0 auto;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.report-margin-row__badge--positive {
+  background: #e6f4ea;
+  color: #1e6b39;
+}
+.report-margin-row__badge--negative {
+  background: #fbe9e8;
+  color: #a81f24;
+}
+.report-margin-row__badge--unknown {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+}
+.report-margin-row__figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.report-margin-row__figures b {
+  color: var(--color-ink);
 }
 
 /* --- Mapa de calor (hora x dia da semana) --- */

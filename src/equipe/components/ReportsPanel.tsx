@@ -3,6 +3,7 @@ import { Download, Printer, RefreshCw } from 'lucide-react'
 import { formatCHF } from '@shared/format'
 import { addDays, dateKeyToDate, toDateKey } from '../dateUtils'
 import { TREND_MONTHS, useReports } from '../hooks/useReports'
+import { buildMarginReport } from '../lucroCalc'
 import {
   buildReport,
   formatDuration,
@@ -17,6 +18,7 @@ import {
 } from '../reportMetrics'
 import { buildItemsCsv, buildOrdersCsv, buildSummaryCsv, downloadCsv, reportFilename } from '../reportExport'
 import ReportBarList from './ReportBarList'
+import ReportMarginList from './ReportMarginList'
 import ReportHeatmap from './ReportHeatmap'
 import ReportTrendChart from './ReportTrendChart'
 import { TooltipProvider, useTooltipBody } from './ReportTooltip'
@@ -56,7 +58,8 @@ function ReportsBody() {
     [preset, customStart, customEnd],
   )
 
-  const { orders, previousOrders, trendOrders, menuItems, categories, loading, error, reload } = useReports(period)
+  const { orders, previousOrders, trendOrders, menuItems, categories, maps, custoPorInsumo, loading, error, reload } =
+    useReports(period)
 
   const report = useMemo(
     () =>
@@ -71,6 +74,8 @@ function ReportsBody() {
       }),
     [period, orders, previousOrders, trendOrders, menuItems, categories],
   )
+
+  const margin = useMemo(() => buildMarginReport(orders, maps, custoPorInsumo), [orders, maps, custoPorInsumo])
 
   const { sales, previousSales, entrega, heatmap } = report
 
@@ -260,6 +265,39 @@ function ReportsBody() {
                 />
               </Block>
             </div>
+
+            <Block
+              title="Margem por produto"
+              hint="Receita menos o custo dos insumos, pela composição e pelos preços de compra atuais"
+            >
+              <div className="stat-strip stat-strip--pair">
+                <Stat
+                  label="Lucro bruto do período"
+                  value={formatCHF(margin.resumo.lucroBruto)}
+                  hint="Só o custo dos ingredientes — aluguel, taxas e outras despesas fixas não entram aqui"
+                  detail={[
+                    `${formatCHF(margin.resumo.receitaLiquida)} de receita sem gorjeta`,
+                    `${formatCHF(margin.resumo.custoTotal)} de custo de insumos, na parte com custo conhecido`,
+                    margin.resumo.produtosSemCusto.length > 0 &&
+                      `Fora da conta: ${margin.resumo.produtosSemCusto.join(', ')} (sem custo cadastrado ainda)`,
+                  ]}
+                />
+                <Stat
+                  label="Cobertura de custo"
+                  value={formatPercent(margin.resumo.coberturaCusto, 0)}
+                  hint="Fração da receita cujo custo é conhecido por completo"
+                  detail={
+                    margin.resumo.produtosSemCusto.length > 0
+                      ? [
+                          'Falta custo cadastrado (composição ou compra de algum insumo) em:',
+                          margin.resumo.produtosSemCusto.join(', '),
+                        ]
+                      : ['Todo produto vendido no período tem composição e custo de insumo cadastrados.']
+                  }
+                />
+              </div>
+              <ReportMarginList rows={margin.linhas} limit={TOP_ITENS} empty="Sem vendas no período." />
+            </Block>
 
             <div className="reports__pair">
               <Block title="Adicionais mais escolhidos" hint="Quantas vezes cada um entrou num pedido">
