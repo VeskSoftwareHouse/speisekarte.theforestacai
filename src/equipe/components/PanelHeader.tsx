@@ -1,6 +1,6 @@
-import { ChartColumn, ClipboardList, LogOut, MessageCircleMore, Package, UtensilsCrossed, type LucideIcon } from 'lucide-react'
+import { ChartColumn, ClipboardList, LogOut, Package, UtensilsCrossed, type LucideIcon } from 'lucide-react'
 
-export type PanelTab = 'pedidos' | 'cardapio' | 'estoque' | 'relatorios' | 'assistente'
+export type PanelTab = 'pedidos' | 'cardapio' | 'estoque' | 'relatorios'
 
 /**
  * As três telas do painel, lado a lado no topo. São destinos, não interruptores:
@@ -13,7 +13,6 @@ export const PANEL_TABS: { id: PanelTab; label: string; icon: LucideIcon }[] = [
   { id: 'cardapio', label: 'Cardápio', icon: UtensilsCrossed },
   { id: 'estoque', label: 'Estoque', icon: Package },
   { id: 'relatorios', label: 'Relatórios', icon: ChartColumn },
-  { id: 'assistente', label: 'Assistente', icon: MessageCircleMore },
 ]
 
 interface Props {

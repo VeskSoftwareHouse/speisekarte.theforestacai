@@ -1,19 +1,161 @@
-import { MessageCircleMore } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { History, MessageCircleMore, Plus, Send, Trash2, X } from 'lucide-react'
+import { useAssistant, type ConversaResumo } from '../hooks/useAssistant'
 
 interface Props {
-  onOpen: () => void
+  accessToken: string
 }
 
 /**
- * Atalho flutuante pra assistente, visível em qualquer aba do painel
- * (montado uma vez em App.tsx, fora dos blocos de aba). A conversa em si
- * mora na aba "Assistente" — clicar aqui só leva até lá, evitando duas
- * telas de chat independentes brigando pelo mesmo histórico.
+ * Chat flutuante da assistente de IA, disponível em qualquer aba do painel
+ * (montado uma vez em App.tsx, fora dos blocos de aba). Sem overlay que
+ * escurece a tela — diferente de um modal de confirmação, um chat deve
+ * deixar a equipe ver o resto da tela enquanto conversa. "Nova conversa"
+ * não apaga nada — só troca pra uma em branco; a lista de conversas
+ * antigas é como se volta pras anteriores.
  */
-export default function AssistantChat({ onOpen }: Props) {
+export default function AssistantChat({ accessToken }: Props) {
+  const [open, setOpen] = useState(false)
+  const [mostrarHistorico, setMostrarHistorico] = useState(false)
+  const [conversas, setConversas] = useState<ConversaResumo[]>([])
+  const [input, setInput] = useState('')
+  const {
+    messages,
+    sending,
+    error,
+    loadingHistorico,
+    sendMessage,
+    startNewConversation,
+    listarConversas,
+    abrirConversa,
+    excluirConversa,
+  } = useAssistant(accessToken)
+  const listRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
+  }, [messages, sending])
+
+  useEffect(() => {
+    if (open && mostrarHistorico) listarConversas().then(setConversas)
+  }, [open, mostrarHistorico, listarConversas])
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!input.trim()) return
+    sendMessage(input)
+    setInput('')
+  }
+
+  async function handleAbrirConversa(id: string) {
+    await abrirConversa(id)
+    setMostrarHistorico(false)
+  }
+
+  async function handleExcluirConversa(e: React.MouseEvent, id: string) {
+    e.stopPropagation()
+    await excluirConversa(id)
+    setConversas((prev) => prev.filter((c) => c.id !== id))
+  }
+
   return (
-    <button className="assistant-fab" onClick={onOpen} aria-label="Abrir assistente">
-      <MessageCircleMore size={22} strokeWidth={2} aria-hidden />
-    </button>
+    <>
+      <button
+        className={`assistant-fab ${open ? 'assistant-fab--open' : ''}`}
+        onClick={() => setOpen((v) => !v)}
+        aria-label={open ? 'Fechar assistente' : 'Abrir assistente'}
+      >
+        {open ? <X size={22} strokeWidth={2} aria-hidden /> : <MessageCircleMore size={22} strokeWidth={2} aria-hidden />}
+      </button>
+
+      {open && (
+        <div className="assistant-panel">
+          <header className="assistant-panel__header">
+            <h2>Assistente</h2>
+            <div className="assistant-panel__header-actions">
+              <button
+                type="button"
+                title="Conversas antigas"
+                aria-label="Conversas antigas"
+                className={mostrarHistorico ? 'assistant-panel__icon-btn assistant-panel__icon-btn--active' : 'assistant-panel__icon-btn'}
+                onClick={() => setMostrarHistorico((v) => !v)}
+              >
+                <History size={16} strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                title="Nova conversa"
+                aria-label="Nova conversa"
+                className="assistant-panel__icon-btn"
+                onClick={() => {
+                  startNewConversation()
+                  setMostrarHistorico(false)
+                }}
+              >
+                <Plus size={16} strokeWidth={2} />
+              </button>
+            </div>
+          </header>
+
+          {mostrarHistorico ? (
+            <div className="assistant-panel__historico">
+              {conversas.length === 0 && <p className="assistant-panel__hint">Nenhuma conversa salva ainda.</p>}
+              {conversas.map((c) => (
+                <button key={c.id} className="assistant-historico-item" onClick={() => handleAbrirConversa(c.id)}>
+                  <span className="assistant-historico-item__texto">
+                    <span className="assistant-historico-item__preview">{c.preview || '(sem mensagens)'}</span>
+                    <span className="assistant-historico-item__data">
+                      {new Date(c.atualizadoEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </span>
+                  <Trash2
+                    size={14}
+                    strokeWidth={2}
+                    className="assistant-historico-item__excluir"
+                    onClick={(e) => handleExcluirConversa(e, c.id)}
+                  />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <>
+              <div className="assistant-panel__messages" ref={listRef}>
+                {loadingHistorico && <p className="equipe-app__status">Carregando…</p>}
+                {!loadingHistorico && messages.length === 0 && (
+                  <p className="assistant-panel__hint">
+                    Pergunte sobre vendas, faturamento ou estoque — ex: &ldquo;quanto vendemos hoje?&rdquo; ou &ldquo;quanto
+                    temos de açaí?&rdquo;.
+                  </p>
+                )}
+                {messages.map((m, i) => (
+                  <div key={i} className={`assistant-bubble assistant-bubble--${m.role}`}>
+                    {m.text}
+                  </div>
+                ))}
+                {sending && <div className="assistant-bubble assistant-bubble--assistant assistant-bubble--typing">Digitando…</div>}
+                {error && <p className="admin-form__error">{error}</p>}
+              </div>
+
+              <form className="assistant-panel__form" onSubmit={handleSubmit}>
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Pergunte alguma coisa…"
+                  disabled={sending || loadingHistorico}
+                />
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={sending || loadingHistorico || !input.trim()}
+                  aria-label="Enviar"
+                >
+                  <Send size={16} strokeWidth={2} />
+                </button>
+              </form>
+            </>
+          )}
+        </div>
+      )}
+    </>
   )
 }

@@ -1505,13 +1505,40 @@ const TOOLS = [
   },
 ]
 
-/** Sobrescreve a conversa salva do usuário com o histórico atual — chamada
- * depois de qualquer resposta bem-sucedida, pra próxima vez (aba nova,
- * recarregar a página) continuar de onde parou. */
-async function salvarConversa(supabase: SupabaseClient, usuarioId: string, contents: Content[]) {
-  await supabase
+/** Primeira mensagem do usuário na conversa, cortada — usado como rótulo na
+ * lista de conversas antigas. */
+function previewDaConversa(contents: Content[]): string {
+  for (const c of contents) {
+    if (c.role !== 'user') continue
+    const texto = c.parts?.find((p) => typeof p.text === 'string')?.text
+    if (texto) return texto.length > 60 ? `${texto.slice(0, 60)}…` : texto
+  }
+  return ''
+}
+
+/** Grava o histórico atual — chamada depois de qualquer resposta bem-sucedida.
+ * Com `conversaId`, atualiza essa conversa; sem ele, cria uma nova (primeira
+ * mensagem de uma conversa nova) e devolve o id gerado, pro cliente guardar. */
+async function salvarConversa(
+  supabase: SupabaseClient,
+  usuarioId: string,
+  contents: Content[],
+  conversaId: string | null,
+): Promise<string | null> {
+  if (conversaId) {
+    await supabase
+      .from('assistente_conversas')
+      .update({ contents, atualizado_em: new Date().toISOString() })
+      .eq('id', conversaId)
+      .eq('usuario_id', usuarioId)
+    return conversaId
+  }
+  const { data } = await supabase
     .from('assistente_conversas')
-    .upsert({ usuario_id: usuarioId, contents, atualizado_em: new Date().toISOString() })
+    .insert({ usuario_id: usuarioId, contents })
+    .select('id')
+    .single()
+  return data?.id ?? null
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -1529,24 +1556,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     auth: { autoRefreshToken: false, persistSession: false },
   })
 
-  // Carrega a conversa salva — usado quando a aba/o widget abre.
   if (req.method === 'GET') {
-    const { data, error } = await supabase
-      .from('assistente_conversas')
-      .select('contents')
-      .eq('usuario_id', caller.id)
-      .maybeSingle()
+    // Lista as conversas antigas do usuário (só o resumo, sem o histórico
+    // inteiro de cada uma) — usado pelo painel de "conversas antigas".
+    if (req.query.list !== undefined) {
+      const { data, error } = await supabase
+        .from('assistente_conversas')
+        .select('id, contents, criado_em, atualizado_em')
+        .eq('usuario_id', caller.id)
+        .order('atualizado_em', { ascending: false })
+        .limit(50)
+      if (error) {
+        res.status(500).json({ error: error.message })
+        return
+      }
+      const conversas = (data ?? []).map((c) => ({
+        id: c.id as string,
+        preview: previewDaConversa((c.contents ?? []) as Content[]),
+        atualizadoEm: c.atualizado_em as string,
+      }))
+      res.status(200).json({ conversas })
+      return
+    }
+
+    // Carrega uma conversa específica (clique numa conversa antiga) ou,
+    // sem id, a mais recente (usado quando o widget abre).
+    const id = typeof req.query.id === 'string' ? req.query.id : null
+    let query = supabase.from('assistente_conversas').select('id, contents').eq('usuario_id', caller.id)
+    query = id ? query.eq('id', id) : query.order('atualizado_em', { ascending: false }).limit(1)
+    const { data, error } = await query.maybeSingle()
     if (error) {
       res.status(500).json({ error: error.message })
       return
     }
-    res.status(200).json({ contents: data?.contents ?? [] })
+    res.status(200).json({ conversaId: data?.id ?? null, contents: data?.contents ?? [] })
     return
   }
 
-  // Apaga a conversa salva — "nova conversa".
+  // Apaga uma conversa antiga.
   if (req.method === 'DELETE') {
-    const { error } = await supabase.from('assistente_conversas').delete().eq('usuario_id', caller.id)
+    const id = typeof req.query.id === 'string' ? req.query.id : null
+    if (!id) {
+      res.status(400).json({ error: 'Id da conversa é obrigatório.' })
+      return
+    }
+    const { error } = await supabase.from('assistente_conversas').delete().eq('id', id).eq('usuario_id', caller.id)
     if (error) {
       res.status(500).json({ error: error.message })
       return
@@ -1562,6 +1616,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const message = typeof req.body?.message === 'string' ? req.body.message.trim() : ''
   const history = Array.isArray(req.body?.contents) ? (req.body.contents as Content[]) : []
+  const conversaId = typeof req.body?.conversaId === 'string' ? req.body.conversaId : null
   if (!message) {
     res.status(400).json({ error: 'Mensagem vazia.' })
     return
@@ -1583,8 +1638,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!calls || calls.length === 0) {
         const reply = stripMarkdown(response.text ?? 'Não consegui responder isso agora.')
         contents.push(createModelContent(reply))
-        await salvarConversa(supabase, caller.id, contents)
-        res.status(200).json({ reply, contents })
+        const idSalvo = await salvarConversa(supabase, caller.id, contents, conversaId)
+        res.status(200).json({ reply, contents, conversaId: idSalvo })
         return
       }
 
@@ -1636,10 +1691,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       contents.push({ role: 'user', parts: responseParts })
     }
 
-    await salvarConversa(supabase, caller.id, contents)
+    const idSalvo = await salvarConversa(supabase, caller.id, contents, conversaId)
     res.status(200).json({
       reply: 'Essa pergunta ficou grande demais pra eu responder agora — tenta ser mais específico?',
       contents,
+      conversaId: idSalvo,
     })
   } catch (err) {
     // O SDK propaga o corpo cru do erro da API do Gemini na mensagem (JSON

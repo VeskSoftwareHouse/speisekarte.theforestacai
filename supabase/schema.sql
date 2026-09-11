@@ -1086,20 +1086,45 @@ create policy "authenticated delete impostos" on impostos for delete using (auth
 -- lendo/escrevendo a própria linha caso algo um dia consulte direto.
 -- =====================================================================
 
+-- Uma linha por CONVERSA (não por usuário): o painel guarda o histórico de
+-- cada conversa separada, pra dar pra reabrir uma antiga sem perder a atual.
 create table if not exists assistente_conversas (
-  usuario_id    uuid primary key references auth.users(id) on delete cascade,
+  id            uuid primary key default gen_random_uuid(),
+  usuario_id    uuid not null references auth.users(id) on delete cascade,
   contents      jsonb not null default '[]'::jsonb,
+  criado_em     timestamptz not null default now(),
   atualizado_em timestamptz not null default now()
 );
 
+-- Migra quem já rodou a versão anterior (uma linha por usuário, sem `id`)
+-- pro novo formato, sem apagar o que já tiver salvo.
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'assistente_conversas' and column_name = 'id'
+  ) then
+    alter table assistente_conversas add column id uuid not null default gen_random_uuid();
+    alter table assistente_conversas add column criado_em timestamptz not null default now();
+    alter table assistente_conversas drop constraint if exists assistente_conversas_pkey;
+    alter table assistente_conversas add primary key (id);
+  end if;
+end $$;
+
+create index if not exists assistente_conversas_usuario_idx on assistente_conversas (usuario_id, atualizado_em desc);
+
 alter table assistente_conversas enable row level security;
 
-drop policy if exists "own conversa read"   on assistente_conversas;
-drop policy if exists "own conversa insert" on assistente_conversas;
-drop policy if exists "own conversa update" on assistente_conversas;
-drop policy if exists "own conversa delete" on assistente_conversas;
+drop policy if exists "own conversa read"    on assistente_conversas;
+drop policy if exists "own conversa insert"  on assistente_conversas;
+drop policy if exists "own conversa update"  on assistente_conversas;
+drop policy if exists "own conversa delete"  on assistente_conversas;
+drop policy if exists "own conversas read"   on assistente_conversas;
+drop policy if exists "own conversas insert" on assistente_conversas;
+drop policy if exists "own conversas update" on assistente_conversas;
+drop policy if exists "own conversas delete" on assistente_conversas;
 
-create policy "own conversa read"   on assistente_conversas for select using (auth.uid() = usuario_id);
-create policy "own conversa insert" on assistente_conversas for insert with check (auth.uid() = usuario_id);
-create policy "own conversa update" on assistente_conversas for update using (auth.uid() = usuario_id) with check (auth.uid() = usuario_id);
-create policy "own conversa delete" on assistente_conversas for delete using (auth.uid() = usuario_id);
+create policy "own conversas read"   on assistente_conversas for select using (auth.uid() = usuario_id);
+create policy "own conversas insert" on assistente_conversas for insert with check (auth.uid() = usuario_id);
+create policy "own conversas update" on assistente_conversas for update using (auth.uid() = usuario_id) with check (auth.uid() = usuario_id);
+create policy "own conversas delete" on assistente_conversas for delete using (auth.uid() = usuario_id);
