@@ -1752,11 +1752,28 @@ body {
   background: var(--color-primary-dark);
 }
 /* Mascote (o tucano da marca, animado) preenche o botão redondo — sem o
-   fundo roxo por trás, senão ele fica com cantos apagando o círculo. */
+   fundo roxo por trás, senão ele fica com cantos apagando o círculo.
+   Aro em camadas (branco fino + roxo) em vez de uma linha só, e um brilho
+   que respira devagar — convida a clicar sem ficar piscando feito alarme. */
 .assistant-fab:has(.assistant-fab__mascote) {
   background: var(--color-surface);
-  padding: 3px;
-  box-shadow: var(--shadow-glow-primary), 0 0 0 2px var(--color-primary);
+  padding: 4px;
+  animation: assistant-fab-breathe 3.2s ease-in-out infinite;
+}
+@keyframes assistant-fab-breathe {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.9),
+      0 0 0 4px var(--color-primary),
+      0 10px 24px rgba(108, 60, 230, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.9),
+      0 0 0 4px var(--color-primary),
+      0 14px 34px rgba(108, 60, 230, 0.55);
+  }
 }
 .assistant-fab__mascote {
   width: 100%;
@@ -1765,8 +1782,10 @@ body {
   /* `cover` preenche o círculo cortando as bordas do vídeo pra caber no
      quadrado — e é isso que cortava o bico. O vídeo já tem margem de sobra
      ao redor do tucano, então `contain` mostra ele inteiro sem precisar
-     encolher nada. */
+     encolher nada; um leve zoom (scale) aproveita parte dessa margem pra
+     não sobrar tanto vazio ao redor dele dentro do círculo. */
   object-fit: contain;
+  transform: scale(1.1);
   pointer-events: none;
 }
 .assistant-panel__brand {
