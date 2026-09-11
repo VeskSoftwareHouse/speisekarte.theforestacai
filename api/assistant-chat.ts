@@ -36,7 +36,9 @@ Hoje é ${hoje} (AAAA-MM-DD). Quando a pergunta mencionar um dia específico (ex
 
 Responda em texto simples, sem markdown: nunca use **negrito**, *itálico*, listas com "-"/"*" nem títulos com "#". Para listar itens (ex: produtos mais vendidos), use uma linha por item com números normais ("1. Açaí 300ml — 67 unidades"), sem nenhum asterisco.
 
-Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a todo o painel da equipe: vendas/relatórios (consultar_vendas), estado atual dos pedidos (consultar_pedidos_atuais), cardápio e adicionais (consultar_cardapio), saldo de estoque (consultar_estoque), histórico de movimentações de estoque (consultar_movimentacoes_estoque), pedidos de compra (consultar_compras), fornecedores (consultar_fornecedores), perdas (consultar_perdas), contagens de inventário (consultar_inventarios), impostos (consultar_impostos), e gorjetas/usuários da equipe (consultar_configuracoes). Se o resultado de uma ferramenta não trouxer o dado que a pergunta pediu, isso significa que a informação não está disponível nessa ferramenta — nunca conclua "zero" ou "nenhum" por conta própria a partir disso; diga que não tem acesso a esse dado específico. Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso. Você ainda não sabe cadastrar nem editar nada — só consultar.`
+Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a todo o painel da equipe: vendas/relatórios (consultar_vendas), estado atual dos pedidos (consultar_pedidos_atuais), cardápio e adicionais (consultar_cardapio), saldo de estoque (consultar_estoque), histórico de movimentações de estoque (consultar_movimentacoes_estoque), pedidos de compra (consultar_compras), fornecedores (consultar_fornecedores), perdas (consultar_perdas), contagens de inventário (consultar_inventarios), impostos (consultar_impostos), e gorjetas/usuários da equipe (consultar_configuracoes). Se o resultado de uma ferramenta não trouxer o dado que a pergunta pediu, isso significa que a informação não está disponível nessa ferramenta — nunca conclua "zero" ou "nenhum" por conta própria a partir disso; diga que não tem acesso a esse dado específico. Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso.
+
+CADASTRO (criar_categoria, criar_produto, criar_insumo, criar_grupo_adicional, criar_opcao_adicional): quando o usuário pedir pra cadastrar algo, faça perguntas UMA DE CADA VEZ, como numa conversa normal — nunca liste todos os campos de uma vez feito um formulário. Peça só o que for obrigatório; campos opcionais (disponível, destaque, descrição, estoque mínimo, preço adicional...) só pergunte se fizer sentido, senão use o padrão da própria ferramenta. Quando tiver o necessário, chame a ferramenta de criação SEM confirmado=true — ela devolve um resumo do que será criado. Mostre esse resumo pro usuário em português e pergunte se pode confirmar. SÓ chame a mesma ferramenta de novo com confirmado=true depois que o usuário disser explicitamente que sim na mensagem mais recente dele — nunca marque confirmado=true por conta própria, nem generalize uma confirmação anterior para uma criação nova. Se a ferramenta devolver "erro" (ex: categoria ou grupo não encontrado), explique o problema ao usuário e pergunte como prosseguir — não insista repetindo a mesma chamada.`
 }
 
 const RETRY_DELAYS_MS = [800, 2000]
@@ -561,6 +563,207 @@ async function consultarConfiguracoes(supabase: SupabaseClient) {
   }
 }
 
+// ---------------------------------------------------------------------
+// Cadastro (escrita) — toda ferramenta abaixo segue o mesmo protocolo de
+// duas chamadas: sem `confirmado`, só valida e devolve um resumo (nada é
+// gravado); com `confirmado: true`, grava de verdade. O prompt de sistema
+// instrui o modelo a nunca pular a primeira chamada nem inventar a
+// confirmação — mas a garantia real está aqui: sem `confirmado === true`
+// literal, a função nunca escreve no banco, não importa o que o modelo
+// "ache" que o usuário disse.
+// ---------------------------------------------------------------------
+
+async function proximaOrdem(supabase: SupabaseClient, tabela: string, filtro?: [string, string]): Promise<number> {
+  let query = supabase.from(tabela).select('ordem').order('ordem', { ascending: false }).limit(1)
+  if (filtro) query = query.eq(filtro[0], filtro[1])
+  const { data } = await query
+  const maior = (data ?? [])[0] as { ordem: number } | undefined
+  return (maior?.ordem ?? -1) + 1
+}
+
+async function criarCategoria(supabase: SupabaseClient, args: { nome?: string; confirmado?: boolean }) {
+  if (!args.nome?.trim()) return { erro: 'Nome da categoria é obrigatório.' }
+  const nome = args.nome.trim()
+
+  if (!args.confirmado) {
+    return { preview: true, resumo: `Nova categoria: "${nome}".` }
+  }
+
+  const ordem = await proximaOrdem(supabase, 'categories')
+  const { error } = await supabase.from('categories').insert({ nome, ordem })
+  if (error) return { erro: error.message }
+  return { sucesso: true, mensagem: `Categoria "${nome}" criada.` }
+}
+
+async function criarProduto(
+  supabase: SupabaseClient,
+  args: {
+    nome?: string
+    categoria?: string
+    preco?: number
+    disponivel?: boolean
+    destaque?: boolean
+    descricao?: string
+    confirmado?: boolean
+  },
+) {
+  if (!args.nome?.trim()) return { erro: 'Nome do produto é obrigatório.' }
+  if (!args.categoria?.trim()) return { erro: 'Categoria é obrigatória.' }
+  if (!(Number(args.preco) > 0)) return { erro: 'Preço é obrigatório e precisa ser maior que zero.' }
+
+  const { data: categorias, error: catErr } = await supabase.from('categories').select('id, nome')
+  if (catErr) return { erro: catErr.message }
+  const termo = args.categoria.trim().toLowerCase()
+  const categoria = (categorias ?? []).find(
+    (c: { id: string; nome: string }) => c.nome.toLowerCase() === termo || c.nome.toLowerCase().includes(termo),
+  ) as { id: string; nome: string } | undefined
+  if (!categoria) {
+    return {
+      erro: `Categoria "${args.categoria}" não encontrada.`,
+      categorias_existentes: (categorias ?? []).map((c: { nome: string }) => c.nome),
+    }
+  }
+
+  const nome = args.nome.trim()
+  const disponivel = args.disponivel ?? true
+  const destaque = args.destaque ?? false
+  const preco = Number(args.preco)
+
+  if (!args.confirmado) {
+    return {
+      preview: true,
+      resumo: `Novo produto: "${nome}", categoria "${categoria.nome}", CHF ${preco.toFixed(2)}, ${disponivel ? 'disponível' : 'indisponível'}${destaque ? ', em destaque' : ''}.`,
+    }
+  }
+
+  const ordem = await proximaOrdem(supabase, 'menu_items')
+  const { error } = await supabase.from('menu_items').insert({
+    nome,
+    categoria_id: categoria.id,
+    preco,
+    disponivel,
+    destaque,
+    descricao: args.descricao?.trim() || null,
+    ordem,
+  })
+  if (error) return { erro: error.message }
+  return {
+    sucesso: true,
+    mensagem: `Produto "${nome}" criado. As traduções pra outros idiomas ainda não foram geradas — abra o produto no Cardápio e salve pra gerá-las.`,
+  }
+}
+
+async function criarInsumo(
+  supabase: SupabaseClient,
+  args: { nome?: string; unidade?: string; estoque_minimo?: number; confirmado?: boolean },
+) {
+  if (!args.nome?.trim()) return { erro: 'Nome do insumo é obrigatório.' }
+  const unidadesValidas = ['kg', 'g', 'l', 'ml', 'unidade']
+  if (!args.unidade || !unidadesValidas.includes(args.unidade)) {
+    return { erro: `Unidade é obrigatória e precisa ser uma de: ${unidadesValidas.join(', ')}.` }
+  }
+
+  const nome = args.nome.trim()
+
+  if (!args.confirmado) {
+    return {
+      preview: true,
+      resumo: `Novo insumo: "${nome}", unidade ${args.unidade}${args.estoque_minimo ? `, alerta de saldo baixo abaixo de ${args.estoque_minimo}` : ''}.`,
+    }
+  }
+
+  const ordem = await proximaOrdem(supabase, 'insumos')
+  const { error } = await supabase
+    .from('insumos')
+    .insert({ nome, unidade: args.unidade, estoque_minimo: args.estoque_minimo ?? null, ativo: true, ordem })
+  if (error) return { erro: error.message }
+  return { sucesso: true, mensagem: `Insumo "${nome}" criado.` }
+}
+
+async function criarGrupoAdicional(
+  supabase: SupabaseClient,
+  args: { nome?: string; tipo?: string; selecao?: string; confirmado?: boolean },
+) {
+  if (!args.nome?.trim()) return { erro: 'Nome do grupo de adicionais é obrigatório.' }
+  const tipo = args.tipo === 'obrigatorio' ? 'obrigatorio' : 'opcional'
+  const selecao = args.selecao === 'unica' ? 'unica' : 'multipla'
+  const nome = args.nome.trim()
+
+  if (!args.confirmado) {
+    return {
+      preview: true,
+      resumo: `Novo grupo de adicionais: "${nome}" (${tipo === 'obrigatorio' ? 'obrigatório' : 'opcional'}, seleção ${selecao === 'unica' ? 'única' : 'múltipla'}).`,
+    }
+  }
+
+  const { error } = await supabase.from('modifiers').insert({ nome, tipo, selecao })
+  if (error) return { erro: error.message }
+  return { sucesso: true, mensagem: `Grupo de adicionais "${nome}" criado.` }
+}
+
+async function criarOpcaoAdicional(
+  supabase: SupabaseClient,
+  args: { nome?: string; grupo?: string; preco_adicional?: number; insumo?: string; quantidade_padrao?: number; confirmado?: boolean },
+) {
+  if (!args.nome?.trim()) return { erro: 'Nome da opção é obrigatório.' }
+  if (!args.grupo?.trim()) return { erro: 'Grupo de adicionais é obrigatório (ex: "Frutas", "Toppings").' }
+
+  const { data: grupos, error: gruposErr } = await supabase.from('modifiers').select('id, nome')
+  if (gruposErr) return { erro: gruposErr.message }
+  const termoGrupo = args.grupo.trim().toLowerCase()
+  const grupo = (grupos ?? []).find(
+    (g: { id: string; nome: string }) => g.nome.toLowerCase() === termoGrupo || g.nome.toLowerCase().includes(termoGrupo),
+  ) as { id: string; nome: string } | undefined
+  if (!grupo) {
+    return {
+      erro: `Grupo de adicionais "${args.grupo}" não encontrado.`,
+      grupos_existentes: (grupos ?? []).map((g: { nome: string }) => g.nome),
+    }
+  }
+
+  let insumoId: string | null = null
+  if (args.insumo?.trim()) {
+    const { data: insumos, error: insumosErr } = await supabase.from('insumos').select('id, nome')
+    if (insumosErr) return { erro: insumosErr.message }
+    const termoInsumo = args.insumo.trim().toLowerCase()
+    const insumo = (insumos ?? []).find(
+      (i: { id: string; nome: string }) => i.nome.toLowerCase() === termoInsumo || i.nome.toLowerCase().includes(termoInsumo),
+    ) as { id: string; nome: string } | undefined
+    if (!insumo) {
+      return {
+        erro: `Insumo "${args.insumo}" não encontrado.`,
+        insumos_existentes: (insumos ?? []).map((i: { nome: string }) => i.nome),
+      }
+    }
+    insumoId = insumo.id
+  }
+
+  const nome = args.nome.trim()
+  const precoAdicional = args.preco_adicional ?? 0
+
+  if (!args.confirmado) {
+    return {
+      preview: true,
+      resumo: `Nova opção "${nome}" no grupo "${grupo.nome}", preço adicional CHF ${precoAdicional.toFixed(2)}${insumoId ? `, consumindo ${args.quantidade_padrao ?? '?'} de ${args.insumo}` : ''}.`,
+    }
+  }
+  if (insumoId && !(Number(args.quantidade_padrao) > 0)) {
+    return { erro: 'Quando vincula um insumo, a quantidade padrão consumida é obrigatória e precisa ser maior que zero.' }
+  }
+
+  const ordem = await proximaOrdem(supabase, 'modifier_options', ['modifier_id', grupo.id])
+  const { error } = await supabase.from('modifier_options').insert({
+    nome,
+    modifier_id: grupo.id,
+    preco_adicional: precoAdicional,
+    ordem,
+    insumo_id: insumoId,
+    quantidade_padrao: insumoId ? Number(args.quantidade_padrao) : null,
+  })
+  if (error) return { erro: error.message }
+  return { sucesso: true, mensagem: `Opção "${nome}" criada no grupo "${grupo.nome}".` }
+}
+
 const TOOLS = [
   {
     functionDeclarations: [
@@ -687,6 +890,87 @@ const TOOLS = [
         description: 'Consulta as opções de gorjeta oferecidas no totem e a lista de usuários com acesso ao painel da equipe.',
         parametersJsonSchema: { type: 'object', properties: {} },
       },
+      {
+        name: 'criar_categoria',
+        description:
+          'Cadastra uma nova categoria de cardápio. Chame sem confirmado para ver o resumo antes de gravar; chame de novo com confirmado=true só depois que o usuário confirmar explicitamente.',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            nome: { type: 'string', description: 'Nome da categoria (obrigatório).' },
+            confirmado: { type: 'boolean', description: 'true só depois que o usuário confirmar o resumo mostrado.' },
+          },
+        },
+      },
+      {
+        name: 'criar_produto',
+        description:
+          'Cadastra um novo produto no cardápio. Chame sem confirmado para ver o resumo antes de gravar; chame de novo com confirmado=true só depois que o usuário confirmar explicitamente.',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            nome: { type: 'string', description: 'Nome do produto (obrigatório).' },
+            categoria: { type: 'string', description: 'Nome de uma categoria já existente (obrigatório).' },
+            preco: { type: 'number', description: 'Preço em CHF (obrigatório).' },
+            disponivel: { type: 'boolean', description: 'Se aparece no totem. Padrão: true — só pergunte se o usuário mencionar.' },
+            destaque: { type: 'boolean', description: 'Se aparece em Destaques. Padrão: false — só pergunte se o usuário mencionar.' },
+            descricao: { type: 'string', description: 'Descrição opcional que aparece no cardápio.' },
+            confirmado: { type: 'boolean', description: 'true só depois que o usuário confirmar o resumo mostrado.' },
+          },
+        },
+      },
+      {
+        name: 'criar_insumo',
+        description:
+          'Cadastra um novo insumo de estoque. Chame sem confirmado para ver o resumo antes de gravar; chame de novo com confirmado=true só depois que o usuário confirmar explicitamente.',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            nome: { type: 'string', description: 'Nome do insumo (obrigatório).' },
+            unidade: { type: 'string', enum: ['kg', 'g', 'l', 'ml', 'unidade'], description: 'Unidade de controle (obrigatório).' },
+            estoque_minimo: { type: 'number', description: 'Alerta de saldo baixo — opcional, só pergunte se o usuário mencionar.' },
+            confirmado: { type: 'boolean', description: 'true só depois que o usuário confirmar o resumo mostrado.' },
+          },
+        },
+      },
+      {
+        name: 'criar_grupo_adicional',
+        description:
+          'Cadastra um novo grupo de adicionais/misturas (ex: "Frutas", "Toppings"). Chame sem confirmado para ver o resumo antes de gravar; chame de novo com confirmado=true só depois que o usuário confirmar explicitamente.',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            nome: { type: 'string', description: 'Nome do grupo (obrigatório).' },
+            tipo: {
+              type: 'string',
+              enum: ['obrigatorio', 'opcional'],
+              description: 'Se o cliente é obrigado a escolher algo desse grupo. Padrão: opcional.',
+            },
+            selecao: {
+              type: 'string',
+              enum: ['unica', 'multipla'],
+              description: 'Se pode escolher mais de uma opção do grupo. Padrão: multipla.',
+            },
+            confirmado: { type: 'boolean', description: 'true só depois que o usuário confirmar o resumo mostrado.' },
+          },
+        },
+      },
+      {
+        name: 'criar_opcao_adicional',
+        description:
+          'Cadastra uma nova opção dentro de um grupo de adicionais já existente (ex: "Banana" dentro de "Frutas"). Chame sem confirmado para ver o resumo antes de gravar; chame de novo com confirmado=true só depois que o usuário confirmar explicitamente.',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            nome: { type: 'string', description: 'Nome da opção (obrigatório).' },
+            grupo: { type: 'string', description: 'Nome de um grupo de adicionais já existente (obrigatório).' },
+            preco_adicional: { type: 'number', description: 'Quanto soma ao preço do produto. Padrão: 0 — só pergunte se o usuário mencionar.' },
+            insumo: { type: 'string', description: 'Nome de um insumo, opcional, se essa opção deve descontar estoque.' },
+            quantidade_padrao: { type: 'number', description: 'Quanto do insumo é consumido por escolha — obrigatório só quando "insumo" é informado.' },
+            confirmado: { type: 'boolean', description: 'true só depois que o usuário confirmar o resumo mostrado.' },
+          },
+        },
+      },
     ],
   },
 ]
@@ -761,6 +1045,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           else if (call.name === 'consultar_inventarios') resultado = await consultarInventarios(supabase)
           else if (call.name === 'consultar_impostos') resultado = await consultarImpostos(supabase)
           else if (call.name === 'consultar_configuracoes') resultado = await consultarConfiguracoes(supabase)
+          else if (call.name === 'criar_categoria') resultado = await criarCategoria(supabase, args)
+          else if (call.name === 'criar_produto') resultado = await criarProduto(supabase, args)
+          else if (call.name === 'criar_insumo') resultado = await criarInsumo(supabase, args)
+          else if (call.name === 'criar_grupo_adicional') resultado = await criarGrupoAdicional(supabase, args)
+          else if (call.name === 'criar_opcao_adicional') resultado = await criarOpcaoAdicional(supabase, args)
           else resultado = { error: `Ferramenta desconhecida: ${call.name}` }
           return createPartFromFunctionResponse(
             call.id ?? call.name ?? '',
