@@ -24,21 +24,62 @@ const MODEL = 'gemini-3.6-flash'
 // se o modelo insistir em chamar function calls sem nunca concluir.
 const MAX_TOOL_ROUNDS = 5
 
-const SYSTEM_INSTRUCTION = `Você é a assistente do Painel da Equipe da The Forest Açaí, um food truck de açaí na Suíça. Responda sempre em português, de forma direta e curta — quem está te lendo é a equipe no meio do expediente, não tem tempo pra textão.
+/** Gerada a cada request (não uma constante) — é o que deixa o modelo calcular
+ * datas relativas tipo "domingo passado" ou "dia 25" sozinho. */
+function buildSystemInstruction(): string {
+  const hoje = new Date().toISOString().slice(0, 10)
+  return `Você é a assistente do Painel da Equipe da The Forest Açaí, um food truck de açaí na Suíça. Responda sempre em português, de forma direta e curta — quem está te lendo é a equipe no meio do expediente, não tem tempo pra textão.
+
+Hoje é ${hoje} (AAAA-MM-DD). Quando a pergunta mencionar um dia específico (ex: "domingo passado", "dia 25", "ontem à noite"), calcule a data exata a partir de hoje e passe em data_inicio/data_fim na ferramenta consultar_vendas — não se limite ao parâmetro periodo quando o usuário pedir um dia específico.
 
 Responda em texto simples, sem markdown: nunca use **negrito**, *itálico*, listas com "-"/"*" nem títulos com "#". Para listar itens (ex: produtos mais vendidos), use uma linha por item com números normais ("1. Açaí 300ml — 67 unidades"), sem nenhum asterisco.
 
 Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números de vendas, faturamento ou estoque — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Se a pergunta não tiver nada a ver com vendas ou estoque desta loja, diga que só sabe responder sobre isso. Você ainda não sabe cadastrar nem editar nada — só consultar.`
+}
+
+/** Rede de segurança: o modelo às vezes ignora a instrução de texto simples
+ * e volta a usar markdown — isso limpa o que passar, em vez de confiar só
+ * no prompt. */
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^[-*]\s+/gm, '')
+}
 
 /** Mesmos valores de PAID_STATUSES (@shared/types) — escritos direto aqui porque
  * `api/*.ts` não importa de `src/` de forma confiável (ver plano/estoque). */
 const PAID_STATUSES = ['recebido', 'em_preparo', 'pronto', 'entregue']
 
-function periodoParaIntervalo(periodo: string): { inicio: Date; fim: Date } {
+/** "AAAA-MM-DD" -> meia-noite local daquele dia. Datas inválidas viram null (cai no período padrão). */
+function parseDataLocal(data: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(data)
+  if (!m) return null
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+function periodoParaIntervalo(args: { periodo?: string; data_inicio?: string; data_fim?: string }): {
+  inicio: Date
+  fim: Date
+} {
   const agora = new Date()
   const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate())
   const fimAberto = new Date(agora.getTime() + 1000)
 
+  // Dia/intervalo específico (ex: "domingo passado") tem prioridade sobre o
+  // atalho de `periodo` — é o que o system instruction pede pro modelo usar
+  // quando a pergunta menciona uma data.
+  const inicioEspecifico = args.data_inicio ? parseDataLocal(args.data_inicio) : null
+  if (inicioEspecifico) {
+    const fimEspecifico = args.data_fim ? parseDataLocal(args.data_fim) : null
+    const fim = fimEspecifico ? new Date(fimEspecifico.getTime() + 24 * 60 * 60 * 1000) : new Date(inicioEspecifico.getTime() + 24 * 60 * 60 * 1000)
+    return { inicio: inicioEspecifico, fim }
+  }
+
+  const periodo = args.periodo ?? 'hoje'
   if (periodo === 'ontem') {
     const inicio = new Date(inicioHoje)
     inicio.setDate(inicio.getDate() - 1)
@@ -65,9 +106,11 @@ interface OrderRow {
   order_items: OrderItemRow[] | null
 }
 
-async function consultarVendas(supabase: SupabaseClient, args: { periodo?: string }) {
-  const periodo = args.periodo ?? 'hoje'
-  const { inicio, fim } = periodoParaIntervalo(periodo)
+async function consultarVendas(
+  supabase: SupabaseClient,
+  args: { periodo?: string; data_inicio?: string; data_fim?: string },
+) {
+  const { inicio, fim } = periodoParaIntervalo(args)
   const { data, error } = await supabase
     .from('orders')
     .select('valor_pago, gorjeta, order_items(nome_item, quantidade)')
@@ -88,7 +131,7 @@ async function consultarVendas(supabase: SupabaseClient, args: { periodo?: strin
   }
 
   return {
-    periodo,
+    periodo_consultado: `${inicio.toISOString().slice(0, 10)} a ${new Date(fim.getTime() - 1).toISOString().slice(0, 10)}`,
     pedidos: pedidos.length,
     faturamento_chf: Number(faturamento.toFixed(2)),
     gorjetas_chf: Number(gorjetas.toFixed(2)),
@@ -140,14 +183,23 @@ const TOOLS = [
     functionDeclarations: [
       {
         name: 'consultar_vendas',
-        description: 'Consulta pedidos pagos, faturamento e quantidade vendida por produto num período.',
+        description:
+          'Consulta pedidos pagos, faturamento e quantidade vendida por produto num período. Para um dia ou intervalo específico (ex: "domingo passado"), use data_inicio/data_fim em vez de periodo.',
         parametersJsonSchema: {
           type: 'object',
           properties: {
             periodo: {
               type: 'string',
               enum: ['hoje', 'ontem', 'semana', 'mes'],
-              description: 'Período a consultar. Padrão: hoje.',
+              description: 'Atalho de período. Ignorado se data_inicio for informado.',
+            },
+            data_inicio: {
+              type: 'string',
+              description: 'Data inicial no formato AAAA-MM-DD, calculada a partir de "hoje" quando o usuário menciona um dia específico.',
+            },
+            data_fim: {
+              type: 'string',
+              description: 'Data final (inclusive) no formato AAAA-MM-DD. Se omitida, usa o mesmo dia de data_inicio.',
             },
           },
         },
@@ -195,18 +247,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   })
   const client = new GoogleGenAI({ apiKey: geminiApiKey })
   const contents: Content[] = [...history, createUserContent(message)]
+  const systemInstruction = buildSystemInstruction()
 
   try {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
       const response = await client.models.generateContent({
         model: MODEL,
         contents,
-        config: { systemInstruction: SYSTEM_INSTRUCTION, tools: TOOLS },
+        config: { systemInstruction, tools: TOOLS },
       })
 
       const calls = response.functionCalls
       if (!calls || calls.length === 0) {
-        const reply = response.text ?? 'Não consegui responder isso agora.'
+        const reply = stripMarkdown(response.text ?? 'Não consegui responder isso agora.')
         contents.push(createModelContent(reply))
         res.status(200).json({ reply, contents })
         return
