@@ -139,9 +139,9 @@ export default function AssistantChat({ accessToken }: Props) {
                       playsInline
                     />
                     <div className="assistant-bubble assistant-bubble--assistant">
-                      Oi, eu sou o Tuco — bico grande, mas o olho é ainda maior: enxergo o painel inteiro daqui de
+                      Oi, eu sou o Tuco. Bico grande, mas o olho é ainda maior: enxergo o painel inteiro daqui de
                       cima. Conto como estão as vendas e o lucro, consulto e atualizo o cardápio e o estoque,
-                      acompanho compras, perdas e fechamento, e até cadastro ou edito coisas pra você — sempre te
+                      acompanho compras, perdas e fechamento, e até cadastro ou edito coisas pra você, sempre te
                       mostrando um resumo antes de gravar qualquer coisa (prometo não voar com seus dados).
                       Pergunta à vontade, tipo &ldquo;quanto vendemos hoje?&rdquo; ou &ldquo;cadastra um novo
                       insumo&rdquo;.
