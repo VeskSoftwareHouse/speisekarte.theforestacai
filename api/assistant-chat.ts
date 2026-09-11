@@ -1,11 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import {
   GoogleGenAI,
+  ApiError,
   createUserContent,
   createModelContent,
   createPartFromFunctionCall,
   createPartFromFunctionResponse,
   type Content,
+  type GenerateContentResponse,
 } from '@google/genai'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { requireCaller } from './_auth.js'
@@ -35,6 +37,27 @@ Hoje é ${hoje} (AAAA-MM-DD). Quando a pergunta mencionar um dia específico (ex
 Responda em texto simples, sem markdown: nunca use **negrito**, *itálico*, listas com "-"/"*" nem títulos com "#". Para listar itens (ex: produtos mais vendidos), use uma linha por item com números normais ("1. Açaí 300ml — 67 unidades"), sem nenhum asterisco.
 
 Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números de vendas, faturamento ou estoque — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Se a pergunta não tiver nada a ver com vendas ou estoque desta loja, diga que só sabe responder sobre isso. Você ainda não sabe cadastrar nem editar nada — só consultar.`
+}
+
+const RETRY_DELAYS_MS = [800, 2000]
+
+/** 503 (sobrecarga do modelo) e 429 (limite de taxa) são conhecidos por
+ * passarem sozinhos em segundos — mesma lógica do retryLoad usado no painel
+ * da equipe para o "JWT issued at future", só que aqui contra a API do
+ * Gemini em vez do Supabase. */
+async function generateContentComRetry(
+  client: GoogleGenAI,
+  params: Parameters<GoogleGenAI['models']['generateContent']>[0],
+): Promise<GenerateContentResponse> {
+  for (let tentativa = 0; ; tentativa++) {
+    try {
+      return await client.models.generateContent(params)
+    } catch (err) {
+      const transitorio = err instanceof ApiError && (err.status === 503 || err.status === 429)
+      if (!transitorio || tentativa >= RETRY_DELAYS_MS.length) throw err
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[tentativa]))
+    }
+  }
 }
 
 /** Rede de segurança: o modelo às vezes ignora a instrução de texto simples
@@ -251,7 +274,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-      const response = await client.models.generateContent({
+      const response = await generateContentComRetry(client, {
         model: MODEL,
         contents,
         config: { systemInstruction, tools: TOOLS },
@@ -298,6 +321,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       contents,
     })
   } catch (err) {
-    res.status(502).json({ error: err instanceof Error ? err.message : 'Erro ao falar com a assistente.' })
+    // O SDK propaga o corpo cru do erro da API do Gemini na mensagem (JSON
+    // com "status"/"code") — nunca mostra isso direto pra equipe. Sobrecarga
+    // já tenta de novo sozinha (ver generateContentComRetry); se ainda assim
+    // falhar, é porque persistiu além das tentativas.
+    const sobrecarga = err instanceof ApiError && (err.status === 503 || err.status === 429)
+    res.status(502).json({
+      error: sobrecarga
+        ? 'A IA está sobrecarregada agora. Espera alguns segundos e tenta de novo.'
+        : 'Não consegui falar com a assistente agora. Tenta de novo em instantes.',
+    })
   }
 }
