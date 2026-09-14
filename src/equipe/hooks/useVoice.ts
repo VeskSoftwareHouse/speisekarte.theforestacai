@@ -103,12 +103,24 @@ export function useVoice(onTranscricaoFinal: (texto: string) => void) {
   const speak = useCallback(
     (texto: string) => {
       if (!ttsSupported || !texto.trim()) return
-      window.speechSynthesis.cancel()
-      const utterance = new SpeechSynthesisUtterance(texto)
-      utterance.lang = 'pt-BR'
-      const voz = escolherVozPortuguesa()
-      if (voz) utterance.voice = voz
-      window.speechSynthesis.speak(utterance)
+      const synth = window.speechSynthesis
+      const falar = () => {
+        const utterance = new SpeechSynthesisUtterance(texto)
+        utterance.lang = 'pt-BR'
+        const voz = escolherVozPortuguesa()
+        if (voz) utterance.voice = voz
+        synth.resume()
+        synth.speak(utterance)
+      }
+      // No Chrome, cancel() seguido de speak() no mesmo instante às vezes
+      // descarta a fala nova em silêncio — só cancela se tiver algo tocando,
+      // e dá um respiro antes de falar.
+      if (synth.speaking || synth.pending) {
+        synth.cancel()
+        setTimeout(falar, 100)
+      } else {
+        falar()
+      }
     },
     [ttsSupported],
   )

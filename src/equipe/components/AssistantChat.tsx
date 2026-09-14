@@ -58,8 +58,19 @@ export default function AssistantChat({ accessToken }: Props) {
   // Lê em voz alta assim que uma resposta nova do Tuco chega — não as que já
   // vieram no histórico salvo (ver comentário em faladasRef acima).
   useEffect(() => {
-    if (loadingHistorico) return
+    // Carregando uma conversa (a inicial ou uma aberta pelo histórico): zera a
+    // referência pra fixá-la de novo quando terminar, sem ler as antigas.
+    if (loadingHistorico) {
+      faladasRef.current = null
+      return
+    }
     if (faladasRef.current === null) {
+      faladasRef.current = messages.length
+      return
+    }
+    // "Nova conversa" esvazia a lista — sem reajustar, a referência ficaria no
+    // tamanho da conversa anterior e nenhuma resposta nova seria falada.
+    if (messages.length < faladasRef.current) {
       faladasRef.current = messages.length
       return
     }
