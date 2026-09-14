@@ -42,11 +42,11 @@ Responda em texto simples, sem markdown: nunca use **negrito**, *itálico*, list
 
 Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a todo o painel da equipe: vendas/relatórios, incluindo lucro bruto e margem por produto (consultar_vendas), estado atual dos pedidos de hoje (consultar_pedidos_atuais), pedidos e nomes de clientes de qualquer dia ou período, inclusive dias anteriores (consultar_pedidos_periodo),cardápio e adicionais (consultar_cardapio), saldo de estoque (consultar_estoque), histórico de movimentações de estoque (consultar_movimentacoes_estoque), pedidos de compra (consultar_compras), fornecedores (consultar_fornecedores), perdas (consultar_perdas), contagens de inventário (consultar_inventarios), fila de pedidos pendentes de fechamento de estoque (consultar_fechamento), impostos (consultar_impostos), e gorjetas/usuários da equipe/fechamento automático de estoque (consultar_configuracoes). Você é a especialista em tudo que está no painel — qualquer pergunta sobre o que ele mostra ou faz, tente responder chamando a ferramenta certa antes de dizer que não sabe. Se o resultado de uma ferramenta não trouxer o dado que a pergunta pediu, isso significa que a informação não está disponível nessa ferramenta — nunca conclua "zero" ou "nenhum" por conta própria a partir disso; diga que você não tem acesso a esse dado específico. Fale sempre na primeira pessoa ("eu não tenho", "eu não consigo calcular") — nunca em terceira pessoa como se fosse outra coisa respondendo (nunca "o painel não consegue" ou "o sistema não tem"): é você quem está conversando, não o painel. Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso.
 
-CADASTRO E EDIÇÃO (criar_categoria, criar_produto, criar_insumo, criar_grupo_adicional, criar_opcao_adicional, vincular_grupo_adicional, definir_ingredientes_copo_pronto, criar_fornecedor, criar_imposto, criar_gorjeta, registrar_movimentacao_estoque, registrar_perda): quando o usuário pedir pra cadastrar OU editar/alterar/atualizar algo (ex: "configura um alerta de saldo baixo no açaí", "muda o preço do X", "desativa o fornecedor Y"), use a ferramenta correspondente — a maioria serve tanto pra criar quanto pra editar: informando o campo "*_atual" (ex: nome_atual, valor_atual) você EDITA o registro existente daquele nome; sem isso, você CRIA um novo. Nunca diga que não sabe editar algo antes de checar se a ferramenta certa aceita isso. Pra ligar/desligar um grupo de adicionais num produto (ex: "coloca o Toppings no Açaí 500ml"), use vincular_grupo_adicional — não é a mesma coisa que criar o grupo ou a opção. Pra marcar um produto como "copo pronto" (o botão "Ver ingredientes" no cardápio) e escolher quais adicionais já cadastrados aparecem nele, use definir_ingredientes_copo_pronto — nunca diga que não consegue mexer nisso.
+CADASTRO E EDIÇÃO (criar_categoria, criar_produto, criar_insumo, criar_grupo_adicional, criar_opcao_adicional, vincular_grupo_adicional, definir_ingredientes_copo_pronto, definir_composicao_produto, criar_fornecedor, criar_imposto, criar_gorjeta, definir_fechamento_automatico, registrar_movimentacao_estoque, registrar_perda): quando o usuário pedir pra cadastrar OU editar/alterar/atualizar algo (ex: "configura um alerta de saldo baixo no açaí", "muda o preço do X", "desativa o fornecedor Y"), use a ferramenta correspondente — a maioria serve tanto pra criar quanto pra editar: informando o campo "*_atual" (ex: nome_atual, valor_atual) você EDITA o registro existente daquele nome; sem isso, você CRIA um novo. Nunca diga que não sabe editar algo antes de checar se a ferramenta certa aceita isso. Pra ligar/desligar um grupo de adicionais num produto (ex: "coloca o Toppings no Açaí 500ml"), use vincular_grupo_adicional — não é a mesma coisa que criar o grupo ou a opção. Pra marcar um produto como "copo pronto" (o botão "Ver ingredientes" no cardápio) e escolher quais adicionais já cadastrados aparecem nele, use definir_ingredientes_copo_pronto. Pra definir quais insumos de estoque (e quanto de cada) são debitados em toda venda de um produto, use definir_composicao_produto — não confunda com definir_ingredientes_copo_pronto, que é só informativo pro cliente e usa adicionais, não insumos. Nunca diga que não consegue mexer em nada disso.
 
 Faça perguntas UMA DE CADA VEZ, como numa conversa normal — nunca liste todos os campos de uma vez feito um formulário. Ao editar, peça só os campos que o usuário quer mudar (não pergunte os que não mudam). Ao criar, peça só o que for obrigatório; campos opcionais (disponível, destaque, descrição, estoque mínimo, preço adicional...) só pergunte se fizer sentido, senão use o padrão da própria ferramenta. Assim que tiver o necessário, chame a ferramenta direto — ela já grava, sem passo de confirmação nenhum, então nunca pare pra perguntar "posso confirmar?" nem liste um resumo do que vai mudar antes de chamar. Depois que a ferramenta responder com sucesso, avise o usuário em uma frase curta o que foi feito. Se a ferramenta devolver "erro" (ex: item não encontrado), explique o problema ao usuário e pergunte como prosseguir — não insista repetindo a mesma chamada.
 
-Fora do seu alcance (fica pra a equipe fazer direto no painel): gerenciar usuários com acesso ao painel (segurança de contas), cadastrar pedidos de compra a fornecedores, registrar contagens de inventário, e executar o fechamento de estoque em si (bater os insumos em lote) — mas você PODE consultar a fila de pendentes de fechamento (consultar_fechamento), os pedidos de compra já cadastrados (consultar_compras) e as contagens já feitas (consultar_inventarios).`
+Fora do seu alcance (fica pra a equipe fazer direto no painel, sempre por decisão de segurança ou porque exige conferir algo físico na hora): gerenciar usuários com acesso ao painel (segurança de contas), cadastrar pedidos de compra a fornecedores, registrar contagens de inventário, executar o fechamento de estoque em si (bater os insumos em lote), confirmar o pagamento em dinheiro de um pedido (exige contar o troco na mão), e mudar o status de um pedido no quadro da cozinha (recebido/em preparo/pronto/entregue) — mas você PODE consultar a fila de pendentes de fechamento (consultar_fechamento), os pedidos de compra já cadastrados (consultar_compras), as contagens já feitas (consultar_inventarios), e o estado atual dos pedidos (consultar_pedidos_atuais). Fora isso, praticamente todo cadastro do painel (cardápio, adicionais, copo pronto, composição de estoque, insumos, fornecedores, impostos, gorjetas, fechamento automático, movimentações e perdas de estoque) você lê E edita — nunca diga que não consegue sem antes checar se existe uma ferramenta pra isso.`
 }
 
 const RETRY_DELAYS_MS = [800, 2000]
@@ -377,14 +377,18 @@ async function consultarCardapio(supabase: SupabaseClient, args: { categoria?: s
   const { data: itens, error: itensErr } = await query
   if (itensErr) return { error: itensErr.message }
 
-  const [gruposRes, opcoesRes, ingredientesRes] = await Promise.all([
+  const [gruposRes, opcoesRes, ingredientesRes, composicaoRes, insumosRes] = await Promise.all([
     supabase.from('modifiers').select('id, nome, tipo, selecao').order('nome'),
     supabase.from('modifier_options').select('id, modifier_id, nome, preco_adicional').order('ordem'),
     supabase.from('menu_item_ingredientes').select('menu_item_id, modifier_option_id').order('ordem'),
+    supabase.from('menu_item_insumos').select('menu_item_id, insumo_id, quantidade'),
+    supabase.from('insumos').select('id, nome, unidade, gramas_por_litro'),
   ])
   if (gruposRes.error) return { error: gruposRes.error.message }
   if (opcoesRes.error) return { error: opcoesRes.error.message }
   if (ingredientesRes.error) return { error: ingredientesRes.error.message }
+  if (composicaoRes.error) return { error: composicaoRes.error.message }
+  if (insumosRes.error) return { error: insumosRes.error.message }
 
   const nomeOpcaoPorId = new Map((opcoesRes.data ?? []).map((o: { id: string; nome: string }) => [o.id, o.nome]))
   const ingredientesPorItem = new Map<string, string[]>()
@@ -394,6 +398,24 @@ async function consultarCardapio(supabase: SupabaseClient, args: { categoria?: s
     const lista = ingredientesPorItem.get(link.menu_item_id) ?? []
     lista.push(nomeOpcao)
     ingredientesPorItem.set(link.menu_item_id, lista)
+  }
+
+  const insumoPorId = new Map(
+    (insumosRes.data ?? []).map((i: { id: string; nome: string; unidade: string; gramas_por_litro: number | null }) => [i.id, i]),
+  )
+  const composicaoPorItem = new Map<string, { insumo: string; quantidade: number; unidade: string }[]>()
+  for (const linha of (composicaoRes.data ?? []) as { menu_item_id: string; insumo_id: string; quantidade: number }[]) {
+    const insumo = insumoPorId.get(linha.insumo_id)
+    if (!insumo) continue
+    // Mesma conversão do Painel da Equipe (ver src/shared/insumoConversao.ts,
+    // duplicada aqui porque api/*.ts não importa de src/ de forma confiável
+    // no build da Vercel): com densidade cadastrada, litros/ml vira gramas.
+    const emGramas = (insumo.unidade === 'l' || insumo.unidade === 'ml') && insumo.gramas_por_litro
+    const litros = insumo.unidade === 'ml' ? linha.quantidade / 1000 : linha.quantidade
+    const quantidade = emGramas ? litros * (insumo.gramas_por_litro as number) : linha.quantidade
+    const lista = composicaoPorItem.get(linha.menu_item_id) ?? []
+    lista.push({ insumo: insumo.nome, quantidade: Number(quantidade.toFixed(2)), unidade: emGramas ? 'g' : insumo.unidade })
+    composicaoPorItem.set(linha.menu_item_id, lista)
   }
 
   const nomeCategoriaPorId = new Map((categorias ?? []).map((c: { id: string; nome: string }) => [c.id, c.nome]))
@@ -408,6 +430,9 @@ async function consultarCardapio(supabase: SupabaseClient, args: { categoria?: s
     // "Copo pronto": mostra o botão "Ver ingredientes" no cardápio pro cliente (ver definir_ingredientes_copo_pronto).
     copo_pronto: i.copo_pronto,
     ingredientes_copo_pronto: ingredientesPorItem.get(i.id) ?? [],
+    // Receita fixa de insumos consumida do estoque em toda venda, independente
+    // das misturas escolhidas pelo cliente (ver definir_composicao_produto).
+    composicao: composicaoPorItem.get(i.id) ?? [],
   }))
   if (args.categoria) {
     const termo = args.categoria.toLowerCase()
@@ -465,9 +490,13 @@ async function consultarPedidosAtuais(supabase: SupabaseClient, args: { nome_cli
   const contagemPorStatus: Record<string, number> = {}
   for (const p of hoje) contagemPorStatus[p.status] = (contagemPorStatus[p.status] ?? 0) + 1
 
+  const dinheiro = (dinheiroRes.data ?? []) as PedidoAtualRow[]
   const resultado: Record<string, unknown> = {
     pedidos_hoje_por_status: contagemPorStatus,
-    aguardando_confirmacao_dinheiro: (dinheiroRes.data ?? []).length,
+    aguardando_confirmacao_dinheiro: dinheiro.length,
+    // Lista de quem está esperando a equipe conferir o troco no caixa — a
+    // confirmação em si (contar o dinheiro na mão) não é algo que você faz.
+    pedidos_aguardando_dinheiro: dinheiro.map((p) => ({ nome_cliente: p.nome_cliente, valor_chf: p.valor_pago, criado_em: p.criado_em })),
     // Lista completa de hoje, com nome do cliente — pra perguntas tipo "quem
     // comprou hoje?" sem precisar já saber um nome pra filtrar.
     pedidos_hoje: hoje
@@ -550,11 +579,12 @@ interface InsumoRow {
   nome: string
   unidade: string
   estoque_minimo: number | null
+  gramas_por_litro: number | null
 }
 
 async function consultarEstoque(supabase: SupabaseClient, args: { insumo?: string }) {
   const [insumosRes, saldosRes] = await Promise.all([
-    supabase.from('insumos').select('id, nome, unidade, estoque_minimo').eq('ativo', true),
+    supabase.from('insumos').select('id, nome, unidade, estoque_minimo, gramas_por_litro').eq('ativo', true),
     supabase.from('insumo_saldos').select('insumo_id, saldo_atual'),
   ])
   if (insumosRes.error) return { error: insumosRes.error.message }
@@ -577,6 +607,9 @@ async function consultarEstoque(supabase: SupabaseClient, args: { insumo?: strin
         saldo,
         unidade: i.unidade,
         saldo_baixo: i.estoque_minimo != null && saldo < i.estoque_minimo,
+        // Só relevante pra unidade l/ml: peso de 1 litro em gramas, usado pra
+        // compor a receita do produto em gramas (ver criar_insumo).
+        gramas_por_litro: i.gramas_por_litro,
       }
     }),
   }
@@ -913,6 +946,8 @@ interface ProdutoArgs {
   disponivel?: boolean
   destaque?: boolean
   descricao?: string
+  descricao_na_comanda?: boolean
+  max_ingredientes?: number | null
 }
 
 async function criarProduto(supabase: SupabaseClient, args: ProdutoArgs) {
@@ -950,6 +985,8 @@ async function criarProduto(supabase: SupabaseClient, args: ProdutoArgs) {
     if (args.disponivel !== undefined) patch.disponivel = args.disponivel
     if (args.destaque !== undefined) patch.destaque = args.destaque
     if (args.descricao !== undefined) patch.descricao = args.descricao.trim() || null
+    if (args.descricao_na_comanda !== undefined) patch.descricao_na_comanda = args.descricao_na_comanda
+    if (args.max_ingredientes !== undefined) patch.max_ingredientes = args.max_ingredientes
     if (Object.keys(patch).length === 0) return { erro: 'Nada pra alterar — informe pelo menos um campo novo.' }
 
     const { error } = await supabase.from('menu_items').update(patch).eq('id', produto.id)
@@ -974,6 +1011,8 @@ async function criarProduto(supabase: SupabaseClient, args: ProdutoArgs) {
     disponivel,
     destaque,
     descricao: args.descricao?.trim() || null,
+    descricao_na_comanda: args.descricao_na_comanda ?? false,
+    max_ingredientes: args.max_ingredientes ?? null,
     ordem,
   })
   if (error) return { erro: error.message }
@@ -988,6 +1027,7 @@ interface InsumoArgs {
   nome?: string
   unidade?: string
   estoque_minimo?: number
+  gramas_por_litro?: number | null
   ativo?: boolean
 }
 
@@ -1012,6 +1052,7 @@ async function criarInsumo(supabase: SupabaseClient, args: InsumoArgs) {
     if (args.nome?.trim()) patch.nome = args.nome.trim()
     if (args.unidade) patch.unidade = args.unidade
     if (args.estoque_minimo !== undefined) patch.estoque_minimo = args.estoque_minimo
+    if (args.gramas_por_litro !== undefined) patch.gramas_por_litro = args.gramas_por_litro
     if (args.ativo !== undefined) patch.ativo = args.ativo
     if (Object.keys(patch).length === 0) return { erro: 'Nada pra alterar — informe pelo menos um campo novo.' }
 
@@ -1025,9 +1066,14 @@ async function criarInsumo(supabase: SupabaseClient, args: InsumoArgs) {
   const nome = args.nome.trim()
 
   const ordem = await proximaOrdem(supabase, 'insumos')
-  const { error } = await supabase
-    .from('insumos')
-    .insert({ nome, unidade: args.unidade, estoque_minimo: args.estoque_minimo ?? null, ativo: true, ordem })
+  const { error } = await supabase.from('insumos').insert({
+    nome,
+    unidade: args.unidade,
+    estoque_minimo: args.estoque_minimo ?? null,
+    gramas_por_litro: (args.unidade === 'l' || args.unidade === 'ml') ? (args.gramas_por_litro ?? null) : null,
+    ativo: true,
+    ordem,
+  })
   if (error) return { erro: error.message }
   return { sucesso: true, mensagem: `Insumo "${nome}" criado.` }
 }
@@ -1278,6 +1324,83 @@ async function definirIngredientesCopoPronto(supabase: SupabaseClient, args: Cop
   }
 }
 
+interface ComposicaoProdutoArgs {
+  produto?: string
+  itens?: { insumo?: string; quantidade?: number }[]
+}
+
+/** Define a composição/receita fixa de insumos de um produto (menu_item_insumos)
+ * — o que é debitado do estoque em toda venda, independente das misturas
+ * escolhidas pelo cliente. `itens` sempre SUBSTITUI a composição inteira. Se
+ * o insumo tiver a densidade cadastrada (gramas_por_litro), a quantidade é
+ * informada em gramas, igual à composição no Painel da Equipe; senão, na
+ * própria unidade de controle do insumo. */
+async function definirComposicaoProduto(supabase: SupabaseClient, args: ComposicaoProdutoArgs) {
+  if (!args.produto?.trim()) return { erro: 'Nome do produto é obrigatório.' }
+  if (!args.itens || args.itens.length === 0) {
+    return { erro: 'Informe a lista de insumos e quantidades que compõem a receita fixa do produto.' }
+  }
+
+  const { encontrado: produto, todos: produtos, erro: erroProduto } = await buscarPorNome<{ id: string; nome: string }>(
+    supabase,
+    'menu_items',
+    'id, nome',
+    args.produto,
+  )
+  if (erroProduto) return { erro: erroProduto }
+  if (!produto) return { erro: `Produto "${args.produto}" não encontrado.`, produtos_existentes: produtos.map((p) => p.nome) }
+
+  const { data: todosInsumos, error: erroInsumos } = await supabase
+    .from('insumos')
+    .select('id, nome, unidade, gramas_por_litro')
+    .eq('ativo', true)
+  if (erroInsumos) return { erro: erroInsumos.message }
+  const insumos = (todosInsumos ?? []) as { id: string; nome: string; unidade: string; gramas_por_litro: number | null }[]
+
+  const linhas: { insumo_id: string; quantidade: number }[] = []
+  const naoEncontrados: string[] = []
+  for (const item of args.itens) {
+    if (!item.insumo?.trim() || !(Number(item.quantidade) > 0)) {
+      return { erro: 'Cada item precisa de um insumo e uma quantidade maior que zero.' }
+    }
+    const termo = item.insumo.trim().toLowerCase()
+    const insumo = insumos.find((i) => i.nome.toLowerCase() === termo) ?? insumos.find((i) => i.nome.toLowerCase().includes(termo))
+    if (!insumo) {
+      naoEncontrados.push(item.insumo)
+      continue
+    }
+    // Mesma conversão do Painel da Equipe (ver src/shared/insumoConversao.ts,
+    // duplicada aqui — api/*.ts não importa de src/ de forma confiável no
+    // build da Vercel): com densidade cadastrada, a quantidade digitada é em
+    // gramas e precisa converter de volta pra unidade de controle do insumo.
+    const emGramas = (insumo.unidade === 'l' || insumo.unidade === 'ml') && insumo.gramas_por_litro
+    let quantidade = Number(item.quantidade)
+    if (emGramas) {
+      const litros = quantidade / (insumo.gramas_por_litro as number)
+      quantidade = insumo.unidade === 'ml' ? litros * 1000 : litros
+    }
+    linhas.push({ insumo_id: insumo.id, quantidade })
+  }
+  if (naoEncontrados.length > 0) {
+    return {
+      erro: `Insumo não encontrado: ${naoEncontrados.join(', ')}.`,
+      insumos_existentes: insumos.map((i) => i.nome),
+    }
+  }
+
+  const { error: delErr } = await supabase.from('menu_item_insumos').delete().eq('menu_item_id', produto.id)
+  if (delErr) return { erro: delErr.message }
+  const { error: insErr } = await supabase
+    .from('menu_item_insumos')
+    .insert(linhas.map((l) => ({ menu_item_id: produto.id, insumo_id: l.insumo_id, quantidade: l.quantidade })))
+  if (insErr) return { erro: insErr.message }
+
+  return {
+    sucesso: true,
+    mensagem: `Composição do produto "${produto.nome}" atualizada, com ${linhas.length} insumo(s).`,
+  }
+}
+
 interface FornecedorArgs {
   nome_atual?: string
   nome?: string
@@ -1429,6 +1552,24 @@ async function criarGorjeta(supabase: SupabaseClient, args: GorjetaArgs) {
   return { sucesso: true, mensagem: `Opção de gorjeta ${descricao} criada.` }
 }
 
+// Linha única do singleton — nunca existe uma segunda (ver estoqueConsumo.ts no painel).
+const CONFIG_ESTOQUE_ID = '00000000-0000-0000-0000-000000000001'
+
+/** Liga/desliga a baixa automática de estoque assim que um pedido é
+ * confirmado (mesmo switch do painel de Fechamento). */
+async function definirFechamentoAutomatico(supabase: SupabaseClient, args: { ativo?: boolean }) {
+  if (args.ativo === undefined) return { erro: 'Informe se o fechamento automático deve ficar ligado ou desligado.' }
+  const { error } = await supabase
+    .from('configuracoes_estoque')
+    .update({ fechamento_automatico: args.ativo })
+    .eq('id', CONFIG_ESTOQUE_ID)
+  if (error) return { erro: error.message }
+  return {
+    sucesso: true,
+    mensagem: `Fechamento automático de estoque ${args.ativo ? 'ligado' : 'desligado'}.`,
+  }
+}
+
 async function registrarMovimentacaoEstoque(
   supabase: SupabaseClient,
   callerId: string,
@@ -1565,7 +1706,7 @@ const TOOLS = [
       {
         name: 'consultar_cardapio',
         description:
-          'Consulta o cardápio cadastrado: produtos, categorias, preços, disponibilidade, destaque, se é um "copo pronto" e seus ingredientes (copo_pronto, ingredientes_copo_pronto), e também os grupos de adicionais/misturas (ex: Frutas, Toppings) com suas opções e preço adicional. Não tem relação com vendas — é o catálogo, vendido ou não.',
+          'Consulta o cardápio cadastrado: produtos, categorias, preços, disponibilidade, destaque, se é um "copo pronto" e seus ingredientes (copo_pronto, ingredientes_copo_pronto), a composição/receita fixa de insumos consumida do estoque em toda venda (composicao — ver definir_composicao_produto), e também os grupos de adicionais/misturas (ex: Frutas, Toppings) com suas opções e preço adicional. Não tem relação com vendas — é o catálogo, vendido ou não.',
         parametersJsonSchema: {
           type: 'object',
           properties: {
@@ -1577,7 +1718,7 @@ const TOOLS = [
       {
         name: 'consultar_pedidos_atuais',
         description:
-          'Consulta o estado operacional agora: quantos pedidos estão em cada etapa da cozinha hoje (recebido/em preparo/pronto/entregue), quantos aguardam confirmação de pagamento em dinheiro, e a lista completa de pedidos pagos hoje com nome do cliente, status e valor (pedidos_hoje) — use isso pra perguntas tipo "quem comprou hoje?" ou "quais os nomes dos clientes de hoje?". Informe nome_cliente só quando quiser filtrar por um cliente específico. Só cobre HOJE: para clientes/pedidos de outros dias (ontem, uma data, a semana), use consultar_pedidos_periodo.',
+          'Consulta o estado operacional agora: quantos pedidos estão em cada etapa da cozinha hoje (recebido/em preparo/pronto/entregue), a lista de quem está esperando a equipe confirmar o troco (pedidos_aguardando_dinheiro), e a lista completa de pedidos pagos hoje com nome do cliente, status e valor (pedidos_hoje) — use isso pra perguntas tipo "quem comprou hoje?" ou "quais os nomes dos clientes de hoje?". Informe nome_cliente só quando quiser filtrar por um cliente específico. Só cobre HOJE: para clientes/pedidos de outros dias (ontem, uma data, a semana), use consultar_pedidos_periodo.',
         parametersJsonSchema: {
           type: 'object',
           properties: {
@@ -1709,6 +1850,14 @@ const TOOLS = [
             disponivel: { type: 'boolean', description: 'Se aparece no totem. Padrão ao criar: true — só pergunte se o usuário mencionar.' },
             destaque: { type: 'boolean', description: 'Se aparece em Destaques. Padrão ao criar: false — só pergunte se o usuário mencionar.' },
             descricao: { type: 'string', description: 'Descrição opcional que aparece no cardápio.' },
+            descricao_na_comanda: {
+              type: 'boolean',
+              description: 'Se true, a descrição vai carimbada na comanda impressa da cozinha em todo pedido. Padrão ao criar: false.',
+            },
+            max_ingredientes: {
+              type: 'number',
+              description: 'Limite combinado de quantos adicionais o cliente pode escolher (ex: "só até 4 toppings"). Deixe vazio pra sem limite.',
+            },
           },
         },
       },
@@ -1723,6 +1872,10 @@ const TOOLS = [
             nome: { type: 'string', description: 'Nome do insumo (obrigatório ao criar).' },
             unidade: { type: 'string', enum: ['kg', 'g', 'l', 'ml', 'unidade'], description: 'Unidade de controle (obrigatório ao criar).' },
             estoque_minimo: { type: 'number', description: 'Alerta de saldo baixo — opcional ao criar; é o campo típico pra editar num insumo existente.' },
+            gramas_por_litro: {
+              type: 'number',
+              description: 'Só pra unidade "l" ou "ml": peso de 1 litro deste insumo em gramas (ex: 1030 pro açaí). Preenchendo isso, a composição dos produtos passa a aceitar a quantidade em gramas em vez de litros/mililitros — o estoque continua controlado na unidade escolhida.',
+            },
             ativo: { type: 'boolean', description: 'Se o insumo está ativo. Só ao editar.' },
           },
         },
@@ -1796,6 +1949,31 @@ const TOOLS = [
         },
       },
       {
+        name: 'definir_composicao_produto',
+        description:
+          'Define a composição/receita fixa de insumos de um produto — o que é debitado do estoque em toda venda dele, independente das misturas que o cliente escolher (ex: Açaí 500ml = 400g de açaí + 1 copo). Não é a mesma coisa que adicionais/ingredientes do copo pronto (ver definir_ingredientes_copo_pronto) — aqui são insumos de estoque (ver criar_insumo), com quantidade. A lista em `itens` SUBSTITUI a composição inteira, não soma à existente — ao editar, sempre peça a lista completa que deve ficar valendo.',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            produto: { type: 'string', description: 'Nome do produto (obrigatório).' },
+            itens: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  insumo: { type: 'string', description: 'Nome de um insumo já cadastrado.' },
+                  quantidade: {
+                    type: 'number',
+                    description: 'Quantidade consumida por unidade vendida do produto. Na unidade de controle do insumo, ou em gramas se o insumo tiver densidade cadastrada (ver criar_insumo/gramas_por_litro) — mesmo comportamento da composição no Painel da Equipe.',
+                  },
+                },
+              },
+              description: 'Lista completa de insumo + quantidade que compõem a receita — substitui a composição anterior inteira.',
+            },
+          },
+        },
+      },
+      {
         name: 'criar_fornecedor',
         description:
           'Cadastra um novo fornecedor, OU edita um já existente (informe nome_atual).',
@@ -1838,6 +2016,17 @@ const TOOLS = [
             tipo: { type: 'string', enum: ['fixo', 'percentual'], description: 'Como é calculado (obrigatório ao criar).' },
             valor: { type: 'number', description: 'Percentual ou valor fixo em CHF (obrigatório ao criar).' },
             ativo: { type: 'boolean', description: 'Se aparece no totem. Só ao editar.' },
+          },
+        },
+      },
+      {
+        name: 'definir_fechamento_automatico',
+        description:
+          'Liga ou desliga a baixa automática de estoque assim que um pedido é confirmado (mesmo switch do painel de Fechamento) — sem isso ligado, a equipe precisa bater o estoque manualmente.',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            ativo: { type: 'boolean', description: 'true liga, false desliga (obrigatório).' },
           },
         },
       },
@@ -2050,6 +2239,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           else if (call.name === 'criar_opcao_adicional') resultado = await criarOpcaoAdicional(supabase, args)
           else if (call.name === 'vincular_grupo_adicional') resultado = await vincularGrupoAdicional(supabase, args)
           else if (call.name === 'definir_ingredientes_copo_pronto') resultado = await definirIngredientesCopoPronto(supabase, args)
+          else if (call.name === 'definir_composicao_produto') resultado = await definirComposicaoProduto(supabase, args)
+          else if (call.name === 'definir_fechamento_automatico') resultado = await definirFechamentoAutomatico(supabase, args)
           else if (call.name === 'criar_fornecedor') resultado = await criarFornecedor(supabase, args)
           else if (call.name === 'criar_imposto') resultado = await criarImposto(supabase, args)
           else if (call.name === 'criar_gorjeta') resultado = await criarGorjeta(supabase, args)
