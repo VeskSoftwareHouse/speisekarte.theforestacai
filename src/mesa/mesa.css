@@ -803,27 +803,29 @@
 }
 /* Botão "ver ingredientes" de um copo pronto — flutua sobre o canto da foto,
    fora do <button> do card (ver .item-card-slot acima), então o toque nele
-   não conta como toque no card (adicionar ao carrinho / abrir modal). */
+   não conta como toque no card (adicionar ao carrinho / abrir modal). Pílula
+   com texto, não só ícone, pra ficar óbvio que dá pra tocar nele. */
 .item-card__ingredients-btn {
   position: absolute;
   top: var(--space-2);
   right: var(--space-2);
-  width: 36px;
   height: 36px;
-  border-radius: 50%;
+  padding: 0 var(--space-3);
+  border-radius: 999px;
   border: none;
-  background: rgba(21, 15, 32, 0.55);
+  background: var(--color-primary);
   color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  gap: 6px;
+  box-shadow: var(--shadow-sm);
   z-index: 1;
   transition: transform 0.1s ease;
 }
 .item-card__ingredients-btn:active {
-  transform: scale(0.92);
+  transform: scale(0.94);
 }
 /* Mesmo fundo da tela de descanso: o roxo da marca com um brilho branco
    discreto no centro, atras da foto. Fica numa variavel porque o quadro do

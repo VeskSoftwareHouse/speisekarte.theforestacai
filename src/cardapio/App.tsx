@@ -121,7 +121,8 @@ export default function App() {
                           aria-label={t('ingredientsButton')}
                           title={t('ingredientsButton')}
                         >
-                          <Info size={18} strokeWidth={2} aria-hidden />
+                          <Info size={16} strokeWidth={2} aria-hidden />
+                          {t('ingredientsButton')}
                         </button>
                       )}
                     </div>
