@@ -369,12 +369,12 @@ async function consultarVendas(
 }
 
 async function consultarCardapio(supabase: SupabaseClient, args: { categoria?: string; apenas_disponiveis?: boolean }) {
-  const { data: categorias, error: catErr } = await supabase.from('categories').select('id, nome').order('ordem')
+  const { data: categorias, error: catErr } = await supabase.from('categories').select('id, nome, ordem').order('ordem')
   if (catErr) return { error: catErr.message }
 
   let query = supabase
     .from('menu_items')
-    .select('id, nome, descricao, preco, disponivel, destaque, categoria_id, copo_pronto')
+    .select('id, nome, descricao, preco, disponivel, destaque, categoria_id, copo_pronto, ordem')
     .order('ordem')
   if (args.apenas_disponiveis) query = query.eq('disponivel', true)
   const { data: itens, error: itensErr } = await query
@@ -434,6 +434,7 @@ async function consultarCardapio(supabase: SupabaseClient, args: { categoria?: s
       destaque: boolean
       categoria_id: string
       copo_pronto: boolean
+      ordem: number
     }) => ({
       nome: i.nome,
       descricao: i.descricao,
@@ -441,6 +442,10 @@ async function consultarCardapio(supabase: SupabaseClient, args: { categoria?: s
       preco_chf: i.preco,
       disponivel: i.disponivel,
       destaque: i.destaque,
+      // Posição de exibição no cardápio (menor aparece primeiro) — os produtos
+      // já vêm nesta lista ordenados por isso; pra reordenar, mude `ordem`
+      // via criar_produto (ver campo ordem).
+      ordem: i.ordem,
       // "Copo pronto": mostra o botão "Ver ingredientes" no cardápio pro cliente (ver definir_ingredientes_copo_pronto).
       copo_pronto: i.copo_pronto,
       ingredientes_copo_pronto: ingredientesPorItem.get(i.id) ?? [],
@@ -472,7 +477,9 @@ async function consultarCardapio(supabase: SupabaseClient, args: { categoria?: s
   return {
     total_produtos: produtos.length,
     total_disponiveis: produtos.filter((p) => p.disponivel).length,
-    categorias: (categorias ?? []).map((c: { nome: string }) => c.nome),
+    // Já vem ordenado por `ordem` (menor primeiro) — pra reordenar categorias
+    // use criar_categoria com o campo ordem (ver consultar_cardapio/ordem de cada uma).
+    categorias: (categorias ?? []).map((c: { nome: string; ordem: number }) => ({ nome: c.nome, ordem: c.ordem })),
     produtos,
     total_adicionais: gruposAdicionais.reduce((soma, g) => soma + g.opcoes.length, 0),
     grupos_adicionais: gruposAdicionais,
@@ -922,6 +929,7 @@ async function buscarPorNome<T extends { nome: string }>(
 interface CategoriaArgs {
   nome_atual?: string
   nome?: string
+  ordem?: number
 }
 
 async function criarCategoria(supabase: SupabaseClient, args: CategoriaArgs) {
@@ -936,18 +944,21 @@ async function criarCategoria(supabase: SupabaseClient, args: CategoriaArgs) {
     if (!categoria) {
       return { erro: `Categoria "${args.nome_atual}" não encontrada.`, categorias_existentes: todos.map((c) => c.nome) }
     }
-    if (!args.nome?.trim()) return { erro: 'Informe o novo nome da categoria.' }
-    const novoNome = args.nome.trim()
 
-    const { error } = await supabase.from('categories').update({ nome: novoNome }).eq('id', categoria.id)
+    const patch: Record<string, unknown> = {}
+    if (args.nome?.trim()) patch.nome = args.nome.trim()
+    if (args.ordem !== undefined) patch.ordem = args.ordem
+    if (Object.keys(patch).length === 0) return { erro: 'Nada pra alterar — informe o novo nome e/ou a nova ordem.' }
+
+    const { error } = await supabase.from('categories').update(patch).eq('id', categoria.id)
     if (error) return { erro: error.message }
-    return { sucesso: true, mensagem: `Categoria renomeada para "${novoNome}".` }
+    return { sucesso: true, mensagem: `Categoria "${categoria.nome}" atualizada.` }
   }
 
   if (!args.nome?.trim()) return { erro: 'Nome da categoria é obrigatório.' }
   const nome = args.nome.trim()
 
-  const ordem = await proximaOrdem(supabase, 'categories')
+  const ordem = args.ordem ?? (await proximaOrdem(supabase, 'categories'))
   const { error } = await supabase.from('categories').insert({ nome, ordem })
   if (error) return { erro: error.message }
   return { sucesso: true, mensagem: `Categoria "${nome}" criada.` }
@@ -963,6 +974,7 @@ interface ProdutoArgs {
   descricao?: string
   descricao_na_comanda?: boolean
   max_ingredientes?: number | null
+  ordem?: number
 }
 
 async function criarProduto(supabase: SupabaseClient, args: ProdutoArgs) {
@@ -1002,6 +1014,7 @@ async function criarProduto(supabase: SupabaseClient, args: ProdutoArgs) {
     if (args.descricao !== undefined) patch.descricao = args.descricao.trim() || null
     if (args.descricao_na_comanda !== undefined) patch.descricao_na_comanda = args.descricao_na_comanda
     if (args.max_ingredientes !== undefined) patch.max_ingredientes = args.max_ingredientes
+    if (args.ordem !== undefined) patch.ordem = args.ordem
     if (Object.keys(patch).length === 0) return { erro: 'Nada pra alterar — informe pelo menos um campo novo.' }
 
     const { error } = await supabase.from('menu_items').update(patch).eq('id', produto.id)
@@ -1018,7 +1031,7 @@ async function criarProduto(supabase: SupabaseClient, args: ProdutoArgs) {
   const destaque = args.destaque ?? false
   const preco = Number(args.preco)
 
-  const ordem = await proximaOrdem(supabase, 'menu_items')
+  const ordem = args.ordem ?? (await proximaOrdem(supabase, 'menu_items'))
   const { error } = await supabase.from('menu_items').insert({
     nome,
     categoria_id: categoriaId,
@@ -1842,19 +1855,23 @@ const TOOLS = [
       {
         name: 'criar_categoria',
         description:
-          'Cadastra uma nova categoria de cardápio, OU renomeia uma já existente (informe nome_atual).',
+          'Cadastra uma nova categoria de cardápio, OU edita uma já existente — renomeia e/ou reordena (informe nome_atual). Pra reordenar a posição das categorias na barra lateral (ex: "bota Copos Prontos em primeiro"), use o campo `ordem`: menor valor aparece primeiro — veja os valores atuais em consultar_cardapio (categorias, já vem ordenado por ele) antes de escolher o novo número. Não existe "arrastar" — é sempre editando o número de cada categoria.',
         parametersJsonSchema: {
           type: 'object',
           properties: {
             nome_atual: { type: 'string', description: 'Nome de uma categoria JÁ EXISTENTE — informe isso pra EDITAR em vez de criar.' },
             nome: { type: 'string', description: 'Nome da categoria: novo nome ao criar, ou nome atualizado ao editar.' },
+            ordem: {
+              type: 'number',
+              description: 'Posição de exibição na barra lateral — menor aparece primeiro. Consulte os valores atuais em consultar_cardapio antes de escolher um novo número.',
+            },
           },
         },
       },
       {
         name: 'criar_produto',
         description:
-          'Cadastra um novo produto no cardápio, OU edita um já existente (informe nome_atual). Ao editar, só envie os campos que devem mudar.',
+          'Cadastra um novo produto no cardápio, OU edita um já existente (informe nome_atual). Ao editar, só envie os campos que devem mudar. Pra reordenar a posição de exibição de produtos (ex: "bota o X em primeiro", "os copos prontos antes das outras opções"), use o campo `ordem`: menor valor aparece primeiro, dentro da mesma categoria; veja os valores atuais em consultar_cardapio (campo ordem de cada produto, já vem ordenado por ele) antes de decidir o novo número de cada um. Não existe "arrastar" nem reordenação em lote — é sempre editando o número de cada produto.',
         parametersJsonSchema: {
           type: 'object',
           properties: {
@@ -1872,6 +1889,10 @@ const TOOLS = [
             max_ingredientes: {
               type: 'number',
               description: 'Limite combinado de quantos adicionais o cliente pode escolher (ex: "só até 4 toppings"). Deixe vazio pra sem limite.',
+            },
+            ordem: {
+              type: 'number',
+              description: 'Posição de exibição no cardápio dentro da categoria — menor aparece primeiro. Consulte os valores atuais em consultar_cardapio antes de escolher um novo número.',
             },
           },
         },
