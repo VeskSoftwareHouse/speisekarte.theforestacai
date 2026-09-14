@@ -674,6 +674,25 @@ body {
 .order-card__time--warning {
   color: var(--color-danger);
 }
+/* Excluir pedido (ex: um pedido de teste) — discreto de propósito, não é uma
+   ação do dia a dia como avançar o pedido. */
+.order-card__delete {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.order-card__delete:hover,
+.order-card__delete:active {
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  color: var(--color-danger);
+}
 
 .status-pill {
   font-size: 0.75rem;
@@ -707,11 +726,16 @@ body {
 .order-card__items {
   list-style: none;
   margin: 0;
-  padding: 0 var(--space-4);
+  padding: var(--space-1) var(--space-4) 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-4);
   flex: 1;
+}
+/* Mais de um produto no pedido: uma linha fina separa um do outro. */
+.order-card__item + .order-card__item {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
 }
 .order-card__item-row {
   display: flex;
@@ -726,32 +750,84 @@ body {
 .order-card__item-name {
   font-weight: 600;
 }
-/* Receita/composição do produto (opt-in por produto, ver ProductFormModal) —
-   itálico pra se distinguir à primeira vista dos adicionais que o cliente
-   escolheu (order-card__item-mods, texto reto): uma é a "ficha técnica" do
-   prato, a outra é o que a pessoa pediu em cima dela. */
+/* Só usado no popup de pagamento em dinheiro (CashPendingPanel) — a comanda
+   em si mostra a receita dentro do copo, ver .copo__camada mais abaixo. */
 .order-card__item-recipe {
-  margin: 1px 0 0 2.4ch;
+  margin: var(--space-1) 0 0 2.4ch;
   color: var(--color-text-muted);
   font-size: 0.9rem;
   font-style: italic;
 }
-.order-card__item-mods {
-  margin: 2px 0 0 2.4ch;
-}
-/* Uma linha por categoria de adicional (ex: "Früchte: 2x Banane, Erdbeere") —
-   o nome da categoria ajuda a achar rápido onde vai cada coisa na receita. */
-.order-card__mod-group {
+/* Um adicional por linha — dentro das camadas do copo. */
+.order-card__mod-list {
+  list-style: none;
   margin: 0;
-  color: var(--color-text-muted);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--color-text);
   font-size: 1rem;
   font-weight: 600;
+  line-height: 1.3;
 }
-.order-card__mod-group-title {
-  color: var(--color-text);
+/* Receita/composição do produto (opt-in por produto, ver ProductFormModal →
+   "Enviar descrição na comanda") — itálico e mais claro pra se distinguir à
+   primeira vista dos adicionais que o cliente escolheu de verdade: uma é a
+   "ficha técnica" do prato, a outra é o que a pessoa pediu em cima dela. */
+.order-card__mod-list--receita {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-style: italic;
+}
+
+/* ----- Copo: uma "camada" por categoria de adicional escolhida -----
+   Contorno em U (sem borda em cima, fundo arredondado) com uma borda um pouco
+   mais larga no topo, só pra lembrar um copo — sem desenho nenhum além disso. */
+.copo {
+  position: relative;
+  margin: var(--space-3) 0 0 2.4ch;
+  padding-top: 3px;
+}
+.copo::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -4px;
+  right: -4px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--color-border);
+}
+.copo__corpo {
+  border: 2px solid var(--color-border);
+  border-top: none;
+  border-radius: 0 0 18px 18px;
+  overflow: hidden;
+}
+.copo__camada {
+  display: grid;
+  grid-template-columns: 5.2rem 1fr;
+  align-items: start;
+  column-gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+}
+.copo__camada + .copo__camada {
+  border-top: 1px dashed var(--color-border);
+}
+.copo__rotulo {
+  padding-top: 3px;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.copo__camada:last-child {
+  padding-bottom: var(--space-3);
 }
 .order-card__item-obs {
-  margin: 1px 0 0 2.4ch;
+  margin: var(--space-3) 0 0 2.4ch;
   color: #a67c1f;
   font-size: 0.9rem;
   font-weight: 600;
@@ -759,7 +835,7 @@ body {
 
 .order-card__footer {
   padding: var(--space-3) var(--space-4) var(--space-4);
-  margin-top: var(--space-3);
+  margin-top: var(--space-4);
   border-top: 1px solid var(--color-border);
   padding-top: var(--space-3);
 }

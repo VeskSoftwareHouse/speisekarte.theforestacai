@@ -326,6 +326,7 @@ drop policy if exists "public insert orders"             on orders;
 drop policy if exists "public update orders"             on orders;
 drop policy if exists "authenticated read orders"        on orders;
 drop policy if exists "authenticated update orders"      on orders;
+drop policy if exists "authenticated delete orders"      on orders;
 drop policy if exists "public read order_items"          on order_items;
 drop policy if exists "public insert order_items"        on order_items;
 drop policy if exists "authenticated read order_items"    on order_items;
@@ -381,6 +382,11 @@ create policy "authenticated delete tip_options" on tip_options for delete using
 -- Supabase — inclusive marcando um pedido não pago como "recebido".
 create policy "authenticated read orders"   on orders for select using (auth.uid() is not null);
 create policy "authenticated update orders" on orders for update using (auth.uid() is not null) with check (auth.uid() is not null);
+-- Só pra excluir pedido de teste (ver OrderCard "Excluir pedido") — apaga em
+-- cascata os order_items (FK on delete cascade); os insumos já baixados são
+-- estornados antes, com um lançamento de entrada, nunca apagando o histórico
+-- de movimentacoes_estoque (ver excluirPedido em useOrders.ts).
+create policy "authenticated delete orders" on orders for delete using (auth.uid() is not null);
 
 create policy "authenticated read order_items" on order_items for select using (auth.uid() is not null);
 

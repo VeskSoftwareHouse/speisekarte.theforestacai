@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { OrderStatus, OrderWithItems } from '@shared/types'
+import { formatCHF } from '@shared/format'
 import { useOrders } from './hooks/useOrders'
+import { useCopoProntoIngredientes } from './hooks/useCopoProntoIngredientes'
 import { useCashPendingOrders } from './hooks/useCashPendingOrders'
 import { useAuth } from './hooks/useAuth'
 import OrderCard from './components/OrderCard'
+import ConfirmDialog from './components/ConfirmDialog'
 import CashPendingPanel from './components/CashPendingPanel'
 import DateStrip from './components/DateStrip'
 import MenuManager from './components/MenuManager'
@@ -30,9 +33,13 @@ export default function App() {
   const [selectedDateKey, setSelectedDateKey] = useState(() => toDateKey(new Date()))
   const [viewedMonthKey, setViewedMonthKey] = useState(() => toMonthKey(new Date()))
 
-  const { orders, orderCountByDate, loading, error, realtimeConnected, newOrderIds, markSeen, advanceStatus } =
+  const { orders, orderCountByDate, loading, error, realtimeConnected, newOrderIds, markSeen, advanceStatus, excluirPedido } =
     useOrders(selectedDateKey, viewedMonthKey)
   const { orders: cashPendingOrders, confirmCash } = useCashPendingOrders(user?.id ?? '')
+  const ingredientesCopoPronto = useCopoProntoIngredientes()
+  // Confirmação antes de excluir um pedido (ex: pedido de teste) — nunca
+  // apaga direto no clique da lixeira, ver OrderCard.
+  const [deleteOrderTarget, setDeleteOrderTarget] = useState<OrderWithItems | null>(null)
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 15000)
@@ -141,7 +148,16 @@ export default function App() {
                 <p className="equipe-app__status">Nenhum pedido entregue neste dia.</p>
               )}
               {byStatus.entregue.map((order) => (
-                <OrderCard key={order.id} order={order} isNew={false} now={now} onAdvance={advanceStatus} onSeen={markSeen} />
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  isNew={false}
+                  now={now}
+                  onAdvance={advanceStatus}
+                  onSeen={markSeen}
+                  onRequestDelete={setDeleteOrderTarget}
+                  ingredientesCopoPronto={ingredientesCopoPronto}
+                />
               ))}
             </main>
           )}
@@ -166,12 +182,29 @@ export default function App() {
                         now={now}
                         onAdvance={advanceStatus}
                         onSeen={markSeen}
+                        onRequestDelete={setDeleteOrderTarget}
+                        ingredientesCopoPronto={ingredientesCopoPronto}
                       />
                     ))}
                   </div>
                 </section>
               ))}
             </main>
+          )}
+
+          {deleteOrderTarget && (
+            <ConfirmDialog
+              title="Excluir pedido?"
+              message={`O pedido de "${deleteOrderTarget.nome_cliente ?? 'sem nome'}" (${formatCHF(
+                deleteOrderTarget.items.reduce((soma, i) => soma + i.preco_unitario * i.quantidade, 0),
+              )}) some da tela e dos relatórios. Não dá pra desfazer — use só pra pedido de teste.`}
+              confirmLabel="Excluir pedido"
+              onCancel={() => setDeleteOrderTarget(null)}
+              onConfirm={() => {
+                excluirPedido(deleteOrderTarget, user?.id ?? null)
+                setDeleteOrderTarget(null)
+              }}
+            />
           )}
         </>
       )}

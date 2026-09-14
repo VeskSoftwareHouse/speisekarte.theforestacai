@@ -20,6 +20,7 @@ interface UseOrdersResult {
   newOrderIds: Set<string>
   markSeen: (orderId: string) => void
   advanceStatus: (order: OrderWithItems) => Promise<void>
+  excluirPedido: (order: OrderWithItems, criadoPor: string | null) => Promise<void>
 }
 
 interface OrderRow extends Omit<OrderWithItems, 'items'> {
@@ -166,6 +167,7 @@ export function useOrders(selectedDateKey: string, viewedMonthKey: string): UseO
         refetch()
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, refetch)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'orders' }, refetch)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'order_items' }, () =>
         latest.current.fetchDay(),
       )
@@ -218,5 +220,60 @@ export function useOrders(selectedDateKey: string, viewedMonthKey: string): UseO
     }
   }, [])
 
-  return { orders, orderCountByDate, loading, error, realtimeConnected, newOrderIds, markSeen, advanceStatus }
+  /**
+   * Apaga um pedido de teste (e os itens dele, em cascata) — não é uma ação
+   * de operação normal, é pra tirar da tela e dos relatórios um pedido que
+   * nunca devia ter existido. Se o estoque já tinha sido baixado por ele
+   * (order.estoque_baixado), o insumo é estornado com um lançamento de
+   * entrada ANTES de apagar — movimentacoes_estoque nunca é editada nem
+   * apagada (é a trilha de auditoria, ver comentário na tabela), só
+   * compensada, então o motivo de cada baixa continua visível depois.
+   */
+  const excluirPedido = useCallback(async (order: OrderWithItems, criadoPor: string | null) => {
+    setOrders((prev) => prev.filter((o) => o.id !== order.id))
+
+    try {
+      if (order.estoque_baixado) {
+        const { data: movimentos, error: movErr } = await supabase
+          .from('movimentacoes_estoque')
+          .select('insumo_id, quantidade')
+          .eq('origem_tipo', 'order')
+          .eq('origem_id', order.id)
+        if (movErr) throw new Error(movErr.message)
+        if (movimentos && movimentos.length > 0) {
+          const { error: estornoErr } = await supabase.from('movimentacoes_estoque').insert(
+            (movimentos as { insumo_id: string; quantidade: number }[]).map((m) => ({
+              insumo_id: m.insumo_id,
+              quantidade: -m.quantidade,
+              tipo: 'entrada_ajuste_inventario' as const,
+              origem_tipo: 'exclusao_pedido_teste',
+              origem_id: order.id,
+              observacoes: `Estorno automático: pedido de teste excluído.`,
+              criado_por: criadoPor,
+            })),
+          )
+          if (estornoErr) throw new Error(estornoErr.message)
+        }
+      }
+
+      const { error: delErr } = await supabase.from('orders').delete().eq('id', order.id)
+      if (delErr) throw new Error(delErr.message)
+    } catch (err) {
+      // Falhou: devolve o card pra tela em vez de deixar sumido sem apagar de verdade.
+      setOrders((prev) => [...prev, order].sort((a, b) => (a.criado_em < b.criado_em ? -1 : 1)))
+      setError(err instanceof Error ? err.message : 'Não foi possível excluir o pedido.')
+    }
+  }, [])
+
+  return {
+    orders,
+    orderCountByDate,
+    loading,
+    error,
+    realtimeConnected,
+    newOrderIds,
+    markSeen,
+    advanceStatus,
+    excluirPedido,
+  }
 }
