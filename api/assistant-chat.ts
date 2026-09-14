@@ -42,7 +42,7 @@ Responda em texto simples, sem markdown: nunca use **negrito**, *itálico*, list
 
 Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a todo o painel da equipe: vendas/relatórios, incluindo lucro bruto e margem por produto (consultar_vendas), estado atual dos pedidos de hoje (consultar_pedidos_atuais), pedidos e nomes de clientes de qualquer dia ou período, inclusive dias anteriores (consultar_pedidos_periodo),cardápio e adicionais (consultar_cardapio), saldo de estoque (consultar_estoque), histórico de movimentações de estoque (consultar_movimentacoes_estoque), pedidos de compra (consultar_compras), fornecedores (consultar_fornecedores), perdas (consultar_perdas), contagens de inventário (consultar_inventarios), fila de pedidos pendentes de fechamento de estoque (consultar_fechamento), impostos (consultar_impostos), e gorjetas/usuários da equipe/fechamento automático de estoque (consultar_configuracoes). Você é a especialista em tudo que está no painel — qualquer pergunta sobre o que ele mostra ou faz, tente responder chamando a ferramenta certa antes de dizer que não sabe. Se o resultado de uma ferramenta não trouxer o dado que a pergunta pediu, isso significa que a informação não está disponível nessa ferramenta — nunca conclua "zero" ou "nenhum" por conta própria a partir disso; diga que você não tem acesso a esse dado específico. Fale sempre na primeira pessoa ("eu não tenho", "eu não consigo calcular") — nunca em terceira pessoa como se fosse outra coisa respondendo (nunca "o painel não consegue" ou "o sistema não tem"): é você quem está conversando, não o painel. Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso.
 
-CADASTRO E EDIÇÃO (criar_categoria, criar_produto, criar_insumo, criar_grupo_adicional, criar_opcao_adicional, criar_fornecedor, criar_imposto, criar_gorjeta, registrar_movimentacao_estoque, registrar_perda): quando o usuário pedir pra cadastrar OU editar/alterar/atualizar algo (ex: "configura um alerta de saldo baixo no açaí", "muda o preço do X", "desativa o fornecedor Y"), use a ferramenta correspondente — a maioria serve tanto pra criar quanto pra editar: informando o campo "*_atual" (ex: nome_atual, valor_atual) você EDITA o registro existente daquele nome; sem isso, você CRIA um novo. Nunca diga que não sabe editar algo antes de checar se a ferramenta certa aceita isso. Pra ligar/desligar um grupo de adicionais num produto (ex: "coloca o Toppings no Açaí 500ml"), use vincular_grupo_adicional — não é a mesma coisa que criar o grupo ou a opção.
+CADASTRO E EDIÇÃO (criar_categoria, criar_produto, criar_insumo, criar_grupo_adicional, criar_opcao_adicional, vincular_grupo_adicional, definir_ingredientes_copo_pronto, criar_fornecedor, criar_imposto, criar_gorjeta, registrar_movimentacao_estoque, registrar_perda): quando o usuário pedir pra cadastrar OU editar/alterar/atualizar algo (ex: "configura um alerta de saldo baixo no açaí", "muda o preço do X", "desativa o fornecedor Y"), use a ferramenta correspondente — a maioria serve tanto pra criar quanto pra editar: informando o campo "*_atual" (ex: nome_atual, valor_atual) você EDITA o registro existente daquele nome; sem isso, você CRIA um novo. Nunca diga que não sabe editar algo antes de checar se a ferramenta certa aceita isso. Pra ligar/desligar um grupo de adicionais num produto (ex: "coloca o Toppings no Açaí 500ml"), use vincular_grupo_adicional — não é a mesma coisa que criar o grupo ou a opção. Pra marcar um produto como "copo pronto" (o botão "Ver ingredientes" no cardápio) e escolher quais adicionais já cadastrados aparecem nele, use definir_ingredientes_copo_pronto — nunca diga que não consegue mexer nisso.
 
 Faça perguntas UMA DE CADA VEZ, como numa conversa normal — nunca liste todos os campos de uma vez feito um formulário. Ao editar, peça só os campos que o usuário quer mudar (não pergunte os que não mudam). Ao criar, peça só o que for obrigatório; campos opcionais (disponível, destaque, descrição, estoque mínimo, preço adicional...) só pergunte se fizer sentido, senão use o padrão da própria ferramenta. Assim que tiver o necessário, chame a ferramenta direto — ela já grava, sem passo de confirmação nenhum, então nunca pare pra perguntar "posso confirmar?" nem liste um resumo do que vai mudar antes de chamar. Depois que a ferramenta responder com sucesso, avise o usuário em uma frase curta o que foi feito. Se a ferramenta devolver "erro" (ex: item não encontrado), explique o problema ao usuário e pergunte como prosseguir — não insista repetindo a mesma chamada.
 
@@ -372,30 +372,47 @@ async function consultarCardapio(supabase: SupabaseClient, args: { categoria?: s
   const { data: categorias, error: catErr } = await supabase.from('categories').select('id, nome').order('ordem')
   if (catErr) return { error: catErr.message }
 
-  let query = supabase.from('menu_items').select('nome, preco, disponivel, destaque, categoria_id').order('ordem')
+  let query = supabase.from('menu_items').select('id, nome, preco, disponivel, destaque, categoria_id, copo_pronto').order('ordem')
   if (args.apenas_disponiveis) query = query.eq('disponivel', true)
   const { data: itens, error: itensErr } = await query
   if (itensErr) return { error: itensErr.message }
 
+  const [gruposRes, opcoesRes, ingredientesRes] = await Promise.all([
+    supabase.from('modifiers').select('id, nome, tipo, selecao').order('nome'),
+    supabase.from('modifier_options').select('id, modifier_id, nome, preco_adicional').order('ordem'),
+    supabase.from('menu_item_ingredientes').select('menu_item_id, modifier_option_id').order('ordem'),
+  ])
+  if (gruposRes.error) return { error: gruposRes.error.message }
+  if (opcoesRes.error) return { error: opcoesRes.error.message }
+  if (ingredientesRes.error) return { error: ingredientesRes.error.message }
+
+  const nomeOpcaoPorId = new Map((opcoesRes.data ?? []).map((o: { id: string; nome: string }) => [o.id, o.nome]))
+  const ingredientesPorItem = new Map<string, string[]>()
+  for (const link of (ingredientesRes.data ?? []) as { menu_item_id: string; modifier_option_id: string }[]) {
+    const nomeOpcao = nomeOpcaoPorId.get(link.modifier_option_id)
+    if (!nomeOpcao) continue
+    const lista = ingredientesPorItem.get(link.menu_item_id) ?? []
+    lista.push(nomeOpcao)
+    ingredientesPorItem.set(link.menu_item_id, lista)
+  }
+
   const nomeCategoriaPorId = new Map((categorias ?? []).map((c: { id: string; nome: string }) => [c.id, c.nome]))
-  let produtos = (itens ?? []).map((i: { nome: string; preco: number; disponivel: boolean; destaque: boolean; categoria_id: string }) => ({
+  let produtos = (
+    itens ?? []
+  ).map((i: { id: string; nome: string; preco: number; disponivel: boolean; destaque: boolean; categoria_id: string; copo_pronto: boolean }) => ({
     nome: i.nome,
     categoria: nomeCategoriaPorId.get(i.categoria_id) ?? 'Sem categoria',
     preco_chf: i.preco,
     disponivel: i.disponivel,
     destaque: i.destaque,
+    // "Copo pronto": mostra o botão "Ver ingredientes" no cardápio pro cliente (ver definir_ingredientes_copo_pronto).
+    copo_pronto: i.copo_pronto,
+    ingredientes_copo_pronto: ingredientesPorItem.get(i.id) ?? [],
   }))
   if (args.categoria) {
     const termo = args.categoria.toLowerCase()
     produtos = produtos.filter((p) => p.categoria.toLowerCase().includes(termo))
   }
-
-  const [gruposRes, opcoesRes] = await Promise.all([
-    supabase.from('modifiers').select('id, nome, tipo, selecao').order('nome'),
-    supabase.from('modifier_options').select('modifier_id, nome, preco_adicional').order('ordem'),
-  ])
-  if (gruposRes.error) return { error: gruposRes.error.message }
-  if (opcoesRes.error) return { error: opcoesRes.error.message }
 
   const opcoesPorGrupo = new Map<string, { nome: string; preco_adicional_chf: number }[]>()
   for (const o of (opcoesRes.data ?? []) as { modifier_id: string; nome: string; preco_adicional: number }[]) {
@@ -1191,6 +1208,76 @@ async function vincularGrupoAdicional(supabase: SupabaseClient, args: VinculoGru
   return { sucesso: true, mensagem: `Grupo "${grupo.nome}" vinculado ao produto "${produto.nome}".` }
 }
 
+interface CopoProntoArgs {
+  produto?: string
+  ingredientes?: string[]
+  desmarcar?: boolean
+}
+
+/** Marca/edita um produto como "copo pronto" (menu_items.copo_pronto) e a
+ * lista de ingredientes mostrada no botão "Ver ingredientes" do cardápio
+ * (menu_item_ingredientes) — reaproveita os adicionais já cadastrados, não
+ * cria nenhum. `ingredientes` sempre SUBSTITUI a lista inteira (não soma). */
+async function definirIngredientesCopoPronto(supabase: SupabaseClient, args: CopoProntoArgs) {
+  if (!args.produto?.trim()) return { erro: 'Nome do produto é obrigatório.' }
+
+  const { encontrado: produto, todos: produtos, erro: erroProduto } = await buscarPorNome<{ id: string; nome: string }>(
+    supabase,
+    'menu_items',
+    'id, nome',
+    args.produto,
+  )
+  if (erroProduto) return { erro: erroProduto }
+  if (!produto) return { erro: `Produto "${args.produto}" não encontrado.`, produtos_existentes: produtos.map((p) => p.nome) }
+
+  if (args.desmarcar) {
+    const { error: delErr } = await supabase.from('menu_item_ingredientes').delete().eq('menu_item_id', produto.id)
+    if (delErr) return { erro: delErr.message }
+    const { error } = await supabase.from('menu_items').update({ copo_pronto: false }).eq('id', produto.id)
+    if (error) return { erro: error.message }
+    return { sucesso: true, mensagem: `Produto "${produto.nome}" não é mais um copo pronto.` }
+  }
+
+  if (!args.ingredientes || args.ingredientes.length === 0) {
+    return { erro: 'Informe a lista de ingredientes (nomes de adicionais já cadastrados) pra marcar como copo pronto.' }
+  }
+
+  const { data: todasOpcoes, error: erroOpcoes } = await supabase.from('modifier_options').select('id, nome')
+  if (erroOpcoes) return { erro: erroOpcoes.message }
+  const opcoes = (todasOpcoes ?? []) as { id: string; nome: string }[]
+
+  const idsEncontrados: string[] = []
+  const naoEncontrados: string[] = []
+  for (const nomeIngrediente of args.ingredientes) {
+    const termo = nomeIngrediente.trim().toLowerCase()
+    const opcao =
+      opcoes.find((o) => o.nome.toLowerCase() === termo) ?? opcoes.find((o) => o.nome.toLowerCase().includes(termo))
+    if (opcao) idsEncontrados.push(opcao.id)
+    else naoEncontrados.push(nomeIngrediente)
+  }
+  if (naoEncontrados.length > 0) {
+    return {
+      erro: `Adicional não encontrado: ${naoEncontrados.join(', ')}. Só dá pra usar adicionais já cadastrados (ver Adicionais no painel).`,
+      adicionais_existentes: opcoes.map((o) => o.nome),
+    }
+  }
+
+  const { error: delErr } = await supabase.from('menu_item_ingredientes').delete().eq('menu_item_id', produto.id)
+  if (delErr) return { erro: delErr.message }
+  const { error: insErr } = await supabase.from('menu_item_ingredientes').insert(
+    idsEncontrados.map((modifier_option_id, ordem) => ({ menu_item_id: produto.id, modifier_option_id, ordem })),
+  )
+  if (insErr) return { erro: insErr.message }
+
+  const { error: prodErr } = await supabase.from('menu_items').update({ copo_pronto: true }).eq('id', produto.id)
+  if (prodErr) return { erro: prodErr.message }
+
+  return {
+    sucesso: true,
+    mensagem: `Produto "${produto.nome}" marcado como copo pronto, com ${idsEncontrados.length} ingrediente(s).`,
+  }
+}
+
 interface FornecedorArgs {
   nome_atual?: string
   nome?: string
@@ -1478,7 +1565,7 @@ const TOOLS = [
       {
         name: 'consultar_cardapio',
         description:
-          'Consulta o cardápio cadastrado: produtos, categorias, preços, disponibilidade, destaque, e também os grupos de adicionais/misturas (ex: Frutas, Toppings) com suas opções e preço adicional. Não tem relação com vendas — é o catálogo, vendido ou não.',
+          'Consulta o cardápio cadastrado: produtos, categorias, preços, disponibilidade, destaque, se é um "copo pronto" e seus ingredientes (copo_pronto, ingredientes_copo_pronto), e também os grupos de adicionais/misturas (ex: Frutas, Toppings) com suas opções e preço adicional. Não tem relação com vendas — é o catálogo, vendido ou não.',
         parametersJsonSchema: {
           type: 'object',
           properties: {
@@ -1688,6 +1775,23 @@ const TOOLS = [
             produto: { type: 'string', description: 'Nome do produto (obrigatório).' },
             grupo: { type: 'string', description: 'Nome do grupo de adicionais (obrigatório).' },
             acao: { type: 'string', enum: ['vincular', 'desvincular'], description: 'Padrão: vincular.' },
+          },
+        },
+      },
+      {
+        name: 'definir_ingredientes_copo_pronto',
+        description:
+          'Marca um produto como "copo pronto" (receita fixa, ex: um açaí já montado) e define a lista de ingredientes que aparece pro cliente no botão "Ver ingredientes" do cardápio — reaproveitando adicionais já cadastrados (ver criar_opcao_adicional), nunca criando um novo. A lista informada em `ingredientes` SUBSTITUI a lista inteira, não soma às existentes — ao editar, sempre peça a lista completa que deve ficar valendo. Use desmarcar=true pra tirar a marcação de copo pronto (some o botão do cardápio).',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            produto: { type: 'string', description: 'Nome do produto (obrigatório).' },
+            ingredientes: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Nomes dos adicionais já cadastrados que compõem o copo pronto — lista completa, substitui a anterior. Obrigatório, a não ser que desmarcar=true.',
+            },
+            desmarcar: { type: 'boolean', description: 'true pra tirar a marcação de copo pronto do produto (ignora "ingredientes").' },
           },
         },
       },
@@ -1945,6 +2049,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           else if (call.name === 'criar_grupo_adicional') resultado = await criarGrupoAdicional(supabase, args)
           else if (call.name === 'criar_opcao_adicional') resultado = await criarOpcaoAdicional(supabase, args)
           else if (call.name === 'vincular_grupo_adicional') resultado = await vincularGrupoAdicional(supabase, args)
+          else if (call.name === 'definir_ingredientes_copo_pronto') resultado = await definirIngredientesCopoPronto(supabase, args)
           else if (call.name === 'criar_fornecedor') resultado = await criarFornecedor(supabase, args)
           else if (call.name === 'criar_imposto') resultado = await criarImposto(supabase, args)
           else if (call.name === 'criar_gorjeta') resultado = await criarGorjeta(supabase, args)
