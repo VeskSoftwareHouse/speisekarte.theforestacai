@@ -7,6 +7,8 @@
  * falta tradução.
  */
 
+import { authFetch } from '@shared/authFetch'
+
 interface SourceTexts {
   nome: string
   descricao?: string
@@ -63,11 +65,15 @@ export async function translationsFor(
   if (!sourceChanged && hasTranslations) return current
 
   try {
-    const res = await fetch('/api/translate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-      body: JSON.stringify({ texts: { nome, ...(descricao ? { descricao } : {}) } }),
-    })
+    const res = await authFetch(
+      '/api/translate',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texts: { nome, ...(descricao ? { descricao } : {}) } }),
+      },
+      accessToken,
+    )
     const data = await res.json()
     if (!res.ok || !data?.translations) throw new Error(data?.error ?? 'Falha na tradução.')
     return pivotByField(data.translations)

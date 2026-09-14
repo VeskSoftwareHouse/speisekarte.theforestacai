@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { retryLoad } from '@shared/retryLoad'
+import { authFetch } from '@shared/authFetch'
 
 export interface AdminUser {
   id: string
@@ -16,14 +17,17 @@ export interface UserInput {
 }
 
 async function request(accessToken: string, path: string, init?: RequestInit) {
-  const res = await fetch(path, {
-    ...init,
-    headers: {
-      ...(init?.headers ?? {}),
-      Authorization: `Bearer ${accessToken}`,
-      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+  const res = await authFetch(
+    path,
+    {
+      ...init,
+      headers: {
+        ...(init?.headers ?? {}),
+        ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+      },
     },
-  })
+    accessToken,
+  )
   if (!res.ok) {
     const body = await res.json().catch(() => null)
     throw new Error(body?.error ?? `Erro ${res.status}`)

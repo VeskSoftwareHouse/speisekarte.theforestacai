@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { Content, Part } from '@google/genai'
+import { authFetch } from '@shared/authFetch'
 
 export interface AssistantMessage {
   role: 'user' | 'assistant'
@@ -45,7 +46,7 @@ export function useAssistant(accessToken: string) {
 
   useEffect(() => {
     let cancelado = false
-    fetch('/api/assistant-chat', { headers: { Authorization: `Bearer ${accessToken}` } })
+    authFetch('/api/assistant-chat', undefined, accessToken)
       .then((res) => res.json())
       .then((data) => {
         if (cancelado) return
@@ -74,11 +75,15 @@ export function useAssistant(accessToken: string) {
       setError(null)
       setMessages((prev) => [...prev, { role: 'user', text: trimmed }])
       try {
-        const res = await fetch('/api/assistant-chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-          body: JSON.stringify({ message: trimmed, contents, conversaId }),
-        })
+        const res = await authFetch(
+          '/api/assistant-chat',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: trimmed, contents, conversaId }),
+          },
+          accessToken,
+        )
         const data = await res.json()
         if (!res.ok) throw new Error(data?.error ?? 'Não foi possível falar com a assistente.')
         setContents(data.contents ?? [])
@@ -104,7 +109,7 @@ export function useAssistant(accessToken: string) {
 
   const listarConversas = useCallback(async (): Promise<ConversaResumo[]> => {
     try {
-      const res = await fetch('/api/assistant-chat?list=1', { headers: { Authorization: `Bearer ${accessToken}` } })
+      const res = await authFetch('/api/assistant-chat?list=1', undefined, accessToken)
       const data = await res.json()
       return (data?.conversas ?? []) as ConversaResumo[]
     } catch {
@@ -117,7 +122,7 @@ export function useAssistant(accessToken: string) {
       setLoadingHistorico(true)
       setError(null)
       try {
-        const res = await fetch(`/api/assistant-chat?id=${id}`, { headers: { Authorization: `Bearer ${accessToken}` } })
+        const res = await authFetch(`/api/assistant-chat?id=${id}`, undefined, accessToken)
         const data = await res.json()
         const carregado = (data?.contents ?? []) as Content[]
         setConversaId(data?.conversaId ?? id)
@@ -135,7 +140,7 @@ export function useAssistant(accessToken: string) {
   const excluirConversa = useCallback(
     async (id: string) => {
       try {
-        await fetch(`/api/assistant-chat?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } })
+        await authFetch(`/api/assistant-chat?id=${id}`, { method: 'DELETE' }, accessToken)
       } catch {
         // Sem sorte pra apagar do servidor — some da lista mesmo assim (o
         // chamador já atualiza a UI local).
