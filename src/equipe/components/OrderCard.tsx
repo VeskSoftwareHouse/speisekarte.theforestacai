@@ -1,6 +1,7 @@
 import { ORDER_STATUS_LABEL } from '@shared/types'
-import type { OrderWithItems, OrderStatus } from '@shared/types'
+import type { OrderWithItems, OrderStatus, SelectedModifierOption } from '@shared/types'
 import { elapsedLabel, formatCHF, formatSelectedOptionLabel } from '@shared/format'
+import { fruitColor } from '../ingredientColors'
 
 const NEXT_ACTION_LABEL: Record<OrderStatus, string | null> = {
   recebido: 'Iniciar preparo',
@@ -10,6 +11,19 @@ const NEXT_ACTION_LABEL: Record<OrderStatus, string | null> = {
 }
 
 const WAIT_WARNING_MIN = 10
+
+/** Adicionais escolhidos, agrupados pela categoria deles (ex: "Früchte",
+ * "Toppings") — a ordem gravada no pedido já segue a ordem dos grupos no
+ * produto, então só precisa juntar quem tem o mesmo `modifier_nome`. */
+function agruparPorCategoria(opcoes: SelectedModifierOption[]): { categoria: string; opcoes: SelectedModifierOption[] }[] {
+  const porCategoria = new Map<string, SelectedModifierOption[]>()
+  for (const opcao of opcoes) {
+    const lista = porCategoria.get(opcao.modifier_nome) ?? []
+    lista.push(opcao)
+    porCategoria.set(opcao.modifier_nome, lista)
+  }
+  return [...porCategoria.entries()].map(([categoria, opcoes]) => ({ categoria, opcoes }))
+}
 
 interface Props {
   order: OrderWithItems
@@ -54,9 +68,21 @@ export default function OrderCard({ order, isNew, now, onAdvance, onSeen }: Prop
             </div>
             {item.descricao_item && <p className="order-card__item-recipe">{item.descricao_item}</p>}
             {item.modifiers_selecionados.length > 0 && (
-              <p className="order-card__item-mods">
-                {item.modifiers_selecionados.map((m) => formatSelectedOptionLabel(m.option_nome, m.quantidade)).join(', ')}
-              </p>
+              <div className="order-card__item-mods">
+                {agruparPorCategoria(item.modifiers_selecionados).map(({ categoria, opcoes }) => (
+                  <p key={categoria} className="order-card__mod-group">
+                    <span className="order-card__mod-group-title">{categoria}: </span>
+                    {opcoes.map((opcao, i) => (
+                      <span key={opcao.option_id}>
+                        {i > 0 && ', '}
+                        <span style={{ color: fruitColor(opcao.option_nome) }}>
+                          {formatSelectedOptionLabel(opcao.option_nome, opcao.quantidade)}
+                        </span>
+                      </span>
+                    ))}
+                  </p>
+                ))}
+              </div>
             )}
             {item.observacoes && <p className="order-card__item-obs">Obs: {item.observacoes}</p>}
           </li>
