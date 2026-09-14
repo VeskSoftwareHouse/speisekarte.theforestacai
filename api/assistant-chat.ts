@@ -372,7 +372,10 @@ async function consultarCardapio(supabase: SupabaseClient, args: { categoria?: s
   const { data: categorias, error: catErr } = await supabase.from('categories').select('id, nome').order('ordem')
   if (catErr) return { error: catErr.message }
 
-  let query = supabase.from('menu_items').select('id, nome, preco, disponivel, destaque, categoria_id, copo_pronto').order('ordem')
+  let query = supabase
+    .from('menu_items')
+    .select('id, nome, descricao, preco, disponivel, destaque, categoria_id, copo_pronto')
+    .order('ordem')
   if (args.apenas_disponiveis) query = query.eq('disponivel', true)
   const { data: itens, error: itensErr } = await query
   if (itensErr) return { error: itensErr.message }
@@ -421,19 +424,31 @@ async function consultarCardapio(supabase: SupabaseClient, args: { categoria?: s
   const nomeCategoriaPorId = new Map((categorias ?? []).map((c: { id: string; nome: string }) => [c.id, c.nome]))
   let produtos = (
     itens ?? []
-  ).map((i: { id: string; nome: string; preco: number; disponivel: boolean; destaque: boolean; categoria_id: string; copo_pronto: boolean }) => ({
-    nome: i.nome,
-    categoria: nomeCategoriaPorId.get(i.categoria_id) ?? 'Sem categoria',
-    preco_chf: i.preco,
-    disponivel: i.disponivel,
-    destaque: i.destaque,
-    // "Copo pronto": mostra o botão "Ver ingredientes" no cardápio pro cliente (ver definir_ingredientes_copo_pronto).
-    copo_pronto: i.copo_pronto,
-    ingredientes_copo_pronto: ingredientesPorItem.get(i.id) ?? [],
-    // Receita fixa de insumos consumida do estoque em toda venda, independente
-    // das misturas escolhidas pelo cliente (ver definir_composicao_produto).
-    composicao: composicaoPorItem.get(i.id) ?? [],
-  }))
+  ).map(
+    (i: {
+      id: string
+      nome: string
+      descricao: string | null
+      preco: number
+      disponivel: boolean
+      destaque: boolean
+      categoria_id: string
+      copo_pronto: boolean
+    }) => ({
+      nome: i.nome,
+      descricao: i.descricao,
+      categoria: nomeCategoriaPorId.get(i.categoria_id) ?? 'Sem categoria',
+      preco_chf: i.preco,
+      disponivel: i.disponivel,
+      destaque: i.destaque,
+      // "Copo pronto": mostra o botão "Ver ingredientes" no cardápio pro cliente (ver definir_ingredientes_copo_pronto).
+      copo_pronto: i.copo_pronto,
+      ingredientes_copo_pronto: ingredientesPorItem.get(i.id) ?? [],
+      // Receita fixa de insumos consumida do estoque em toda venda, independente
+      // das misturas escolhidas pelo cliente (ver definir_composicao_produto).
+      composicao: composicaoPorItem.get(i.id) ?? [],
+    }),
+  )
   if (args.categoria) {
     const termo = args.categoria.toLowerCase()
     produtos = produtos.filter((p) => p.categoria.toLowerCase().includes(termo))
@@ -1706,7 +1721,7 @@ const TOOLS = [
       {
         name: 'consultar_cardapio',
         description:
-          'Consulta o cardápio cadastrado: produtos, categorias, preços, disponibilidade, destaque, se é um "copo pronto" e seus ingredientes (copo_pronto, ingredientes_copo_pronto), a composição/receita fixa de insumos consumida do estoque em toda venda (composicao — ver definir_composicao_produto), e também os grupos de adicionais/misturas (ex: Frutas, Toppings) com suas opções e preço adicional. Não tem relação com vendas — é o catálogo, vendido ou não.',
+          'Consulta o cardápio cadastrado: produtos, categorias, preços, disponibilidade, destaque, descrição, se é um "copo pronto" e seus ingredientes (copo_pronto, ingredientes_copo_pronto), a composição/receita fixa de insumos consumida do estoque em toda venda (composicao — ver definir_composicao_produto), e também os grupos de adicionais/misturas (ex: Frutas, Toppings) com suas opções e preço adicional. Não tem relação com vendas — é o catálogo, vendido ou não.',
         parametersJsonSchema: {
           type: 'object',
           properties: {
