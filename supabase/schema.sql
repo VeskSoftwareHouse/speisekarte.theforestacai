@@ -752,6 +752,13 @@ create table if not exists insumos (
   criado_em      timestamptz not null default now()
 );
 
+-- peso de 1 litro deste insumo, em gramas (ex: açaí puro ≈ 1030) — só faz
+-- sentido quando `unidade` é 'l' ou 'ml'. Permite montar a composição do
+-- produto (menu_item_insumos) em gramas mesmo controlando o estoque em
+-- volume; a baixa de estoque continua sempre na unidade de controle (ver
+-- src/shared/insumoConversao.ts). null = composição na própria unidade.
+alter table insumos add column if not exists gramas_por_litro numeric(10,2);
+
 create index if not exists idx_insumos_ordem on insumos(ordem);
 
 -- ---------------------------------------------------------------------

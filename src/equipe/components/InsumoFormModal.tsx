@@ -22,6 +22,7 @@ export default function InsumoFormModal({ insumo, proximaOrdem, onClose, onSave 
   const [nome, setNome] = useState(insumo?.nome ?? '')
   const [unidade, setUnidade] = useState<Unidade>(insumo?.unidade ?? 'g')
   const [estoqueMinimo, setEstoqueMinimo] = useState(insumo?.estoque_minimo ?? '')
+  const [gramasPorLitro, setGramasPorLitro] = useState(insumo?.gramas_por_litro ?? '')
   const [ordem, setOrdem] = useState(insumo?.ordem ?? proximaOrdem)
   const [ativo, setAtivo] = useState(insumo?.ativo ?? true)
   const [saving, setSaving] = useState(false)
@@ -37,6 +38,9 @@ export default function InsumoFormModal({ insumo, proximaOrdem, onClose, onSave 
         nome: nome.trim(),
         unidade,
         estoque_minimo: estoqueMinimo === '' ? null : Number(estoqueMinimo),
+        // Só faz sentido controlando em volume — trocar pra kg/g/unidade
+        // descarta a densidade em vez de deixar um valor órfão no banco.
+        gramas_por_litro: (unidade === 'l' || unidade === 'ml') && gramasPorLitro !== '' ? Number(gramasPorLitro) : null,
         ativo,
         ordem,
       })
@@ -79,6 +83,25 @@ export default function InsumoFormModal({ insumo, proximaOrdem, onClose, onSave 
               <input type="number" min={0} value={ordem} onChange={(e) => setOrdem(Number(e.target.value))} />
             </label>
           </div>
+
+          {(unidade === 'l' || unidade === 'ml') && (
+            <label className="admin-form__field">
+              <span>Peso de 1 litro em gramas (opcional)</span>
+              <input
+                type="number"
+                min={0}
+                step="1"
+                value={gramasPorLitro}
+                onChange={(e) => setGramasPorLitro(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="Ex: 1030"
+              />
+              <p className="admin-form__hint">
+                Pese 1 litro deste insumo numa balança. Informando isto, a composição dos produtos passa a aceitar a
+                quantidade em gramas em vez de {unidade === 'l' ? 'litros' : 'mililitros'} — o estoque continua sendo
+                controlado em {unidade === 'l' ? 'litros' : 'mililitros'} normalmente.
+              </p>
+            </label>
+          )}
 
           <label className="admin-form__field">
             <span>Alerta de saldo baixo (opcional)</span>

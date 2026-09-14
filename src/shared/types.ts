@@ -206,6 +206,11 @@ export interface Insumo {
   unidade: Unidade
   /** Abaixo deste saldo, o insumo aparece como "saldo baixo" no dashboard de estoque. null = sem alerta. */
   estoque_minimo: number | null
+  /** Peso de 1 litro deste insumo, em gramas (ex: açaí puro ≈ 1030). Só faz
+   * sentido quando `unidade` é 'l' ou 'ml' — permite compor a receita do
+   * produto em gramas mesmo controlando o estoque em volume (ver
+   * insumoConversao.ts). null = composição continua na própria unidade. */
+  gramas_por_litro: number | null
   /** Desativado em vez de excluído: preserva compras/movimentações/perdas já registradas com este insumo. */
   ativo: boolean
   ordem: number

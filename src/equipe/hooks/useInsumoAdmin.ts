@@ -7,6 +7,7 @@ export interface InsumoInput {
   nome: string
   unidade: Unidade
   estoque_minimo: number | null
+  gramas_por_litro: number | null
   ativo: boolean
   ordem: number
 }

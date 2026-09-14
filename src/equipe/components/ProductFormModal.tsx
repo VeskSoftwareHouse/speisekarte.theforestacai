@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { X, ImagePlus, Loader2, Trash2 } from 'lucide-react'
 import type { Category, Insumo, MenuItem, MenuItemInsumo, Modifier } from '@shared/types'
 import CurrencyInput from '@shared/components/CurrencyInput'
+import { aceitaGramasNaComposicao, deGramas, paraGramas } from '@shared/insumoConversao'
 import { translationsFor } from '../autoTranslate'
 import type { ProductInput } from '../hooks/useMenuAdmin'
 
@@ -278,6 +279,12 @@ export default function ProductFormModal({
               <div className="admin-composition-list">
                 {compositionRows.map((row, idx) => {
                   const insumo = insumos.find((i) => i.id === row.insumo_id)
+                  // Se o insumo tem densidade cadastrada (ver InsumoFormModal), digita e
+                  // mostra a quantidade em gramas — o que é salvo continua sendo sempre
+                  // convertido de volta pra unidade de controle do insumo (ex: litros),
+                  // que é a mesma que a baixa de estoque usa.
+                  const emGramas = aceitaGramasNaComposicao(insumo)
+                  const quantidadeExibida = emGramas ? Math.round(paraGramas(row.quantidade, insumo) * 10) / 10 : row.quantidade
                   return (
                     <div key={idx} className="admin-composition-list__row">
                       <select
@@ -293,12 +300,15 @@ export default function ProductFormModal({
                       <input
                         type="number"
                         min={0}
-                        step="0.001"
-                        value={row.quantidade || ''}
-                        onChange={(e) => updateCompositionRow(idx, { quantidade: Number(e.target.value) })}
+                        step={emGramas ? '1' : '0.001'}
+                        value={quantidadeExibida || ''}
+                        onChange={(e) => {
+                          const digitado = Number(e.target.value)
+                          updateCompositionRow(idx, { quantidade: emGramas ? deGramas(digitado, insumo) : digitado })
+                        }}
                         placeholder="0"
                       />
-                      <span>{insumo?.unidade ?? ''}</span>
+                      <span>{emGramas ? 'g' : (insumo?.unidade ?? '')}</span>
                       <button
                         type="button"
                         className="admin-composition-list__remove"
