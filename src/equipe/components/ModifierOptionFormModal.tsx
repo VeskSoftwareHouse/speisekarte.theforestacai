@@ -173,7 +173,7 @@ export default function ModifierOptionFormModal({
 
           <label className="admin-form__checkbox">
             <input type="checkbox" checked={permiteVarias} onChange={(e) => setPermiteVarias(e.target.checked)} />
-            <span>Cliente pode pedir mais de uma porção (ex: "3x Granola")</span>
+            <span>Cliente pode pedir mais de uma porção</span>
           </label>
 
           {permiteVarias && (
