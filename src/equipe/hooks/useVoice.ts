@@ -29,6 +29,13 @@ interface SpeechRecognitionLike extends EventTarget {
   onend: (() => void) | null
 }
 
+// Quanto de fala juntar antes de começar a tocar, e a pausa inserida se a
+// geração ficar pra trás no meio da fala. Calibrado medindo o streaming do
+// Gemini TTS: o primeiro pedaço chega em ~0,9 s, mas a geração é um pouco
+// mais lenta que a fala em si.
+const PREBUFFER_S = 0.6
+const REBUFFER_S = 0.25
+
 function getSpeechRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
   const w = window as unknown as {
     SpeechRecognition?: new () => SpeechRecognitionLike
@@ -71,6 +78,8 @@ export function useVoice(onTranscricaoFinal: (texto: string) => void) {
     if (!Ctor) return
     // Cala o Tuco antes de ouvir — senão o microfone capta a própria voz dele.
     stopSpeakingRef.current()
+    // Aproveita o clique pra liberar o áudio da resposta que vem depois.
+    prepararAudioRef.current()
     setSttError(null)
 
     const recognition = new Ctor()
@@ -98,17 +107,35 @@ export function useVoice(onTranscricaoFinal: (texto: string) => void) {
     setListening(true)
   }, [])
 
-  // Áudio da voz IA tocando agora, e um contador pra descartar respostas que
-  // chegarem depois de um stopSpeaking() ou de uma fala mais nova.
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  // Tocador da voz IA: um AudioContext reaproveitado, os pedaços agendados da
+  // fala atual, o fetch em andamento, e um contador pra descartar respostas
+  // que chegarem depois de um stopSpeaking() ou de uma fala mais nova.
+  const ctxRef = useRef<AudioContext | null>(null)
+  const fontesRef = useRef<AudioBufferSourceNode[]>([])
+  const abortRef = useRef<AbortController | null>(null)
   const falaIdRef = useRef(0)
 
+  /** Cria/retoma o AudioContext. Chamado num clique (microfone, enviar) —
+   * navegadores só deixam tocar som depois de um gesto do usuário, e o
+   * áudio da resposta chega segundos depois, fora do clique. */
+  const prepararAudio = useCallback(() => {
+    if (typeof window === 'undefined' || !('AudioContext' in window)) return null
+    if (!ctxRef.current) ctxRef.current = new AudioContext()
+    if (ctxRef.current.state === 'suspended') void ctxRef.current.resume()
+    return ctxRef.current
+  }, [])
+
   const pararAudio = useCallback(() => {
-    const audio = audioRef.current
-    if (!audio) return
-    audio.pause()
-    URL.revokeObjectURL(audio.src)
-    audioRef.current = null
+    abortRef.current?.abort()
+    abortRef.current = null
+    for (const fonte of fontesRef.current) {
+      try {
+        fonte.stop()
+      } catch {
+        // Já tinha terminado de tocar.
+      }
+    }
+    fontesRef.current = []
   }, [])
 
   const stopSpeaking = useCallback(() => {
@@ -116,9 +143,11 @@ export function useVoice(onTranscricaoFinal: (texto: string) => void) {
     pararAudio()
     window.speechSynthesis?.cancel()
   }, [pararAudio])
-  // startListening é declarado antes e precisa calar o Tuco — via ref.
+  // startListening é declarado antes e usa estes dois — via ref.
   const stopSpeakingRef = useRef(stopSpeaking)
   stopSpeakingRef.current = stopSpeaking
+  const prepararAudioRef = useRef(prepararAudio)
+  prepararAudioRef.current = prepararAudio
 
   /** Voz do navegador — só usada se a voz IA (api/tuco-voz) falhar. */
   const falarPeloNavegador = useCallback(
@@ -147,38 +176,97 @@ export function useVoice(onTranscricaoFinal: (texto: string) => void) {
   )
 
   /**
-   * Fala com a voz IA do Gemini (natural e igual em todo aparelho); se a rota
-   * falhar ou o navegador bloquear o play, cai na voz do navegador.
+   * Fala com a voz IA do Gemini (natural e igual em todo aparelho), tocando o
+   * áudio em streaming: começa assim que junta um pouquinho de fala, em vez
+   * de esperar a resposta inteira ser gerada. Se a rota falhar antes de
+   * tocar qualquer coisa, cai na voz do navegador.
    */
   const speak = useCallback(
     async (texto: string) => {
       if (!texto.trim()) return
       stopSpeaking()
       const id = falaIdRef.current
+      const controller = new AbortController()
+      abortRef.current = controller
+      let tocou = false
       try {
+        const ctx = prepararAudio()
+        if (!ctx) throw new Error('Web Audio indisponível')
+
         const res = await authFetch('/api/tuco-voz', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: texto }),
+          signal: controller.signal,
         })
-        if (!res.ok) throw new Error(`Voz IA falhou (${res.status})`)
-        const blob = await res.blob()
-        if (id !== falaIdRef.current) return
+        if (!res.ok || !res.body) throw new Error(`Voz IA falhou (${res.status})`)
+        if (ctx.state !== 'running') await ctx.resume()
+        if (ctx.state !== 'running') throw new Error('Navegador bloqueou o áudio')
 
-        const audio = new Audio(URL.createObjectURL(blob))
-        audioRef.current = audio
-        audio.onended = () => {
-          if (audioRef.current === audio) pararAudio()
+        const sampleRate = Number(res.headers.get('X-Sample-Rate')) || 24000
+        const reader = res.body.getReader()
+        let sobra: Uint8Array | null = null // byte ímpar que ficou entre dois pedaços
+        let fila: Float32Array<ArrayBuffer>[] = [] // áudio recebido e ainda não agendado
+        let segundosNaFila = 0
+        let cursor = 0 // quando (no relógio do AudioContext) o próximo pedaço começa
+
+        const agendarFila = () => {
+          // Chegou atrasado (a geração ficou pra trás da fala): em vez de tocar
+          // picotado, faz uma pausa curta e segue — soa como uma respiração.
+          if (cursor < ctx.currentTime + 0.02) cursor = ctx.currentTime + (tocou ? REBUFFER_S : 0.05)
+          for (const amostras of fila) {
+            const buffer = ctx.createBuffer(1, amostras.length, sampleRate)
+            buffer.copyToChannel(amostras, 0)
+            const fonte = ctx.createBufferSource()
+            fonte.buffer = buffer
+            fonte.connect(ctx.destination)
+            fonte.start(cursor)
+            fonte.onended = () => {
+              fontesRef.current = fontesRef.current.filter((f) => f !== fonte)
+            }
+            fontesRef.current.push(fonte)
+            cursor += buffer.duration
+          }
+          fila = []
+          segundosNaFila = 0
+          tocou = true
         }
-        await audio.play()
+
+        for (;;) {
+          const { done, value } = await reader.read()
+          if (id !== falaIdRef.current) return
+          if (done) break
+          if (!value?.length) continue
+
+          let bytes = value
+          if (sobra) {
+            bytes = new Uint8Array(sobra.length + value.length)
+            bytes.set(sobra)
+            bytes.set(value, sobra.length)
+            sobra = null
+          }
+          const total = bytes.length - (bytes.length % 2)
+          if (total < bytes.length) sobra = bytes.slice(total)
+          const view = new DataView(bytes.buffer, bytes.byteOffset, total)
+          const amostras = new Float32Array(total / 2)
+          for (let i = 0; i < amostras.length; i++) amostras[i] = view.getInt16(i * 2, true) / 32768
+          fila.push(amostras)
+          segundosNaFila += amostras.length / sampleRate
+
+          // Primeiro junta um pouco de fala (absorve oscilação da rede e da
+          // geração); depois disso, agenda cada pedaço assim que chega.
+          if (tocou || segundosNaFila >= PREBUFFER_S) agendarFila()
+        }
+        if (fila.length) agendarFila()
+        if (!tocou) throw new Error('Voz IA veio vazia')
       } catch (err) {
-        if (id !== falaIdRef.current) return
+        if (id !== falaIdRef.current || tocou) return
         console.warn('Voz IA do Tuco indisponível; usando a voz do navegador.', err)
         pararAudio()
         falarPeloNavegador(texto)
       }
     },
-    [stopSpeaking, pararAudio, falarPeloNavegador],
+    [stopSpeaking, prepararAudio, pararAudio, falarPeloNavegador],
   )
 
   // Desliga tudo se o componente sumir com o microfone ligado ou o Tuco no
@@ -191,5 +279,15 @@ export function useVoice(onTranscricaoFinal: (texto: string) => void) {
     [stopSpeaking],
   )
 
-  return { sttSupported, ttsSupported, listening, sttError, startListening, stopListening, speak, stopSpeaking }
+  return {
+    sttSupported,
+    ttsSupported,
+    listening,
+    sttError,
+    startListening,
+    stopListening,
+    speak,
+    stopSpeaking,
+    prepararAudio,
+  }
 }

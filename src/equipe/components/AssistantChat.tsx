@@ -39,7 +39,7 @@ export default function AssistantChat({ accessToken }: Props) {
   // as respostas que chegarem dali pra frente.
   const faladasRef = useRef<number | null>(null)
 
-  const { sttSupported, listening, sttError, startListening, stopListening, speak, stopSpeaking } = useVoice(
+  const { sttSupported, listening, sttError, startListening, stopListening, speak, stopSpeaking, prepararAudio } = useVoice(
     (texto) => {
       if (!texto.trim()) return
       sendMessage(texto)
@@ -94,6 +94,8 @@ export default function AssistantChat({ accessToken }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!input.trim()) return
+    // Libera o áudio ainda dentro do clique — a resposta falada chega depois.
+    prepararAudio()
     sendMessage(input)
     setInput('')
   }
