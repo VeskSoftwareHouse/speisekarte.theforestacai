@@ -36,11 +36,11 @@ Seja caloroso e carismático em toda resposta, mesmo as diretas e curtas: trate 
 
 Humor é parte da sua personalidade, não um extra opcional: QUASE TODA resposta deve trazer uma piadinha leve ou um trocadilho, mesmo que pequeno. Aproveite bastante que você é um tucano — bico, voar, pena, tucano/Tuco, açaí são ótimos gatilhos de trocadilho, mas vale qualquer humor leve que caiba na frase. Não espere "vir uma boa" pra soltar algo: capriche mesmo que seja um trocadilho simples. A única regra de ouro é que a piada nunca substitui nem atrapalha a resposta de verdade — ela é uma frase extra, curta, antes ou depois do que a pergunta pediu, e a informação em si continua completa e correta. Corte o humor por completo (nem tente) em confirmações antes de gravar algo, em erros, e em qualquer situação que pareça séria ou urgente — aí o tom é direto, sem gracinha. Fora esses casos, humor é regra, não exceção.
 
-Hoje é ${hoje} (AAAA-MM-DD). Quando a pergunta mencionar um dia específico (ex: "domingo passado", "dia 25", "ontem à noite"), calcule a data exata a partir de hoje e passe em data_inicio/data_fim na ferramenta consultar_vendas — não se limite ao parâmetro periodo quando o usuário pedir um dia específico.
+Hoje é ${hoje} (AAAA-MM-DD). Quando a pergunta mencionar um dia específico (ex: "domingo passado", "dia 25", "ontem à noite"), calcule a data exata a partir de hoje e passe em data_inicio/data_fim na ferramenta consultar_vendas (ou consultar_pedidos_periodo, se a pergunta for sobre clientes/pedidos individuais) — não se limite ao parâmetro periodo quando o usuário pedir um dia específico.
 
 Responda em texto simples, sem markdown: nunca use **negrito**, *itálico*, listas com "-"/"*" nem títulos com "#". Para listar itens (ex: produtos mais vendidos), use uma linha por item com números normais ("1. Açaí 300ml: 67 unidades"), sem nenhum asterisco. Também não use travessão nem meia-risca ("—"/"–") em nenhuma frase — troque por vírgula, ponto final, ou reescreva a frase; use só o hífen normal ("-") quando fizer parte de uma palavra composta.
 
-Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a todo o painel da equipe: vendas/relatórios, incluindo lucro bruto e margem por produto (consultar_vendas), estado atual dos pedidos (consultar_pedidos_atuais), cardápio e adicionais (consultar_cardapio), saldo de estoque (consultar_estoque), histórico de movimentações de estoque (consultar_movimentacoes_estoque), pedidos de compra (consultar_compras), fornecedores (consultar_fornecedores), perdas (consultar_perdas), contagens de inventário (consultar_inventarios), fila de pedidos pendentes de fechamento de estoque (consultar_fechamento), impostos (consultar_impostos), e gorjetas/usuários da equipe/fechamento automático de estoque (consultar_configuracoes). Você é a especialista em tudo que está no painel — qualquer pergunta sobre o que ele mostra ou faz, tente responder chamando a ferramenta certa antes de dizer que não sabe. Se o resultado de uma ferramenta não trouxer o dado que a pergunta pediu, isso significa que a informação não está disponível nessa ferramenta — nunca conclua "zero" ou "nenhum" por conta própria a partir disso; diga que você não tem acesso a esse dado específico. Fale sempre na primeira pessoa ("eu não tenho", "eu não consigo calcular") — nunca em terceira pessoa como se fosse outra coisa respondendo (nunca "o painel não consegue" ou "o sistema não tem"): é você quem está conversando, não o painel. Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso.
+Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a todo o painel da equipe: vendas/relatórios, incluindo lucro bruto e margem por produto (consultar_vendas), estado atual dos pedidos de hoje (consultar_pedidos_atuais), pedidos e nomes de clientes de qualquer dia ou período, inclusive dias anteriores (consultar_pedidos_periodo),cardápio e adicionais (consultar_cardapio), saldo de estoque (consultar_estoque), histórico de movimentações de estoque (consultar_movimentacoes_estoque), pedidos de compra (consultar_compras), fornecedores (consultar_fornecedores), perdas (consultar_perdas), contagens de inventário (consultar_inventarios), fila de pedidos pendentes de fechamento de estoque (consultar_fechamento), impostos (consultar_impostos), e gorjetas/usuários da equipe/fechamento automático de estoque (consultar_configuracoes). Você é a especialista em tudo que está no painel — qualquer pergunta sobre o que ele mostra ou faz, tente responder chamando a ferramenta certa antes de dizer que não sabe. Se o resultado de uma ferramenta não trouxer o dado que a pergunta pediu, isso significa que a informação não está disponível nessa ferramenta — nunca conclua "zero" ou "nenhum" por conta própria a partir disso; diga que você não tem acesso a esse dado específico. Fale sempre na primeira pessoa ("eu não tenho", "eu não consigo calcular") — nunca em terceira pessoa como se fosse outra coisa respondendo (nunca "o painel não consegue" ou "o sistema não tem"): é você quem está conversando, não o painel. Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso.
 
 CADASTRO E EDIÇÃO (criar_categoria, criar_produto, criar_insumo, criar_grupo_adicional, criar_opcao_adicional, criar_fornecedor, criar_imposto, criar_gorjeta, registrar_movimentacao_estoque, registrar_perda): quando o usuário pedir pra cadastrar OU editar/alterar/atualizar algo (ex: "configura um alerta de saldo baixo no açaí", "muda o preço do X", "desativa o fornecedor Y"), use a ferramenta correspondente — a maioria serve tanto pra criar quanto pra editar: informando o campo "*_atual" (ex: nome_atual, valor_atual) você EDITA o registro existente daquele nome; sem isso, você CRIA um novo. Nunca diga que não sabe editar algo antes de checar se a ferramenta certa aceita isso. Pra ligar/desligar um grupo de adicionais num produto (ex: "coloca o Toppings no Açaí 500ml"), use vincular_grupo_adicional — não é a mesma coisa que criar o grupo ou a opção.
 
@@ -467,6 +467,65 @@ async function consultarPedidosAtuais(supabase: SupabaseClient, args: { nome_cli
   }
 
   return resultado
+}
+
+interface PedidoPeriodoRow {
+  nome_cliente: string | null
+  status: string
+  valor_pago: number | null
+  gorjeta: number | null
+  forma_pagamento: string | null
+  criado_em: string
+  order_items: { nome_item: string; quantidade: number }[] | null
+}
+
+// Um mês cheio de food truck cabe folgado; isto só evita mandar milhares de
+// pedidos pro modelo (lento e caro) se alguém pedir um período enorme.
+const MAX_PEDIDOS_PERIODO = 300
+
+/**
+ * Pedidos pagos de qualquer dia ou período, um por um, com nome do cliente —
+ * o que consultar_vendas não traz (só totais) e consultar_pedidos_atuais só
+ * traz de hoje. É o que responde "quem comprou ontem?" ou "quando a Maria
+ * veio da última vez?".
+ */
+async function consultarPedidosPeriodo(
+  supabase: SupabaseClient,
+  args: { periodo?: string; data_inicio?: string; data_fim?: string; nome_cliente?: string },
+) {
+  const { inicio, fim } = periodoParaIntervalo(args)
+  let query = supabase
+    .from('orders')
+    .select('nome_cliente, status, valor_pago, gorjeta, forma_pagamento, criado_em, order_items(nome_item, quantidade)')
+    .in('status', PAID_STATUSES)
+    .gte('criado_em', inicio.toISOString())
+    .lt('criado_em', fim.toISOString())
+    .order('criado_em', { ascending: false })
+    .limit(MAX_PEDIDOS_PERIODO + 1)
+  if (args.nome_cliente) query = query.ilike('nome_cliente', `%${args.nome_cliente}%`)
+
+  const { data, error } = await query
+  if (error) return { error: error.message }
+
+  const linhas = (data ?? []) as unknown as PedidoPeriodoRow[]
+  const pedidos = linhas.slice(0, MAX_PEDIDOS_PERIODO).map((p) => ({
+    nome_cliente: p.nome_cliente,
+    criado_em: p.criado_em,
+    status: p.status,
+    valor_chf: p.valor_pago,
+    gorjeta_chf: p.gorjeta,
+    forma_pagamento: p.forma_pagamento,
+    itens: (p.order_items ?? []).map((i) => `${i.quantidade}x ${i.nome_item}`),
+  }))
+
+  return {
+    intervalo: { inicio: inicio.toISOString(), fim: fim.toISOString() },
+    total_pedidos: pedidos.length,
+    ...(linhas.length > MAX_PEDIDOS_PERIODO
+      ? { aviso: `Mostrando só os ${MAX_PEDIDOS_PERIODO} pedidos mais recentes do período — peça um intervalo menor pra ver o resto.` }
+      : {}),
+    pedidos,
+  }
 }
 
 interface InsumoRow {
@@ -1515,13 +1574,40 @@ const TOOLS = [
       {
         name: 'consultar_pedidos_atuais',
         description:
-          'Consulta o estado operacional agora: quantos pedidos estão em cada etapa da cozinha hoje (recebido/em preparo/pronto/entregue), quantos aguardam confirmação de pagamento em dinheiro, e a lista completa de pedidos pagos hoje com nome do cliente, status e valor (pedidos_hoje) — use isso pra perguntas tipo "quem comprou hoje?" ou "quais os nomes dos clientes de hoje?". Informe nome_cliente só quando quiser filtrar por um cliente específico.',
+          'Consulta o estado operacional agora: quantos pedidos estão em cada etapa da cozinha hoje (recebido/em preparo/pronto/entregue), quantos aguardam confirmação de pagamento em dinheiro, e a lista completa de pedidos pagos hoje com nome do cliente, status e valor (pedidos_hoje) — use isso pra perguntas tipo "quem comprou hoje?" ou "quais os nomes dos clientes de hoje?". Informe nome_cliente só quando quiser filtrar por um cliente específico. Só cobre HOJE: para clientes/pedidos de outros dias (ontem, uma data, a semana), use consultar_pedidos_periodo.',
         parametersJsonSchema: {
           type: 'object',
           properties: {
             nome_cliente: {
               type: 'string',
               description: 'Nome (ou parte do nome) de um cliente, para achar o(s) pedido(s) dele.',
+            },
+          },
+        },
+      },
+      {
+        name: 'consultar_pedidos_periodo',
+        description:
+          'Lista os pedidos pagos de qualquer dia ou período (inclusive dias anteriores), um por um: nome do cliente, data/hora, valor, gorjeta, forma de pagamento, status e itens comprados. Use para perguntas tipo "quem comprou ontem?", "nomes dos clientes do dia 13", "o que o João pediu semana passada?" ou "quando a Maria comprou pela última vez?". Todo pedido fica salvo com o nome do cliente — nunca diga que o histórico de nomes não existe. Para totais (faturamento, mais vendidos) prefira consultar_vendas. Para um dia ou intervalo específico, use data_inicio/data_fim em vez de periodo.',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            periodo: {
+              type: 'string',
+              enum: ['hoje', 'ontem', 'semana', 'mes'],
+              description: 'Atalho de período. Ignorado se data_inicio for informado.',
+            },
+            data_inicio: {
+              type: 'string',
+              description: 'Data inicial no formato AAAA-MM-DD, calculada a partir de "hoje" quando o usuário menciona um dia específico.',
+            },
+            data_fim: {
+              type: 'string',
+              description: 'Data final (inclusive) no formato AAAA-MM-DD. Se omitida, usa o mesmo dia de data_inicio.',
+            },
+            nome_cliente: {
+              type: 'string',
+              description: 'Nome (ou parte do nome) de um cliente, para filtrar só os pedidos dele.',
             },
           },
         },
@@ -1939,6 +2025,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           else if (call.name === 'consultar_estoque') resultado = await consultarEstoque(supabase, args)
           else if (call.name === 'consultar_cardapio') resultado = await consultarCardapio(supabase, args)
           else if (call.name === 'consultar_pedidos_atuais') resultado = await consultarPedidosAtuais(supabase, args)
+          else if (call.name === 'consultar_pedidos_periodo') resultado = await consultarPedidosPeriodo(supabase, args)
           else if (call.name === 'consultar_movimentacoes_estoque') resultado = await consultarMovimentacoesEstoque(supabase, args)
           else if (call.name === 'consultar_compras') resultado = await consultarCompras(supabase, args)
           else if (call.name === 'consultar_fornecedores') resultado = await consultarFornecedores(supabase, args)
