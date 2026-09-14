@@ -34,6 +34,12 @@ export default function App() {
     return categories.flatMap((c) => (itemsByCategory[c.id] ?? []).slice(0, 2)).slice(0, 6)
   })()
 
+  // Categoria sem nenhum produto disponível (vazia, ou só com produtos
+  // desativados — itemsByCategory já só traz os disponíveis) não aparece na
+  // barra lateral: não faz sentido o cliente entrar numa categoria pra achar
+  // "nenhum item aqui".
+  const visibleCategories = categories.filter((c) => (itemsByCategory[c.id]?.length ?? 0) > 0)
+
   const [shownCategory, setShownCategory] = useState<string>(FEATURED_ID)
   const [leaving, setLeaving] = useState(false)
   useEffect(() => {
@@ -57,7 +63,7 @@ export default function App() {
   return (
     <div className="dashboard">
       <div className="dashboard__top">
-        <Sidebar categories={categories} activeId={activeCategory} onSelect={setActiveCategory} />
+        <Sidebar categories={visibleCategories} activeId={activeCategory} onSelect={setActiveCategory} />
 
         <main className="dashboard__main">
           <header className="dashboard__header">

@@ -49,6 +49,15 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
     return categories.flatMap((c) => (itemsByCategory[c.id] ?? []).slice(0, 2)).slice(0, 6)
   }, [categories, itemsByCategory])
 
+  // Categoria sem nenhum produto disponível (vazia, ou só com produtos
+  // desativados — itemsByCategory já só traz os disponíveis) não aparece na
+  // barra lateral: não faz sentido a equipe/cliente entrar numa categoria
+  // pra achar "nenhum item aqui".
+  const visibleCategories = useMemo(
+    () => categories.filter((c) => (itemsByCategory[c.id]?.length ?? 0) > 0),
+    [categories, itemsByCategory],
+  )
+
   // A categoria exibida fica um passo atrás da escolhida: no intervalo os cards
   // antigos continuam montados para poderem animar a saída. A sidebar já marca
   // a nova categoria na hora, então o toque não parece travado.
@@ -110,7 +119,7 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
   return (
     <div className="dashboard">
       <div className="dashboard__top">
-        <Sidebar categories={categories} activeId={activeCategory} onSelect={setActiveCategory} />
+        <Sidebar categories={visibleCategories} activeId={activeCategory} onSelect={setActiveCategory} />
 
         <main className="dashboard__main">
           <header className="dashboard__header">
