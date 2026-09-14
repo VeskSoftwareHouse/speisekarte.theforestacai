@@ -48,6 +48,9 @@ export default function CatalogItemModal({ item, onClose }: Props) {
                       <img className="option-pill__photo" src={option.foto_url} alt="" loading="lazy" />
                     )}
                     {translatedField(option.nome_i18n, lang, option.nome)}
+                    {(option.quantidade_maxima ?? 1) > 1 && (
+                      <span className="option-pill__qty-hint">até {option.quantidade_maxima}x</span>
+                    )}
                     {option.preco_adicional > 0 && (
                       <span className="option-pill__price">+{formatCHF(option.preco_adicional)}</span>
                     )}

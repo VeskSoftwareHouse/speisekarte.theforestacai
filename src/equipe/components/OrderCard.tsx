@@ -1,6 +1,6 @@
 import { ORDER_STATUS_LABEL } from '@shared/types'
 import type { OrderWithItems, OrderStatus } from '@shared/types'
-import { elapsedLabel, formatCHF } from '@shared/format'
+import { elapsedLabel, formatCHF, formatSelectedOptionLabel } from '@shared/format'
 
 const NEXT_ACTION_LABEL: Record<OrderStatus, string | null> = {
   recebido: 'Iniciar preparo',
@@ -55,7 +55,7 @@ export default function OrderCard({ order, isNew, now, onAdvance, onSeen }: Prop
             {item.descricao_item && <p className="order-card__item-recipe">{item.descricao_item}</p>}
             {item.modifiers_selecionados.length > 0 && (
               <p className="order-card__item-mods">
-                {item.modifiers_selecionados.map((m) => m.option_nome).join(', ')}
+                {item.modifiers_selecionados.map((m) => formatSelectedOptionLabel(m.option_nome, m.quantidade)).join(', ')}
               </p>
             )}
             {item.observacoes && <p className="order-card__item-obs">Obs: {item.observacoes}</p>}

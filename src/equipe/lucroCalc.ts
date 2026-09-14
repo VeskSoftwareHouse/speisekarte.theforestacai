@@ -79,7 +79,9 @@ function custoDoItem(item: OrderItem, maps: ReferenceMaps, custoPorInsumo: Map<s
       completo = false
       continue
     }
-    custoUnitario += custo * opcao.quantidade_padrao
+    // `?? 1`: pedidos gravados antes de existir quantidade por opção ficam
+    // como 1 porção, o comportamento de sempre.
+    custoUnitario += custo * opcao.quantidade_padrao * (mod.quantidade ?? 1)
   }
 
   return { custo: custoUnitario * item.quantidade, completo }

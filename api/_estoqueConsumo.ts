@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 interface SelectedModifierOptionRow {
   option_id: string
+  quantidade: number
 }
 
 interface OrderItemRow {
@@ -78,7 +79,10 @@ export async function baixarEstoqueDoPedido(supabase: SupabaseClient, orderId: s
       for (const mod of item.modifiers_selecionados ?? []) {
         const opcao = optionById.get(mod.option_id)
         if (!opcao?.insumo_id || !opcao.quantidade_padrao) continue
-        porInsumo.set(opcao.insumo_id, (porInsumo.get(opcao.insumo_id) ?? 0) + opcao.quantidade_padrao * item.quantidade)
+        porInsumo.set(
+          opcao.insumo_id,
+          (porInsumo.get(opcao.insumo_id) ?? 0) + opcao.quantidade_padrao * (mod.quantidade ?? 1) * item.quantidade,
+        )
       }
     }
 

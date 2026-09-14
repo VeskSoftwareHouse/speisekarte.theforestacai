@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ShoppingBag, X, Minus, Plus } from 'lucide-react'
-import { formatCHF } from '@shared/format'
+import { formatCHF, formatSelectedOptionLabel } from '@shared/format'
 import { FallbackPhotoIcon } from '../categoryIcons'
 import { useLanguage } from '../i18n/LanguageContext'
 import { translatedField } from '../i18n/menuTranslations'
@@ -162,7 +162,9 @@ export default function CartPanel({ items, isOpen, onChangeQuantity, onRemove, o
                 {item.selectedOptions.length > 0 && (
                   <p className="cart-panel__mods">
                     {item.selectedOptions
-                      .map((o) => translatedField(o.option_nome_i18n, lang, o.option_nome))
+                      .map((o) =>
+                        formatSelectedOptionLabel(translatedField(o.option_nome_i18n, lang, o.option_nome) ?? o.option_nome, o.quantidade),
+                      )
                       .join(', ')}
                   </p>
                 )}

@@ -85,6 +85,9 @@ export interface ModifierOption {
   insumo_id: string | null
   /** Quanto desse insumo é consumido por unidade do item, na unidade do próprio insumo (ver Insumo.unidade). null quando `insumo_id` é null. */
   quantidade_padrao: number | null
+  /** Quantas porções desta opção o cliente pode pedir de uma vez (ex: "3x Granola").
+   * null ou 1 = só dá pra marcar/desmarcar; um valor maior mostra um contador no totem. */
+  quantidade_maxima: number | null
 }
 
 export interface MenuItemModifier {
@@ -163,6 +166,9 @@ export interface SelectedModifierOption {
   /** Traduções do nome da opção, só para exibição no carrinho — a cozinha sempre vê `option_nome` (alemão). */
   option_nome_i18n: Record<string, string>
   preco_adicional: number
+  /** Quantas porções desta opção foram pedidas (ver ModifierOption.quantidade_maxima).
+   * Preço, cozinha e baixa de estoque escalam por este número — sempre >= 1. */
+  quantidade: number
 }
 
 export interface OrderItem {

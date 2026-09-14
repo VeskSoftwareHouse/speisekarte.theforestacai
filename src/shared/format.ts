@@ -33,6 +33,12 @@ export function formatTipLabel(option: { tipo: TipTipo; valor: number }, subtota
   return `${porcentagem} · ${formatCHF(tipAmountFor(option, subtotal))}`
 }
 
+/** Nome de uma opção de adicional escolhida, com a quantidade na frente quando
+ * for mais de uma porção (ex: "3x Granola") — senão só o nome, como sempre foi. */
+export function formatSelectedOptionLabel(nome: string, quantidade: number): string {
+  return quantidade > 1 ? `${quantidade}x ${nome}` : nome
+}
+
 /** "há 3 min" / "há 1h 12min" a partir de um timestamp ISO */
 export function elapsedLabel(isoDate: string, now: Date = new Date()): string {
   const diffMs = now.getTime() - new Date(isoDate).getTime()

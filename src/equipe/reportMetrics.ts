@@ -321,12 +321,10 @@ export function rankModifierOptions(orders: ReportOrder[], options: { size: bool
     for (const item of order.items) {
       for (const selected of item.modifiers_selecionados) {
         if (isSizeOption(selected) !== options.size) continue
-        acc.add(
-          selected.option_id || selected.option_nome,
-          selected.option_nome,
-          item.quantidade,
-          num(selected.preco_adicional) * item.quantidade,
-        )
+        // `?? 1`: pedidos gravados antes de existir quantidade por opção
+        // (ex: "3x Granola") ficam como 1 porção, o comportamento de sempre.
+        const porcoes = (selected.quantidade ?? 1) * item.quantidade
+        acc.add(selected.option_id || selected.option_nome, selected.option_nome, porcoes, num(selected.preco_adicional) * porcoes)
       }
     }
   }

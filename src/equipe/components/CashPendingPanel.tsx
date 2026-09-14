@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Banknote, X } from 'lucide-react'
 import type { ReportOrder } from '@shared/types'
-import { formatCHF } from '@shared/format'
+import { formatCHF, formatSelectedOptionLabel } from '@shared/format'
 import CurrencyInput from '@shared/components/CurrencyInput'
 
 interface Props {
@@ -100,7 +100,7 @@ function CashPendingCard({ order, onConfirm }: CardProps) {
             {item.descricao_item && <p className="order-card__item-recipe">{item.descricao_item}</p>}
             {item.modifiers_selecionados.length > 0 && (
               <p className="order-card__item-mods">
-                {item.modifiers_selecionados.map((m) => m.option_nome).join(', ')}
+                {item.modifiers_selecionados.map((m) => formatSelectedOptionLabel(m.option_nome, m.quantidade)).join(', ')}
               </p>
             )}
             {item.observacoes && <p className="order-card__item-obs">Obs: {item.observacoes}</p>}

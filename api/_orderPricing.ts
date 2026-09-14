@@ -59,6 +59,7 @@ export async function resolveTip(
 
 interface RawSelectedOption {
   option_id?: unknown
+  quantidade?: unknown
 }
 
 export interface CartItemPayload {
@@ -121,7 +122,10 @@ export async function resolveItems(
     ),
     optionIds.length > 0
       ? withRetry('modifier_options', () =>
-          supabase.from('modifier_options').select('id, modifier_id, nome, nome_i18n, preco_adicional').in('id', optionIds),
+          supabase
+            .from('modifier_options')
+            .select('id, modifier_id, nome, nome_i18n, preco_adicional, quantidade_maxima')
+            .in('id', optionIds),
         )
       : Promise.resolve({ data: [], error: null }),
   ])
@@ -183,13 +187,35 @@ export async function resolveItems(
         return null
       }
       const option = optionById.get(raw.option_id) as
-        | { id: string; modifier_id: string; nome: string; nome_i18n: Record<string, string>; preco_adicional: number }
+        | {
+            id: string
+            modifier_id: string
+            nome: string
+            nome_i18n: Record<string, string>
+            preco_adicional: number
+            quantidade_maxima: number | null
+          }
         | undefined
       if (!option) {
         console.error('resolveItems: opção de modifier inexistente', { menu_item_id: it.menu_item_id, option_id: raw.option_id })
         return null
       }
-      addOnTotal += Number(option.preco_adicional)
+      // Quantas porções desta opção (ex: "3x Granola" — ver
+      // ModifierOption.quantidade_maxima). Sem informar, 1 porção — o
+      // comportamento de sempre. Um pedido forjado poderia mandar qualquer
+      // número, então fica travado entre 1 e o máximo cadastrado da opção.
+      const maximoOpcao = option.quantidade_maxima ?? 1
+      const optQuantidade = raw.quantidade === undefined ? 1 : Number(raw.quantidade)
+      if (!Number.isInteger(optQuantidade) || optQuantidade < 1 || optQuantidade > maximoOpcao) {
+        console.error('resolveItems: quantidade de opção fora do permitido', {
+          menu_item_id: it.menu_item_id,
+          option_id: raw.option_id,
+          quantidade: raw.quantidade,
+          maximo: maximoOpcao,
+        })
+        return null
+      }
+      addOnTotal += Number(option.preco_adicional) * optQuantidade
       resolvedOptions.push({
         modifier_id: option.modifier_id,
         modifier_nome: modifierNameById.get(option.modifier_id) ?? '',
@@ -197,6 +223,7 @@ export async function resolveItems(
         option_nome: option.nome,
         option_nome_i18n: option.nome_i18n ?? {},
         preco_adicional: Number(option.preco_adicional),
+        quantidade: optQuantidade,
       })
     }
 

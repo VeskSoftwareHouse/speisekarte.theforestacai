@@ -1,4 +1,5 @@
 import type { ReportOrder } from '@shared/types'
+import { formatSelectedOptionLabel } from '@shared/format'
 import { toDateKey } from './dateUtils'
 import {
   formatDuration,
@@ -213,7 +214,7 @@ export function buildItemsCsv(allOrders: ReportOrder[]): string {
           item.quantidade,
           decimal(Number(item.preco_unitario ?? 0)),
           decimal(lineTotal(item)),
-          item.modifiers_selecionados.map((option) => option.option_nome).join(' | '),
+          item.modifiers_selecionados.map((option) => formatSelectedOptionLabel(option.option_nome, option.quantidade)).join(' | '),
           item.observacoes ?? '',
         ]),
       )

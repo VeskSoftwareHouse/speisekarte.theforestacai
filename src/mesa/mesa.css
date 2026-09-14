@@ -1255,6 +1255,58 @@
 .option-pill--active .option-pill__price {
   color: var(--color-primary-dark);
 }
+/* "até 3x" — usado só no cardápio de consulta (CatalogItemModal), que é
+   informativo e não tem o contador de verdade (ver option-pill__stepper). */
+.option-pill__qty-hint {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+/* Opção que aceita mais de uma porção (ex: "3x Granola" — ver
+   ModifierOption.quantidade_maxima): a pílula vira um <div> com um botão por
+   dentro (o corpo, que soma a primeira porção) e um contador +/- ao lado. */
+.option-pill--qty {
+  padding-right: var(--space-2);
+  cursor: default;
+}
+.option-pill__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+.option-pill__stepper {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.option-pill__stepper-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+.option-pill--active .option-pill__stepper-btn {
+  border-color: transparent;
+  background: #fff;
+}
+.option-pill__stepper-value {
+  min-width: 18px;
+  text-align: center;
+  font-weight: 700;
+}
 .modal__textarea {
   width: 100%;
   border: 1px solid var(--color-border);

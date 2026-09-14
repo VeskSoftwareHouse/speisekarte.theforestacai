@@ -84,7 +84,12 @@ export function consumoDoPedido(
         semVinculo.add(mod.option_nome)
         continue
       }
-      porInsumo.set(opcao.insumo_id, (porInsumo.get(opcao.insumo_id) ?? 0) + opcao.quantidade_padrao * item.quantidade)
+      // `?? 1`: pedidos gravados antes deste campo existir não têm quantidade
+      // por opção no JSON salvo — tratados como 1 porção, o comportamento de sempre.
+      porInsumo.set(
+        opcao.insumo_id,
+        (porInsumo.get(opcao.insumo_id) ?? 0) + opcao.quantidade_padrao * (mod.quantidade ?? 1) * item.quantidade,
+      )
     }
   }
 

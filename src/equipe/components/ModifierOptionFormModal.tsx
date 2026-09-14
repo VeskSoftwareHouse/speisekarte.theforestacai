@@ -34,6 +34,8 @@ export default function ModifierOptionFormModal({
   const [fotoUrl, setFotoUrl] = useState(option?.foto_url ?? '')
   const [insumoId, setInsumoId] = useState(option?.insumo_id ?? '')
   const [quantidadePadrao, setQuantidadePadrao] = useState(option?.quantidade_padrao ?? '')
+  const [permiteVarias, setPermiteVarias] = useState((option?.quantidade_maxima ?? 1) > 1)
+  const [quantidadeMaxima, setQuantidadeMaxima] = useState(option?.quantidade_maxima ?? 3)
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -61,6 +63,10 @@ export default function ModifierOptionFormModal({
       setError('Informe uma quantidade maior que zero para o insumo vinculado.')
       return
     }
+    if (permiteVarias && !(Number(quantidadeMaxima) >= 2)) {
+      setError('A quantidade máxima de porções precisa ser 2 ou mais.')
+      return
+    }
     setSaving(true)
     setError(null)
     try {
@@ -74,6 +80,7 @@ export default function ModifierOptionFormModal({
         foto_url: fotoUrl.trim() || null,
         insumo_id: insumoId || null,
         quantidade_padrao: insumoId ? Number(quantidadePadrao) : null,
+        quantidade_maxima: permiteVarias ? Number(quantidadeMaxima) : null,
       })
       onClose()
     } catch (err) {
@@ -163,6 +170,28 @@ export default function ModifierOptionFormModal({
               <input type="number" min={0} value={ordem} onChange={(e) => setOrdem(Number(e.target.value))} />
             </label>
           </div>
+
+          <label className="admin-form__checkbox">
+            <input type="checkbox" checked={permiteVarias} onChange={(e) => setPermiteVarias(e.target.checked)} />
+            <span>Cliente pode pedir mais de uma porção (ex: "3x Granola")</span>
+          </label>
+
+          {permiteVarias && (
+            <label className="admin-form__field">
+              <span>Quantidade máxima de porções por pedido</span>
+              <input
+                type="number"
+                min={2}
+                value={quantidadeMaxima}
+                onChange={(e) => setQuantidadeMaxima(Number(e.target.value))}
+                required
+              />
+              <p className="admin-form__hint">
+                No totem, esta opção mostra um contador +/- em vez de só marcar/desmarcar. Preço e baixa de estoque
+                escalam junto com a quantidade escolhida.
+              </p>
+            </label>
+          )}
 
           <label className="admin-form__field">
             <span>Insumo consumido (opcional)</span>

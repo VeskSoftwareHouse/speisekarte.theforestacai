@@ -23,6 +23,9 @@ export interface ModifierOptionInput {
   insumo_id: string | null
   /** Quanto desse insumo é consumido por unidade do item, na unidade do próprio insumo. null quando `insumo_id` é null. */
   quantidade_padrao: number | null
+  /** Quantas porções desta opção o cliente pode pedir de uma vez (ex: "3x Granola").
+   * null ou 1 = só dá pra marcar/desmarcar; um valor maior mostra um contador no totem. */
+  quantidade_maxima: number | null
 }
 
 export function useModifierAdmin() {

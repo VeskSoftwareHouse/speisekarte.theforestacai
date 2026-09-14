@@ -135,7 +135,7 @@ interface OrderItemRow {
   quantidade: number
   preco_unitario: number
   menu_item_id: string | null
-  modifiers_selecionados: { option_id: string }[] | null
+  modifiers_selecionados: { option_id: string; quantidade?: number }[] | null
 }
 interface OrderRow {
   valor_pago: number | null
@@ -310,7 +310,9 @@ async function consultarVendas(
           completo = false
           continue
         }
-        custoUnitario += custo * opcao.quantidade_padrao
+        // `?? 1`: pedidos gravados antes de existir quantidade por opção ficam
+        // como 1 porção, o comportamento de sempre.
+        custoUnitario += custo * opcao.quantidade_padrao * (mod.quantidade ?? 1)
       }
 
       const custoItem = custoUnitario * item.quantidade
@@ -382,7 +384,7 @@ async function consultarCardapio(supabase: SupabaseClient, args: { categoria?: s
 
   const [gruposRes, opcoesRes, ingredientesRes, composicaoRes, insumosRes] = await Promise.all([
     supabase.from('modifiers').select('id, nome, tipo, selecao').order('nome'),
-    supabase.from('modifier_options').select('id, modifier_id, nome, preco_adicional').order('ordem'),
+    supabase.from('modifier_options').select('id, modifier_id, nome, preco_adicional, quantidade_maxima').order('ordem'),
     supabase.from('menu_item_ingredientes').select('menu_item_id, modifier_option_id').order('ordem'),
     supabase.from('menu_item_insumos').select('menu_item_id, insumo_id, quantidade'),
     supabase.from('insumos').select('id, nome, unidade, gramas_por_litro'),
@@ -459,10 +461,12 @@ async function consultarCardapio(supabase: SupabaseClient, args: { categoria?: s
     produtos = produtos.filter((p) => p.categoria.toLowerCase().includes(termo))
   }
 
-  const opcoesPorGrupo = new Map<string, { nome: string; preco_adicional_chf: number }[]>()
-  for (const o of (opcoesRes.data ?? []) as { modifier_id: string; nome: string; preco_adicional: number }[]) {
+  const opcoesPorGrupo = new Map<string, { nome: string; preco_adicional_chf: number; quantidade_maxima: number }[]>()
+  for (const o of (opcoesRes.data ?? []) as { modifier_id: string; nome: string; preco_adicional: number; quantidade_maxima: number | null }[]) {
     const lista = opcoesPorGrupo.get(o.modifier_id) ?? []
-    lista.push({ nome: o.nome, preco_adicional_chf: o.preco_adicional })
+    // 1 = só marca/desmarca (comportamento de sempre); maior que isso é quantas
+    // porções o cliente pode pedir dessa opção (ex: "3x Granola" — ver criar_opcao_adicional).
+    lista.push({ nome: o.nome, preco_adicional_chf: o.preco_adicional, quantidade_maxima: o.quantidade_maxima ?? 1 })
     opcoesPorGrupo.set(o.modifier_id, lista)
   }
   const gruposAdicionais = ((gruposRes.data ?? []) as { id: string; nome: string; tipo: string; selecao: string }[]).map(
@@ -1152,6 +1156,7 @@ interface OpcaoAdicionalArgs {
   preco_adicional?: number
   insumo?: string
   quantidade_padrao?: number
+  quantidade_maxima?: number | null
 }
 
 async function criarOpcaoAdicional(supabase: SupabaseClient, args: OpcaoAdicionalArgs) {
@@ -1196,6 +1201,7 @@ async function criarOpcaoAdicional(supabase: SupabaseClient, args: OpcaoAdiciona
     if (args.preco_adicional !== undefined) patch.preco_adicional = args.preco_adicional
     if (insumoId !== undefined) patch.insumo_id = insumoId
     if (args.quantidade_padrao !== undefined) patch.quantidade_padrao = args.quantidade_padrao
+    if (args.quantidade_maxima !== undefined) patch.quantidade_maxima = args.quantidade_maxima
     if (Object.keys(patch).length === 0) return { erro: 'Nada pra alterar.' }
 
     const { error } = await supabase.from('modifier_options').update(patch).eq('id', opcao.id)
@@ -1221,6 +1227,7 @@ async function criarOpcaoAdicional(supabase: SupabaseClient, args: OpcaoAdiciona
     ordem,
     insumo_id: insumoId ?? null,
     quantidade_padrao: insumoId ? Number(args.quantidade_padrao) : null,
+    quantidade_maxima: args.quantidade_maxima ?? null,
   })
   if (error) return { erro: error.message }
   return { sucesso: true, mensagem: `Opção "${nome}" criada no grupo "${grupoNome}".` }
@@ -1951,6 +1958,10 @@ const TOOLS = [
             preco_adicional: { type: 'number', description: 'Quanto soma ao preço do produto. Padrão ao criar: 0.' },
             insumo: { type: 'string', description: 'Nome de um insumo, opcional, se essa opção deve descontar estoque.' },
             quantidade_padrao: { type: 'number', description: 'Quanto do insumo é consumido por escolha — obrigatório só quando "insumo" é informado.' },
+            quantidade_maxima: {
+              type: 'number',
+              description: 'Quantas porções desta opção o cliente pode pedir de uma vez (ex: 3 pra deixar pedir "3x Granola"). Deixe vazio pra só marcar/desmarcar (padrão, 1 porção).',
+            },
           },
         },
       },

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { formatCHF } from '@shared/format'
+import { formatCHF, formatSelectedOptionLabel } from '@shared/format'
 import { isPaidStatus } from '@shared/types'
 import type { OrderItem, ReportOrder } from '@shared/types'
 import { RECEIPT_STRINGS } from './strings'
@@ -105,7 +105,7 @@ export default function Receipt() {
             </div>
             {item.modifiers_selecionados.length > 0 && (
               <p className="receipt__item-mods">
-                {item.modifiers_selecionados.map((o) => o.option_nome).join(' · ')}
+                {item.modifiers_selecionados.map((o) => formatSelectedOptionLabel(o.option_nome, o.quantidade)).join(' · ')}
               </p>
             )}
             {item.observacoes && <p className="receipt__item-note">{item.observacoes}</p>}

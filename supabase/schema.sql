@@ -94,6 +94,13 @@ create table if not exists modifier_options (
 alter table modifier_options add column if not exists nome_i18n jsonb not null default '{}'::jsonb;
 alter table modifier_options add column if not exists foto_url text;
 
+-- quantas porções desta opção o cliente pode pedir de uma vez (ex: "3x
+-- Granola"). null ou 1 = só dá pra marcar/desmarcar, como sempre foi;
+-- qualquer valor maior mostra um contador +/- no totem em vez de um toque
+-- único. Preço, adicional e baixa de estoque (quantidade_padrao) escalam
+-- juntos pela quantidade escolhida.
+alter table modifier_options add column if not exists quantidade_maxima int;
+
 create index if not exists idx_modifier_options_modifier on modifier_options(modifier_id);
 
 -- ---------------------------------------------------------------------
