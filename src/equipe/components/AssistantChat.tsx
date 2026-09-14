@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { History, Plus, Send, Trash2, X } from 'lucide-react'
+import { History, Mic, Plus, Send, Trash2, X } from 'lucide-react'
 import { useAssistant, type ConversaResumo } from '../hooks/useAssistant'
+import { useVoice } from '../hooks/useVoice'
 
 interface Props {
   accessToken: string
@@ -32,6 +33,20 @@ export default function AssistantChat({ accessToken }: Props) {
   } = useAssistant(accessToken)
   const listRef = useRef<HTMLDivElement | null>(null)
 
+  // Quantas mensagens já foram faladas em voz alta — começa null (ainda não
+  // sabe) e é fixado assim que o histórico salvo termina de carregar, pra
+  // nunca ler em voz alta uma conversa antiga inteira ao reabrir o chat, só
+  // as respostas que chegarem dali pra frente.
+  const faladasRef = useRef<number | null>(null)
+
+  const { sttSupported, listening, sttError, startListening, stopListening, speak, stopSpeaking } = useVoice(
+    (texto) => {
+      if (!texto.trim()) return
+      sendMessage(texto)
+      setInput('')
+    },
+  )
+
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
   }, [messages, sending])
@@ -39,6 +54,31 @@ export default function AssistantChat({ accessToken }: Props) {
   useEffect(() => {
     if (open && mostrarHistorico) listarConversas().then(setConversas)
   }, [open, mostrarHistorico, listarConversas])
+
+  // Lê em voz alta assim que uma resposta nova do Tuco chega — não as que já
+  // vieram no histórico salvo (ver comentário em faladasRef acima).
+  useEffect(() => {
+    if (loadingHistorico) return
+    if (faladasRef.current === null) {
+      faladasRef.current = messages.length
+      return
+    }
+    if (messages.length > faladasRef.current) {
+      const novas = messages.slice(faladasRef.current)
+      const ultimaDoTuco = [...novas].reverse().find((m) => m.role === 'assistant')
+      if (ultimaDoTuco) speak(ultimaDoTuco.text)
+      faladasRef.current = messages.length
+    }
+  }, [messages, loadingHistorico, speak])
+
+  // Fechar o chat corta a fala e o microfone na hora — ninguém quer o Tuco
+  // continuar falando com a janela fechada.
+  useEffect(() => {
+    if (!open) {
+      stopSpeaking()
+      stopListening()
+    }
+  }, [open, stopSpeaking, stopListening])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -181,15 +221,28 @@ export default function AssistantChat({ accessToken }: Props) {
                   </div>
                 )}
                 {error && <p className="admin-form__error">{error}</p>}
+                {sttError && <p className="admin-form__error">{sttError}</p>}
               </div>
 
               <form className="assistant-panel__form" onSubmit={handleSubmit}>
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Pergunte alguma coisa…"
-                  disabled={sending || loadingHistorico}
+                  placeholder={listening ? 'Ouvindo…' : 'Pergunte alguma coisa…'}
+                  disabled={sending || loadingHistorico || listening}
                 />
+                {sttSupported && (
+                  <button
+                    type="button"
+                    className={`assistant-panel__mic-btn ${listening ? 'assistant-panel__mic-btn--listening' : ''}`}
+                    onClick={() => (listening ? stopListening() : startListening())}
+                    disabled={sending || loadingHistorico}
+                    aria-label={listening ? 'Parar de ouvir' : 'Falar com o Tuco'}
+                    title={listening ? 'Parar de ouvir' : 'Falar com o Tuco'}
+                  >
+                    <Mic size={16} strokeWidth={2} />
+                  </button>
+                )}
                 <button
                   type="submit"
                   className="btn btn-primary"

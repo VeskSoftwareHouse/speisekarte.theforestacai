@@ -1948,6 +1948,32 @@ body {
   justify-content: center;
   border-radius: var(--radius-sm);
 }
+/* Botão de falar com o Tuco (reconhecimento de voz do navegador) — vermelho
+   e pulsando enquanto ouve, pra ficar óbvio que o microfone está ligado. */
+.assistant-panel__mic-btn {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+.assistant-panel__mic-btn:hover {
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+.assistant-panel__mic-btn--listening {
+  border-color: var(--color-danger, #d33);
+  background: var(--color-danger, #d33);
+  color: #fff;
+  animation: assistant-mic-pulse 1.2s ease-in-out infinite;
+}
+@keyframes assistant-mic-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(211, 51, 51, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(211, 51, 51, 0);
+  }
+}
 /* Lista de conversas antigas, no lugar das mensagens quando aberta. */
 .assistant-panel__historico {
   flex: 1;
