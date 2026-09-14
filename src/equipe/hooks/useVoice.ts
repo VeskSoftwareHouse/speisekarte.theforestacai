@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { authFetch } from '@shared/authFetch'
 
 // A Web Speech API não tem tipos oficiais completos no TS/DOM lib pra
 // reconhecimento de fala (só pra síntese) — o mínimo que este hook usa,
@@ -68,7 +69,8 @@ export function useVoice(onTranscricaoFinal: (texto: string) => void) {
   const startListening = useCallback(() => {
     const Ctor = getSpeechRecognitionCtor()
     if (!Ctor) return
-    window.speechSynthesis?.cancel()
+    // Cala o Tuco antes de ouvir — senão o microfone capta a própria voz dele.
+    stopSpeakingRef.current()
     setSttError(null)
 
     const recognition = new Ctor()
@@ -96,13 +98,32 @@ export function useVoice(onTranscricaoFinal: (texto: string) => void) {
     setListening(true)
   }, [])
 
-  const stopSpeaking = useCallback(() => {
-    window.speechSynthesis?.cancel()
+  // Áudio da voz IA tocando agora, e um contador pra descartar respostas que
+  // chegarem depois de um stopSpeaking() ou de uma fala mais nova.
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const falaIdRef = useRef(0)
+
+  const pararAudio = useCallback(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    audio.pause()
+    URL.revokeObjectURL(audio.src)
+    audioRef.current = null
   }, [])
 
-  const speak = useCallback(
+  const stopSpeaking = useCallback(() => {
+    falaIdRef.current++
+    pararAudio()
+    window.speechSynthesis?.cancel()
+  }, [pararAudio])
+  // startListening é declarado antes e precisa calar o Tuco — via ref.
+  const stopSpeakingRef = useRef(stopSpeaking)
+  stopSpeakingRef.current = stopSpeaking
+
+  /** Voz do navegador — só usada se a voz IA (api/tuco-voz) falhar. */
+  const falarPeloNavegador = useCallback(
     (texto: string) => {
-      if (!ttsSupported || !texto.trim()) return
+      if (!ttsSupported) return
       const synth = window.speechSynthesis
       const falar = () => {
         const utterance = new SpeechSynthesisUtterance(texto)
@@ -125,14 +146,49 @@ export function useVoice(onTranscricaoFinal: (texto: string) => void) {
     [ttsSupported],
   )
 
+  /**
+   * Fala com a voz IA do Gemini (natural e igual em todo aparelho); se a rota
+   * falhar ou o navegador bloquear o play, cai na voz do navegador.
+   */
+  const speak = useCallback(
+    async (texto: string) => {
+      if (!texto.trim()) return
+      stopSpeaking()
+      const id = falaIdRef.current
+      try {
+        const res = await authFetch('/api/tuco-voz', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: texto }),
+        })
+        if (!res.ok) throw new Error(`Voz IA falhou (${res.status})`)
+        const blob = await res.blob()
+        if (id !== falaIdRef.current) return
+
+        const audio = new Audio(URL.createObjectURL(blob))
+        audioRef.current = audio
+        audio.onended = () => {
+          if (audioRef.current === audio) pararAudio()
+        }
+        await audio.play()
+      } catch (err) {
+        if (id !== falaIdRef.current) return
+        console.warn('Voz IA do Tuco indisponível; usando a voz do navegador.', err)
+        pararAudio()
+        falarPeloNavegador(texto)
+      }
+    },
+    [stopSpeaking, pararAudio, falarPeloNavegador],
+  )
+
   // Desliga tudo se o componente sumir com o microfone ligado ou o Tuco no
   // meio de uma fala — sem isso o áudio continuaria mesmo com o chat fechado.
   useEffect(
     () => () => {
       recognitionRef.current?.stop()
-      window.speechSynthesis?.cancel()
+      stopSpeaking()
     },
-    [],
+    [stopSpeaking],
   )
 
   return { sttSupported, ttsSupported, listening, sttError, startListening, stopListening, speak, stopSpeaking }
