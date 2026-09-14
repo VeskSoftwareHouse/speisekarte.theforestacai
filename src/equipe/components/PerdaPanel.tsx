@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react'
 import type { Insumo, Perda } from '@shared/types'
 import { MOTIVO_PERDA_LABEL } from '@shared/types'
+import { UNIDADE_LABEL } from '@shared/unidadeLabel'
 
 interface Props {
   perdas: Perda[]
@@ -47,7 +48,7 @@ export default function PerdaPanel({ perdas, insumosById, onAdd }: Props) {
               </div>
 
               <strong style={{ color: 'var(--color-danger)' }}>
-                -{perda.quantidade} {insumo?.unidade ?? ''}
+                -{perda.quantidade} {insumo ? UNIDADE_LABEL[insumo.unidade] : ''}
               </strong>
             </article>
           )

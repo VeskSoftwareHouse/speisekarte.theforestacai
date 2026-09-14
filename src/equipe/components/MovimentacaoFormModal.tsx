@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import type { Insumo } from '@shared/types'
+import { UNIDADE_LABEL } from '@shared/unidadeLabel'
 import type { MovimentoManualInput } from '../hooks/useEstoqueMovimentos'
 
 interface Props {
@@ -82,7 +83,7 @@ export default function MovimentacaoFormModal({ insumos, onClose, onSave }: Prop
           </label>
 
           <label className="admin-form__field">
-            <span>Quantidade {insumo ? `(${insumo.unidade})` : ''}</span>
+            <span>Quantidade {insumo ? `(${UNIDADE_LABEL[insumo.unidade]})` : ''}</span>
             <input
               type="number"
               min={0}

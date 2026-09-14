@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X, Trash2 } from 'lucide-react'
 import type { Fornecedor, Imposto, Insumo, PedidoCompraStatus, PedidoCompraWithItens } from '@shared/types'
 import { formatCHF } from '@shared/format'
+import { UNIDADE_LABEL } from '@shared/unidadeLabel'
 import { valorUnitarioComImposto } from '../estoqueCalc'
 import type { PedidoCompraInput, PedidoCompraItemInput } from '../hooks/useComprasAdmin'
 
@@ -123,7 +124,7 @@ export default function CompraFormModal({ pedido, fornecedores, insumos, imposto
                           onChange={(e) => updateRow(idx, { quantidade: Number(e.target.value) })}
                           placeholder="Qtd."
                         />
-                        <span>{insumo?.unidade ?? ''}</span>
+                        <span>{insumo ? UNIDADE_LABEL[insumo.unidade] : ''}</span>
                         <input
                           type="number"
                           min={0}

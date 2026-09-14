@@ -1,13 +1,6 @@
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import type { Insumo } from '@shared/types'
-
-const UNIDADE_LABEL: Record<Insumo['unidade'], string> = {
-  kg: 'kg',
-  g: 'g',
-  l: 'l',
-  ml: 'ml',
-  unidade: 'un.',
-}
+import { UNIDADE_LABEL } from '@shared/unidadeLabel'
 
 interface Props {
   insumos: Insumo[]

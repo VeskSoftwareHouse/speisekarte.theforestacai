@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import type { Insumo, MotivoPerda } from '@shared/types'
 import { MOTIVO_PERDA_LABEL } from '@shared/types'
+import { UNIDADE_LABEL } from '@shared/unidadeLabel'
 import type { PerdaManualInput } from '../hooks/usePerdasAdmin'
 
 const MOTIVOS = Object.entries(MOTIVO_PERDA_LABEL) as [MotivoPerda, string][]
@@ -63,7 +64,7 @@ export default function PerdaFormModal({ insumos, onClose, onSave }: Props) {
           </label>
 
           <label className="admin-form__field">
-            <span>Quantidade perdida {insumo ? `(${insumo.unidade})` : ''}</span>
+            <span>Quantidade perdida {insumo ? `(${UNIDADE_LABEL[insumo.unidade]})` : ''}</span>
             <input
               type="number"
               min={0}

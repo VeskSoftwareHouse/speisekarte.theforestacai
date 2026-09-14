@@ -3,6 +3,7 @@ import { X, ImagePlus, Loader2, Trash2 } from 'lucide-react'
 import type { Category, Insumo, MenuItem, MenuItemInsumo, Modifier } from '@shared/types'
 import CurrencyInput from '@shared/components/CurrencyInput'
 import { aceitaGramasNaComposicao, deGramas, paraGramas } from '@shared/insumoConversao'
+import { UNIDADE_LABEL } from '@shared/unidadeLabel'
 import { translationsFor } from '../autoTranslate'
 import type { ProductInput } from '../hooks/useMenuAdmin'
 
@@ -308,7 +309,7 @@ export default function ProductFormModal({
                         }}
                         placeholder="0"
                       />
-                      <span>{emGramas ? 'g' : (insumo?.unidade ?? '')}</span>
+                      <span>{emGramas ? 'gramas' : (insumo ? UNIDADE_LABEL[insumo.unidade] : '')}</span>
                       <button
                         type="button"
                         className="admin-composition-list__remove"

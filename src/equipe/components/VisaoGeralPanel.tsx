@@ -1,6 +1,7 @@
 import type { Imposto, Insumo, MovimentacaoEstoque, PedidoCompraWithItens, Perda } from '@shared/types'
 import { MOTIVO_PERDA_LABEL, MOVIMENTACAO_TIPO_LABEL } from '@shared/types'
 import { formatCHF } from '@shared/format'
+import { UNIDADE_LABEL } from '@shared/unidadeLabel'
 import { valorUnitarioComImposto } from '../estoqueCalc'
 
 const RECENTES_LIMIT = 8
@@ -74,7 +75,7 @@ export default function VisaoGeralPanel({ insumos, saldoPorInsumo, movimentos, p
                   <div key={i.id} className={`visao-geral__insumo-card ${baixo ? 'visao-geral__insumo-card--warn' : ''}`}>
                     <span className="visao-geral__insumo-card__nome">{i.nome}</span>
                     <strong className="visao-geral__insumo-card__saldo">
-                      {saldo} <small>{i.unidade}</small>
+                      {saldo} <small>{UNIDADE_LABEL[i.unidade]}</small>
                     </strong>
                     {baixo && <span className="visao-geral__insumo-card__badge">Saldo baixo</span>}
                   </div>
@@ -105,7 +106,7 @@ export default function VisaoGeralPanel({ insumos, saldoPorInsumo, movimentos, p
                   </div>
                   <strong style={{ color: positivo ? 'var(--color-success)' : 'var(--color-danger)' }}>
                     {positivo ? '+' : ''}
-                    {mov.quantidade} {insumo?.unidade ?? ''}
+                    {mov.quantidade} {insumo ? UNIDADE_LABEL[insumo.unidade] : ''}
                   </strong>
                 </article>
               )
@@ -131,7 +132,7 @@ export default function VisaoGeralPanel({ insumos, saldoPorInsumo, movimentos, p
                     <p className="admin-product-row__desc">{new Date(perda.criado_em).toLocaleString('pt-BR')}</p>
                   </div>
                   <strong style={{ color: 'var(--color-danger)' }}>
-                    -{perda.quantidade} {insumo?.unidade ?? ''}
+                    -{perda.quantidade} {insumo ? UNIDADE_LABEL[insumo.unidade] : ''}
                   </strong>
                 </article>
               )

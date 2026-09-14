@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react'
 import type { Insumo, MovimentacaoEstoque } from '@shared/types'
 import { MOVIMENTACAO_TIPO_LABEL } from '@shared/types'
+import { UNIDADE_LABEL } from '@shared/unidadeLabel'
 
 interface Props {
   insumos: Insumo[]
@@ -29,7 +30,7 @@ export default function MovimentacaoPanel({ insumos, saldoPorInsumo, movimentos,
 
       {insumosBaixos.length > 0 && (
         <p className="admin-panel__hint admin-panel__hint--warn">
-          Saldo baixo: {insumosBaixos.map((i) => `${i.nome} (${saldoPorInsumo[i.id] ?? 0} ${i.unidade})`).join(', ')}
+          Saldo baixo: {insumosBaixos.map((i) => `${i.nome} (${saldoPorInsumo[i.id] ?? 0} ${UNIDADE_LABEL[i.unidade]})`).join(', ')}
         </p>
       )}
 
@@ -60,7 +61,7 @@ export default function MovimentacaoPanel({ insumos, saldoPorInsumo, movimentos,
 
               <strong style={{ color: positivo ? 'var(--color-success)' : 'var(--color-danger)' }}>
                 {positivo ? '+' : ''}
-                {mov.quantidade} {insumo?.unidade ?? ''}
+                {mov.quantidade} {insumo ? UNIDADE_LABEL[insumo.unidade] : ''}
               </strong>
             </article>
           )

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { X, ImagePlus, Loader2, Trash2 } from 'lucide-react'
 import type { Insumo, Modifier, ModifierOption } from '@shared/types'
 import CurrencyInput from '@shared/components/CurrencyInput'
+import { UNIDADE_LABEL } from '@shared/unidadeLabel'
 import { translationsFor } from '../autoTranslate'
 import type { ModifierOptionInput } from '../hooks/useModifierAdmin'
 
@@ -177,7 +178,13 @@ export default function ModifierOptionFormModal({
 
           {insumoId && (
             <label className="admin-form__field">
-              <span>Quantidade padrão ({insumos.find((i) => i.id === insumoId)?.unidade})</span>
+              <span>
+                Quantidade padrão
+                {(() => {
+                  const u = insumos.find((i) => i.id === insumoId)?.unidade
+                  return u ? ` (${UNIDADE_LABEL[u]})` : ''
+                })()}
+              </span>
               <input
                 type="number"
                 min={0}

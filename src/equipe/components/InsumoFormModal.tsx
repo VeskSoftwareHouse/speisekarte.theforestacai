@@ -1,15 +1,13 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import type { Insumo, Unidade } from '@shared/types'
+import { UNIDADE_LABEL } from '@shared/unidadeLabel'
 import type { InsumoInput } from '../hooks/useInsumoAdmin'
 
-const UNIDADES: { value: Unidade; label: string }[] = [
-  { value: 'kg', label: 'Quilogramas (kg)' },
-  { value: 'g', label: 'Gramas (g)' },
-  { value: 'l', label: 'Litros (l)' },
-  { value: 'ml', label: 'Mililitros (ml)' },
-  { value: 'unidade', label: 'Unidade' },
-]
+const UNIDADES: { value: Unidade; label: string }[] = (['kg', 'g', 'l', 'ml', 'unidade'] as const).map((value) => ({
+  value,
+  label: UNIDADE_LABEL[value][0].toUpperCase() + UNIDADE_LABEL[value].slice(1),
+}))
 
 interface Props {
   insumo: Insumo | null

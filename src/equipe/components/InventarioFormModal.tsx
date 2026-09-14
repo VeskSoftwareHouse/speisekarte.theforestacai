@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X, Trash2 } from 'lucide-react'
 import type { Insumo, MotivoPerda } from '@shared/types'
 import { MOTIVO_PERDA_LABEL } from '@shared/types'
+import { UNIDADE_LABEL } from '@shared/unidadeLabel'
 import type { InventarioItemInput } from '../hooks/useInventarioAdmin'
 
 interface Row {
@@ -111,7 +112,7 @@ export default function InventarioFormModal({ insumos, saldoPorInsumo, onClose, 
                         ))}
                       </select>
                       <span>
-                        Sistema: {saldoSistema} {insumo?.unidade}
+                        Sistema: {saldoSistema} {insumo ? UNIDADE_LABEL[insumo.unidade] : ''}
                       </span>
                       <input
                         type="number"
@@ -135,7 +136,7 @@ export default function InventarioFormModal({ insumos, saldoPorInsumo, onClose, 
                     {faltou && (
                       <label className="admin-form__field admin-inventario-row__motivo">
                         <span>
-                          Faltaram {(saldoSistema - (saldoContado ?? 0)).toFixed(3)} {insumo?.unidade} — motivo
+                          Faltaram {(saldoSistema - (saldoContado ?? 0)).toFixed(3)} {insumo ? UNIDADE_LABEL[insumo.unidade] : ''} — motivo
                         </span>
                         <select value={row.motivo} onChange={(e) => updateRow(idx, { motivo: e.target.value as MotivoPerda })}>
                           <option value="">Selecione…</option>

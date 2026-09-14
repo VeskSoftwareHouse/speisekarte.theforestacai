@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import type { Insumo, OrderWithItems } from '@shared/types'
+import { UNIDADE_LABEL } from '@shared/unidadeLabel'
 import type { ConsumoPreview } from '../hooks/useFechamento'
 
 interface Props {
@@ -80,7 +81,7 @@ export default function FechamentoPreviewModal({ selecionados, insumos, calcular
                         <div key={c.insumo_id} className="admin-consumo-list__row">
                           <span>{insumo?.nome ?? 'Insumo removido'}</span>
                           <strong>
-                            -{c.quantidade.toFixed(3)} {insumo?.unidade}
+                            -{c.quantidade.toFixed(3)} {insumo ? UNIDADE_LABEL[insumo.unidade] : ''}
                           </strong>
                         </div>
                       )
