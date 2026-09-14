@@ -46,6 +46,9 @@ export interface MenuItem {
   destaque: boolean
   /** Se true, a descrição vai carimbada em `order_items.descricao_item` a cada pedido e aparece na comanda da cozinha. */
   descricao_na_comanda: boolean
+  /** Produto com receita fixa (ex: um açaí já montado) — mostra ao cliente um
+   * botão "Ver ingredientes" com a lista em `MenuItemWithModifiers.ingredientes`. */
+  copo_pronto: boolean
   ordem: number
   /** Limite combinado de seleções nos grupos com `conta_para_limite`, ex: "escolha até 4". null = sem limite. */
   max_ingredientes: number | null
@@ -87,6 +90,14 @@ export interface ModifierOption {
 export interface MenuItemModifier {
   menu_item_id: string
   modifier_id: string
+}
+
+/** Ingrediente fixo de um "copo pronto" (ver MenuItem.copo_pronto) — reaproveita
+ * um adicional (modifier_options) já cadastrado, só como informação pro cliente. */
+export interface MenuItemIngrediente {
+  menu_item_id: string
+  modifier_option_id: string
+  ordem: number
 }
 
 export type TipTipo = 'fixo' | 'percentual'
@@ -170,6 +181,9 @@ export interface OrderItem {
 /** Um item completo com seus modifiers disponíveis, montado no App da Mesa */
 export interface MenuItemWithModifiers extends MenuItem {
   modifierGroups: ModifierGroup[]
+  /** Ingredientes fixos do "copo pronto" (ver MenuItem.copo_pronto), na ordem
+   * escolhida no Painel da Equipe. Vazio quando não é um copo pronto. */
+  ingredientes: ModifierOption[]
 }
 
 export interface ModifierGroup extends Modifier {

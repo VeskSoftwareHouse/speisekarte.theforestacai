@@ -3,6 +3,7 @@ import { supabase } from '@shared/supabaseClient'
 import type {
   Category,
   MenuItem,
+  MenuItemIngrediente,
   MenuItemModifier,
   MenuItemWithModifiers,
   Modifier,
@@ -17,7 +18,14 @@ interface MenuData {
   error: string | null
 }
 
-const MENU_TABLES = ['categories', 'menu_items', 'modifiers', 'modifier_options', 'menu_item_modifiers'] as const
+const MENU_TABLES = [
+  'categories',
+  'menu_items',
+  'modifiers',
+  'modifier_options',
+  'menu_item_modifiers',
+  'menu_item_ingredientes',
+] as const
 
 /**
  * Esperas entre as tentativas de recarregar o cardápio. Existem porque falhas
@@ -52,17 +60,18 @@ export function useMenu(): MenuData {
     const mine = ++generation.current
 
     for (let attempt = 0; ; attempt++) {
-      const [catsRes, itemsRes, modsRes, optsRes, linksRes] = await Promise.all([
+      const [catsRes, itemsRes, modsRes, optsRes, linksRes, ingredientesRes] = await Promise.all([
         supabase.from('categories').select('*').order('ordem'),
         supabase.from('menu_items').select('*').eq('disponivel', true).order('ordem'),
         supabase.from('modifiers').select('*'),
         supabase.from('modifier_options').select('*').order('ordem'),
         supabase.from('menu_item_modifiers').select('*'),
+        supabase.from('menu_item_ingredientes').select('*').order('ordem'),
       ])
       if (generation.current !== mine) return
 
       const firstError =
-        catsRes.error ?? itemsRes.error ?? modsRes.error ?? optsRes.error ?? linksRes.error
+        catsRes.error ?? itemsRes.error ?? modsRes.error ?? optsRes.error ?? linksRes.error ?? ingredientesRes.error
 
       if (!firstError) {
         const { categories: cats, itemsByCategory: grouped } = assemble(
@@ -71,6 +80,7 @@ export function useMenu(): MenuData {
           (modsRes.data ?? []) as Modifier[],
           (optsRes.data ?? []) as ModifierOption[],
           (linksRes.data ?? []) as MenuItemModifier[],
+          (ingredientesRes.data ?? []) as MenuItemIngrediente[],
         )
         setCategories(cats)
         setItemsByCategory(grouped)
@@ -109,20 +119,23 @@ export function useMenu(): MenuData {
   return { categories, itemsByCategory, loading, error }
 }
 
-/** Junta as cinco tabelas cruas no formato que as telas consomem. */
+/** Junta as seis tabelas cruas no formato que as telas consomem. */
 function assemble(
   cats: Category[],
   items: MenuItem[],
   mods: Modifier[],
   opts: ModifierOption[],
   links: MenuItemModifier[],
+  ingredienteLinks: MenuItemIngrediente[],
 ): { categories: Category[]; itemsByCategory: Record<string, MenuItemWithModifiers[]> } {
   const groupsById: Record<string, ModifierGroup> = {}
   for (const m of mods) {
     groupsById[m.id] = { ...m, options: [] }
   }
+  const optionsById: Record<string, ModifierOption> = {}
   for (const o of opts) {
     groupsById[o.modifier_id]?.options.push(o)
+    optionsById[o.id] = o
   }
 
   const groupsByItem: Record<string, ModifierGroup[]> = {}
@@ -132,9 +145,22 @@ function assemble(
     ;(groupsByItem[link.menu_item_id] ??= []).push(group)
   }
 
+  // Já vem ordenado por `ordem` da query — a posição escolhida no Painel da
+  // Equipe pro copo pronto, não a ordem cadastrada do adicional.
+  const ingredientesByItem: Record<string, ModifierOption[]> = {}
+  for (const link of ingredienteLinks) {
+    const option = optionsById[link.modifier_option_id]
+    if (!option) continue
+    ;(ingredientesByItem[link.menu_item_id] ??= []).push(option)
+  }
+
   const itemsByCategory: Record<string, MenuItemWithModifiers[]> = {}
   for (const item of items) {
-    const withMods: MenuItemWithModifiers = { ...item, modifierGroups: groupsByItem[item.id] ?? [] }
+    const withMods: MenuItemWithModifiers = {
+      ...item,
+      modifierGroups: groupsByItem[item.id] ?? [],
+      ingredientes: ingredientesByItem[item.id] ?? [],
+    }
     ;(itemsByCategory[item.categoria_id] ??= []).push(withMods)
   }
 

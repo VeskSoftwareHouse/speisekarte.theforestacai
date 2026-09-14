@@ -48,6 +48,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
     categories,
     items,
     compositionByItem,
+    ingredientesByItem,
     loading,
     error,
     createCategory,
@@ -57,6 +58,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
     updateProduct,
     deleteProduct,
     setProductComposition,
+    setProductIngredientes,
     uploadImage,
   } = useMenuAdmin()
 
@@ -188,6 +190,7 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
         disponivel: !product.disponivel,
         destaque: product.destaque,
         descricao_na_comanda: product.descricao_na_comanda,
+        copo_pronto: product.copo_pronto,
         ordem: product.ordem,
       })
     } catch (err) {
@@ -347,15 +350,18 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
           defaultCategoryId={selectedCategoryId}
           modifierGroups={groups}
           linkedModifierIds={productForm === 'new' ? [] : (linksByItem[productForm.id] ?? [])}
+          allOptions={options}
+          ingredienteIds={productForm === 'new' ? [] : (ingredientesByItem[productForm.id] ?? [])}
           insumos={insumos}
           composition={productForm === 'new' ? [] : (compositionByItem[productForm.id] ?? [])}
           accessToken={accessToken}
           onClose={() => setProductForm(null)}
-          onSave={async (input, modifierIds, composition) => {
+          onSave={async (input, modifierIds, composition, ingredienteIds) => {
             const id = productForm === 'new' ? (await createProduct(input)).id : productForm.id
             if (productForm !== 'new') await updateProduct(productForm.id, input)
             await setProductModifiers(id, modifierIds)
             await setProductComposition(id, composition)
+            await setProductIngredientes(id, ingredienteIds)
           }}
           onUploadImage={uploadImage}
         />

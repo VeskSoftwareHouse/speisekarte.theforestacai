@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { X, ImagePlus, Loader2, Trash2 } from 'lucide-react'
-import type { Category, Insumo, MenuItem, MenuItemInsumo, Modifier } from '@shared/types'
+import type { Category, Insumo, MenuItem, MenuItemInsumo, Modifier, ModifierOption } from '@shared/types'
 import CurrencyInput from '@shared/components/CurrencyInput'
 import { aceitaGramasNaComposicao, deGramas, paraGramas } from '@shared/insumoConversao'
 import { UNIDADE_LABEL } from '@shared/unidadeLabel'
@@ -18,11 +18,18 @@ interface Props {
   defaultCategoryId: string | null
   modifierGroups: Modifier[]
   linkedModifierIds: string[]
+  allOptions: ModifierOption[]
+  ingredienteIds: string[]
   insumos: Insumo[]
   composition: MenuItemInsumo[]
   accessToken: string
   onClose: () => void
-  onSave: (input: ProductInput, modifierIds: string[], composition: CompositionRow[]) => Promise<void>
+  onSave: (
+    input: ProductInput,
+    modifierIds: string[],
+    composition: CompositionRow[],
+    ingredienteIds: string[],
+  ) => Promise<void>
   onUploadImage: (file: File) => Promise<string>
 }
 
@@ -32,6 +39,8 @@ export default function ProductFormModal({
   defaultCategoryId,
   modifierGroups,
   linkedModifierIds,
+  allOptions,
+  ingredienteIds: initialIngredienteIds,
   insumos,
   composition,
   accessToken,
@@ -46,9 +55,11 @@ export default function ProductFormModal({
   const [disponivel, setDisponivel] = useState(product?.disponivel ?? true)
   const [destaque, setDestaque] = useState(product?.destaque ?? false)
   const [descricaoNaComanda, setDescricaoNaComanda] = useState(product?.descricao_na_comanda ?? false)
+  const [copoPronto, setCopoPronto] = useState(product?.copo_pronto ?? false)
   const [ordem, setOrdem] = useState(product?.ordem ?? 0)
   const [fotoUrl, setFotoUrl] = useState(product?.foto_url ?? '')
   const [selectedModifierIds, setSelectedModifierIds] = useState<string[]>(linkedModifierIds)
+  const [ingredienteIds, setIngredienteIds] = useState<string[]>(initialIngredienteIds)
   const [compositionRows, setCompositionRows] = useState<CompositionRow[]>(
     composition.map((c) => ({ insumo_id: c.insumo_id, quantidade: c.quantidade })),
   )
@@ -115,10 +126,12 @@ export default function ProductFormModal({
           disponivel,
           destaque,
           descricao_na_comanda: descricaoNaComanda,
+          copo_pronto: copoPronto,
           ordem,
         },
         selectedModifierIds,
         compositionRows,
+        copoPronto ? ingredienteIds : [],
       )
       onClose()
     } catch (err) {
@@ -242,6 +255,45 @@ export default function ProductFormModal({
             <input type="checkbox" checked={destaque} onChange={(e) => setDestaque(e.target.checked)} />
             <span>Destaque (aparece na página de Destaques)</span>
           </label>
+
+          <label className="admin-form__checkbox">
+            <input type="checkbox" checked={copoPronto} onChange={(e) => setCopoPronto(e.target.checked)} />
+            <span>Copo pronto (mostra ao cliente um botão "Ver ingredientes" no cardápio)</span>
+          </label>
+
+          {copoPronto && (
+            <div className="admin-form__field">
+              <span>Ingredientes deste copo pronto</span>
+              {allOptions.length === 0 && (
+                <p className="admin-form__hint">
+                  Nenhum adicional cadastrado ainda — cadastre em Adicionais para poder marcar aqui.
+                </p>
+              )}
+              <div className="admin-modifier-checklist">
+                {allOptions.map((o) => {
+                  const checked = ingredienteIds.includes(o.id)
+                  const grupo = modifierGroups.find((g) => g.id === o.modifier_id)
+                  return (
+                    <label key={o.id} className="admin-modifier-checklist__item">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() =>
+                          setIngredienteIds((prev) =>
+                            checked ? prev.filter((id) => id !== o.id) : [...prev, o.id],
+                          )
+                        }
+                      />
+                      <span>
+                        {o.nome}
+                        {grupo ? ` (${grupo.nome})` : ''}
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="admin-form__field">
             <span>Adicionais deste produto</span>

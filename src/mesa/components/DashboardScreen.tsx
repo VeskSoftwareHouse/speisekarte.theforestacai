@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { Check, ChefHat, Plus, ShoppingBag } from 'lucide-react'
+import { Check, ChefHat, Info, Plus, ShoppingBag } from 'lucide-react'
 import { useMenu } from '@shared/hooks/useMenu'
 import type { MenuItemWithModifiers } from '@shared/types'
 import { formatCHF } from '@shared/format'
 import Sidebar, { FEATURED_ID } from './Sidebar'
 import CartPanel from './CartPanel'
 import ItemModal from './ItemModal'
+import IngredientsPopup from './IngredientsPopup'
 import { iconFor, FeaturedIcon, FallbackPhotoIcon } from '../categoryIcons'
 import { useLanguage } from '../i18n/LanguageContext'
 import { translatedField } from '../i18n/menuTranslations'
@@ -30,6 +31,7 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
   const { lang, t } = useLanguage()
   const [activeCategory, setActiveCategory] = useState<string>(FEATURED_ID)
   const [selectedItem, setSelectedItem] = useState<MenuItemWithModifiers | null>(null)
+  const [ingredientsItem, setIngredientsItem] = useState<MenuItemWithModifiers | null>(null)
   const [cartOpen, setCartOpen] = useState(false)
   const [justAdded, setJustAdded] = useState<Set<string>>(new Set())
   const { launch, layer: flyLayer } = useFlyToCart()
@@ -144,45 +146,57 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
                 {items.map((item, i) => {
                   const desc = translatedField(item.descricao_i18n, lang, item.descricao)
                   const nome = translatedField(item.nome_i18n, lang, item.nome) ?? item.nome
+                  const showIngredients = item.copo_pronto && item.ingredientes.length > 0
                   return (
-                    <button
-                      key={item.id}
-                      className="item-card"
-                      style={{ '--i': i } as CSSProperties}
-                      onClick={(e) => handleCardClick(item, e.currentTarget)}
-                    >
-                      <div className="item-card__photo-wrap">
-                        {item.foto_url ? (
-                          <img className="item-card__photo" src={item.foto_url} alt={nome} loading="lazy" />
-                        ) : (
-                          <FallbackPhotoIcon
-                            className="item-card__photo-fallback"
-                            size={40}
-                            strokeWidth={1.5}
-                            aria-hidden
-                          />
-                        )}
-                      </div>
-                      <div className="item-card__body">
-                        <h3 className="item-card__name">{nome}</h3>
-                        {desc && <p className="item-card__desc">{desc}</p>}
-                        <div className="item-card__footer">
-                          <span className="item-card__price">{formatCHF(item.preco)}</span>
-                          <span
-                            className={`item-card__add ${
-                              justAdded.has(item.id) ? 'item-card__add--done' : ''
-                            }`}
-                            aria-hidden
-                          >
-                            {justAdded.has(item.id) ? (
-                              <Check size={18} strokeWidth={3} />
-                            ) : (
-                              <Plus size={18} strokeWidth={2.5} />
-                            )}
-                          </span>
+                    <div key={item.id} className="item-card-slot" style={{ '--i': i } as CSSProperties}>
+                      <button className="item-card" onClick={(e) => handleCardClick(item, e.currentTarget)}>
+                        <div className="item-card__photo-wrap">
+                          {item.foto_url ? (
+                            <img className="item-card__photo" src={item.foto_url} alt={nome} loading="lazy" />
+                          ) : (
+                            <FallbackPhotoIcon
+                              className="item-card__photo-fallback"
+                              size={40}
+                              strokeWidth={1.5}
+                              aria-hidden
+                            />
+                          )}
                         </div>
-                      </div>
-                    </button>
+                        <div className="item-card__body">
+                          <h3 className="item-card__name">{nome}</h3>
+                          {desc && <p className="item-card__desc">{desc}</p>}
+                          <div className="item-card__footer">
+                            <span className="item-card__price">{formatCHF(item.preco)}</span>
+                            <span
+                              className={`item-card__add ${
+                                justAdded.has(item.id) ? 'item-card__add--done' : ''
+                              }`}
+                              aria-hidden
+                            >
+                              {justAdded.has(item.id) ? (
+                                <Check size={18} strokeWidth={3} />
+                              ) : (
+                                <Plus size={18} strokeWidth={2.5} />
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                      {showIngredients && (
+                        <button
+                          type="button"
+                          className="item-card__ingredients-btn"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setIngredientsItem(item)
+                          }}
+                          aria-label={t('ingredientsButton')}
+                          title={t('ingredientsButton')}
+                        >
+                          <Info size={18} strokeWidth={2} aria-hidden />
+                        </button>
+                      )}
+                    </div>
                   )
                 })}
               </div>
@@ -231,6 +245,14 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
             onAddToCart(cartItem)
             setSelectedItem(null)
           }}
+        />
+      )}
+
+      {ingredientsItem && (
+        <IngredientsPopup
+          nome={translatedField(ingredientsItem.nome_i18n, lang, ingredientsItem.nome) ?? ingredientsItem.nome}
+          ingredientes={ingredientsItem.ingredientes}
+          onClose={() => setIngredientsItem(null)}
         />
       )}
 

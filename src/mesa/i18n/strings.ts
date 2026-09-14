@@ -67,6 +67,10 @@ export interface StringDict {
   cashTimeoutBody: string
   /** Aviso no cardápio de só-consulta (/cardapio), no lugar do "vai pra cozinha" do totem. */
   catalogNotice: string
+  /** Botão no card de um "copo pronto" (MenuItem.copo_pronto) que abre o popup de ingredientes. */
+  ingredientsButton: string
+  /** Título do popup de ingredientes. */
+  ingredientsTitle: string
 }
 
 export type StringKey = keyof StringDict
@@ -134,6 +138,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     cashTimeoutTitle: 'Noch nicht bestätigt',
     cashTimeoutBody: 'Wende dich an unser Team an der Kasse, um die Barzahlung zu bestätigen.',
     catalogNotice: 'Nur zum Anschauen — bestelle am Totem oder bei unserem Team.',
+    ingredientsButton: 'Zutaten ansehen',
+    ingredientsTitle: 'Zutaten',
   },
   fr: {
     sidebarTagline: "Savoure l'Amazonie, ressens l'énergie",
@@ -197,6 +203,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     cashTimeoutTitle: 'Toujours pas confirmé',
     cashTimeoutBody: "Adressez-vous à l'équipe à la caisse pour confirmer le paiement en espèces.",
     catalogNotice: 'Uniquement pour consultation — commandez à la borne ou auprès de notre équipe.',
+    ingredientsButton: 'Voir les ingrédients',
+    ingredientsTitle: 'Ingrédients',
   },
   it: {
     sidebarTagline: "Assapora l'Amazzonia, senti l'energia",
@@ -260,6 +268,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     cashTimeoutTitle: 'Ancora da confermare',
     cashTimeoutBody: 'Parla con il nostro team alla cassa per confermare il pagamento in contanti.',
     catalogNotice: 'Solo per consultazione — ordina al totem o con il nostro team.',
+    ingredientsButton: 'Vedi ingredienti',
+    ingredientsTitle: 'Ingredienti',
   },
   en: {
     sidebarTagline: 'Taste the Amazon, feel the energy',
@@ -323,6 +333,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     cashTimeoutTitle: 'Still waiting for confirmation',
     cashTimeoutBody: 'Please check with our team at the counter to confirm your cash payment.',
     catalogNotice: 'For browsing only — order at the kiosk or with our team.',
+    ingredientsButton: 'View ingredients',
+    ingredientsTitle: 'Ingredients',
   },
   pt: {
     sidebarTagline: 'Prove a Amazônia, sinta a energia',
@@ -386,6 +398,8 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     cashTimeoutTitle: 'Ainda aguardando confirmação',
     cashTimeoutBody: 'Fale com a equipe no caixa para confirmar o pagamento em dinheiro.',
     catalogNotice: 'Somente para consulta — peça no totem ou com a equipe.',
+    ingredientsButton: 'Ver ingredientes',
+    ingredientsTitle: 'Ingredientes',
   },
   es: {
     sidebarTagline: 'Prueba la Amazonía, siente la energía',
@@ -449,5 +463,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     cashTimeoutTitle: 'Aún sin confirmar',
     cashTimeoutBody: 'Habla con el equipo en caja para confirmar el pago en efectivo.',
     catalogNotice: 'Solo para consulta — pide en el totem o con nuestro equipo.',
+    ingredientsButton: 'Ver ingredientes',
+    ingredientsTitle: 'Ingredientes',
   },
 }

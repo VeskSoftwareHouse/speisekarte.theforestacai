@@ -105,6 +105,25 @@ create table if not exists menu_item_modifiers (
   primary key (menu_item_id, modifier_id)
 );
 
+-- "copo pronto": produto com receita fixa (ex: um açaí já montado, sem o
+-- cliente escolher nada) onde vale a pena mostrar os ingredientes antes de
+-- pedir. Sem relação com menu_item_insumos (baixa de estoque) — aqui são os
+-- mesmos adicionais já cadastrados (modifier_options), só como informação
+-- pro cliente, ligados por menu_item_ingredientes logo abaixo.
+alter table menu_items add column if not exists copo_pronto boolean not null default false;
+
+-- ---------------------------------------------------------------------
+-- menu_item_ingredientes (ingredientes fixos mostrados ao cliente num
+-- "copo pronto" — ver menu_items.copo_pronto acima. `ordem` é a posição
+-- escolhida no Painel da Equipe, não a ordem cadastrada do adicional.)
+-- ---------------------------------------------------------------------
+create table if not exists menu_item_ingredientes (
+  menu_item_id       uuid not null references menu_items(id) on delete cascade,
+  modifier_option_id uuid not null references modifier_options(id) on delete cascade,
+  ordem              int not null default 0,
+  primary key (menu_item_id, modifier_option_id)
+);
+
 -- ---------------------------------------------------------------------
 -- tip_options (opções de gorjeta oferecidas no totem)
 --
@@ -258,6 +277,7 @@ alter table menu_items          enable row level security;
 alter table modifiers           enable row level security;
 alter table modifier_options    enable row level security;
 alter table menu_item_modifiers enable row level security;
+alter table menu_item_ingredientes enable row level security;
 alter table tip_options         enable row level security;
 alter table orders              enable row level security;
 alter table order_items         enable row level security;
@@ -287,6 +307,9 @@ drop policy if exists "authenticated delete modifier_options" on modifier_option
 drop policy if exists "public read menu_item_modifiers"          on menu_item_modifiers;
 drop policy if exists "authenticated insert menu_item_modifiers" on menu_item_modifiers;
 drop policy if exists "authenticated delete menu_item_modifiers" on menu_item_modifiers;
+drop policy if exists "public read menu_item_ingredientes"          on menu_item_ingredientes;
+drop policy if exists "authenticated insert menu_item_ingredientes" on menu_item_ingredientes;
+drop policy if exists "authenticated delete menu_item_ingredientes" on menu_item_ingredientes;
 drop policy if exists "public read tip_options"          on tip_options;
 drop policy if exists "authenticated insert tip_options" on tip_options;
 drop policy if exists "authenticated update tip_options" on tip_options;
@@ -306,6 +329,7 @@ create policy "public read menu_items"          on menu_items          for selec
 create policy "public read modifiers"           on modifiers           for select using (true);
 create policy "public read modifier_options"    on modifier_options    for select using (true);
 create policy "public read menu_item_modifiers" on menu_item_modifiers for select using (true);
+create policy "public read menu_item_ingredientes" on menu_item_ingredientes for select using (true);
 
 -- gestão do cardápio pelo Painel da Equipe: só usuários autenticados
 -- (login da equipe, ver src/equipe/hooks/useAuth.ts) podem escrever.
@@ -328,6 +352,9 @@ create policy "authenticated delete modifier_options" on modifier_options for de
 
 create policy "authenticated insert menu_item_modifiers" on menu_item_modifiers for insert with check (auth.uid() is not null);
 create policy "authenticated delete menu_item_modifiers" on menu_item_modifiers for delete using (auth.uid() is not null);
+
+create policy "authenticated insert menu_item_ingredientes" on menu_item_ingredientes for insert with check (auth.uid() is not null);
+create policy "authenticated delete menu_item_ingredientes" on menu_item_ingredientes for delete using (auth.uid() is not null);
 
 -- gorjetas: o totem lê para montar as opções; só a equipe logada edita.
 create policy "public read tip_options"          on tip_options for select using (true);
@@ -414,6 +441,13 @@ begin
     where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'menu_item_modifiers'
   ) then
     alter publication supabase_realtime add table menu_item_modifiers;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'menu_item_ingredientes'
+  ) then
+    alter publication supabase_realtime add table menu_item_ingredientes;
   end if;
 end $$;
 

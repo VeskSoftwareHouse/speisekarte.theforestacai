@@ -773,6 +773,17 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+/* Envolve o .item-card (um <button>) e o botão de ingredientes lado a lado —
+   um <button> não pode conter outro <button> no HTML, então o botão de
+   ingredientes fica fora do card, só posicionado por cima dele. */
+.item-card-slot {
+  position: relative;
+  display: flex;
+}
+.item-card-slot .item-card {
+  flex: 1;
+  min-width: 0;
+}
 .item-card {
   display: flex;
   flex-direction: column;
@@ -789,6 +800,30 @@
   transform: scale(0.98);
   border-color: var(--color-primary);
   box-shadow: var(--shadow-md);
+}
+/* Botão "ver ingredientes" de um copo pronto — flutua sobre o canto da foto,
+   fora do <button> do card (ver .item-card-slot acima), então o toque nele
+   não conta como toque no card (adicionar ao carrinho / abrir modal). */
+.item-card__ingredients-btn {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(21, 15, 32, 0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1;
+  transition: transform 0.1s ease;
+}
+.item-card__ingredients-btn:active {
+  transform: scale(0.92);
 }
 /* Mesmo fundo da tela de descanso: o roxo da marca com um brilho branco
    discreto no centro, atras da foto. Fica numa variavel porque o quadro do
@@ -1089,6 +1124,11 @@
   margin: 0 auto;
   max-width: 640px;
   box-shadow: var(--shadow-lg);
+}
+/* Popup de ingredientes do "copo pronto" (IngredientsPopup) — bem mais curto
+   que o modal de personalização, não precisa da mesma largura. */
+.modal--sm {
+  max-width: 420px;
 }
 .modal__close {
   position: absolute;
