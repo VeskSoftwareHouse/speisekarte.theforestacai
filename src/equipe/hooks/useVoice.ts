@@ -36,6 +36,53 @@ interface SpeechRecognitionLike extends EventTarget {
 const PREBUFFER_S = 0.6
 const REBUFFER_S = 0.25
 
+// Tamanho máximo de cada trecho mandado pra voz IA. Uma resposta longa (ex:
+// lista de clientes) numa requisição só estourava o limite da rota e o tempo
+// da função — o Tuco parava de falar na metade. Trechos curtos geram rápido
+// e são emendados no mesmo tocador.
+const MAX_TRECHO = 350
+
+/** Quebra o texto em trechos de até MAX_TRECHO caracteres, respeitando linhas
+ * e frases sempre que possível (a pausa entre trechos cai num lugar natural). */
+function dividirEmTrechos(texto: string): string[] {
+  const pedacos: string[] = []
+  for (const linha of texto.split(/\n+/).map((l) => l.trim()).filter(Boolean)) {
+    if (linha.length <= MAX_TRECHO) {
+      pedacos.push(linha)
+      continue
+    }
+    for (const frase of linha.split(/(?<=[.!?])\s+/)) {
+      if (frase.length <= MAX_TRECHO) {
+        pedacos.push(frase)
+        continue
+      }
+      let atual = ''
+      for (const palavra of frase.split(/\s+/)) {
+        if (atual && atual.length + palavra.length + 1 > MAX_TRECHO) {
+          pedacos.push(atual)
+          atual = palavra
+        } else {
+          atual = atual ? `${atual} ${palavra}` : palavra
+        }
+      }
+      if (atual) pedacos.push(atual)
+    }
+  }
+
+  // Junta pedaços pequenos vizinhos (ex: uma linha por nome) pra não abrir
+  // uma requisição por nome.
+  const trechos: string[] = []
+  for (const pedaco of pedacos) {
+    const ultimo = trechos[trechos.length - 1]
+    if (ultimo !== undefined && ultimo.length + pedaco.length + 1 <= MAX_TRECHO) {
+      trechos[trechos.length - 1] = `${ultimo}\n${pedaco}`
+    } else {
+      trechos.push(pedaco)
+    }
+  }
+  return trechos
+}
+
 function getSpeechRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
   const w = window as unknown as {
     SpeechRecognition?: new () => SpeechRecognitionLike
@@ -188,27 +235,33 @@ export function useVoice(onTranscricaoFinal: (texto: string) => void) {
       const id = falaIdRef.current
       const controller = new AbortController()
       abortRef.current = controller
+      const trechos = dividirEmTrechos(texto)
       let tocou = false
+      let trechoAtual = 0
+      let cursor = 0 // quando (no relógio do AudioContext) o próximo pedaço começa
       try {
         const ctx = prepararAudio()
         if (!ctx) throw new Error('Web Audio indisponível')
 
-        const res = await authFetch('/api/tuco-voz', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: texto }),
-          signal: controller.signal,
-        })
-        if (!res.ok || !res.body) throw new Error(`Voz IA falhou (${res.status})`)
-        if (ctx.state !== 'running') await ctx.resume()
-        if (ctx.state !== 'running') throw new Error('Navegador bloqueou o áudio')
+        // Cada trecho é pedido assim que o anterior começa a ser lido — a
+        // geração do próximo já corre enquanto o atual toca, sem pedir todos
+        // de uma vez (se a pessoa interromper, não gasta à toa).
+        const pedidos = new Map<number, Promise<Response>>()
+        const pedir = (i: number) => {
+          if (i >= trechos.length || pedidos.has(i)) return
+          const promessa = authFetch('/api/tuco-voz', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: trechos[i] }),
+            signal: controller.signal,
+          })
+          promessa.catch(() => {}) // tratado quando o trecho for lido
+          pedidos.set(i, promessa)
+        }
 
-        const sampleRate = Number(res.headers.get('X-Sample-Rate')) || 24000
-        const reader = res.body.getReader()
-        let sobra: Uint8Array | null = null // byte ímpar que ficou entre dois pedaços
         let fila: Float32Array<ArrayBuffer>[] = [] // áudio recebido e ainda não agendado
         let segundosNaFila = 0
-        let cursor = 0 // quando (no relógio do AudioContext) o próximo pedaço começa
+        let sampleRate = 24000
 
         const agendarFila = () => {
           // Chegou atrasado (a geração ficou pra trás da fala): em vez de tocar
@@ -232,38 +285,67 @@ export function useVoice(onTranscricaoFinal: (texto: string) => void) {
           tocou = true
         }
 
-        for (;;) {
-          const { done, value } = await reader.read()
+        for (; trechoAtual < trechos.length; trechoAtual++) {
+          pedir(trechoAtual)
+          pedir(trechoAtual + 1)
+          const res = await pedidos.get(trechoAtual)!
           if (id !== falaIdRef.current) return
-          if (done) break
-          if (!value?.length) continue
+          if (!res.ok || !res.body) throw new Error(`Voz IA falhou (${res.status})`)
+          if (ctx.state !== 'running') await ctx.resume()
+          if (ctx.state !== 'running') throw new Error('Navegador bloqueou o áudio')
 
-          let bytes = value
-          if (sobra) {
-            bytes = new Uint8Array(sobra.length + value.length)
-            bytes.set(sobra)
-            bytes.set(value, sobra.length)
-            sobra = null
+          sampleRate = Number(res.headers.get('X-Sample-Rate')) || 24000
+          const reader = res.body.getReader()
+          let sobra: Uint8Array | null = null // byte ímpar que ficou entre dois pedaços
+          let recebeuAudio = false
+
+          for (;;) {
+            const { done, value } = await reader.read()
+            if (id !== falaIdRef.current) return
+            if (done) break
+            if (!value?.length) continue
+
+            let bytes = value
+            if (sobra) {
+              bytes = new Uint8Array(sobra.length + value.length)
+              bytes.set(sobra)
+              bytes.set(value, sobra.length)
+              sobra = null
+            }
+            const total = bytes.length - (bytes.length % 2)
+            if (total < bytes.length) sobra = bytes.slice(total)
+            if (!total) continue
+            const view = new DataView(bytes.buffer, bytes.byteOffset, total)
+            const amostras = new Float32Array(total / 2)
+            for (let i = 0; i < amostras.length; i++) amostras[i] = view.getInt16(i * 2, true) / 32768
+            fila.push(amostras)
+            segundosNaFila += amostras.length / sampleRate
+            recebeuAudio = true
+
+            // Primeiro junta um pouco de fala (absorve oscilação da rede e da
+            // geração); depois disso, agenda cada pedaço assim que chega.
+            if (tocou || segundosNaFila >= PREBUFFER_S) agendarFila()
           }
-          const total = bytes.length - (bytes.length % 2)
-          if (total < bytes.length) sobra = bytes.slice(total)
-          const view = new DataView(bytes.buffer, bytes.byteOffset, total)
-          const amostras = new Float32Array(total / 2)
-          for (let i = 0; i < amostras.length; i++) amostras[i] = view.getInt16(i * 2, true) / 32768
-          fila.push(amostras)
-          segundosNaFila += amostras.length / sampleRate
-
-          // Primeiro junta um pouco de fala (absorve oscilação da rede e da
-          // geração); depois disso, agenda cada pedaço assim que chega.
-          if (tocou || segundosNaFila >= PREBUFFER_S) agendarFila()
+          if (fila.length) agendarFila()
+          if (!recebeuAudio) throw new Error('Voz IA veio vazia')
         }
-        if (fila.length) agendarFila()
-        if (!tocou) throw new Error('Voz IA veio vazia')
       } catch (err) {
-        if (id !== falaIdRef.current || tocou) return
+        if (id !== falaIdRef.current) return
         console.warn('Voz IA do Tuco indisponível; usando a voz do navegador.', err)
-        pararAudio()
-        falarPeloNavegador(texto)
+        const ctx = ctxRef.current
+        if (!tocou || !ctx) {
+          pararAudio()
+          falarPeloNavegador(texto)
+          return
+        }
+        // Falhou no meio: deixa terminar o que já foi agendado e lê o resto
+        // pela voz do navegador, em vez de o Tuco ficar mudo na metade.
+        abortRef.current?.abort()
+        const resto = trechos.slice(trechoAtual).join('\n')
+        const esperaMs = Math.max(0, (cursor - ctx.currentTime) * 1000)
+        setTimeout(() => {
+          if (id === falaIdRef.current) falarPeloNavegador(resto)
+        }, esperaMs)
       }
     },
     [stopSpeaking, prepararAudio, pararAudio, falarPeloNavegador],
