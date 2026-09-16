@@ -166,16 +166,16 @@ create table if not exists orders (
   id            uuid primary key default gen_random_uuid(),
   status        text not null default 'aguardando_pagamento'
                   check (status in
-                    ('aguardando_pagamento', 'aguardando_dinheiro', 'recebido', 'em_preparo', 'pronto', 'entregue', 'cancelado')),
+                    ('aguardando_pagamento', 'aguardando_dinheiro', 'aguardando_twint', 'recebido', 'em_preparo', 'pronto', 'entregue', 'cancelado')),
   criado_em     timestamptz not null default now(),
   atualizado_em timestamptz not null default now()
 );
 
 -- pedido só chega na cozinha depois que o pagamento é confirmado — pela SumUp
--- (aguardando_pagamento) ou pela equipe no caixa (aguardando_dinheiro).
+-- (aguardando_pagamento) ou pela equipe no caixa (aguardando_dinheiro / aguardando_twint).
 alter table orders drop constraint if exists orders_status_check;
 alter table orders add constraint orders_status_check check (status in
-  ('aguardando_pagamento', 'aguardando_dinheiro', 'recebido', 'em_preparo', 'pronto', 'entregue', 'cancelado'));
+  ('aguardando_pagamento', 'aguardando_dinheiro', 'aguardando_twint', 'recebido', 'em_preparo', 'pronto', 'entregue', 'cancelado'));
 alter table orders alter column status set default 'aguardando_pagamento';
 alter table orders add column if not exists sumup_checkout_id text;
 alter table orders add column if not exists valor_pago numeric(10,2);

@@ -46,7 +46,7 @@ CADASTRO E EDIÇÃO (criar_categoria, criar_produto, criar_insumo, criar_grupo_a
 
 Faça perguntas UMA DE CADA VEZ, como numa conversa normal — nunca liste todos os campos de uma vez feito um formulário. Ao editar, peça só os campos que o usuário quer mudar (não pergunte os que não mudam). Ao criar, peça só o que for obrigatório; campos opcionais (disponível, destaque, descrição, estoque mínimo, preço adicional...) só pergunte se fizer sentido, senão use o padrão da própria ferramenta. Assim que tiver o necessário, chame a ferramenta direto — ela já grava, sem passo de confirmação nenhum, então nunca pare pra perguntar "posso confirmar?" nem liste um resumo do que vai mudar antes de chamar. Depois que a ferramenta responder com sucesso, avise o usuário em uma frase curta o que foi feito. Se a ferramenta devolver "erro" (ex: item não encontrado), explique o problema ao usuário e pergunte como prosseguir — não insista repetindo a mesma chamada.
 
-Fora do seu alcance (fica pra a equipe fazer direto no painel, sempre por decisão de segurança ou porque exige conferir algo físico na hora): gerenciar usuários com acesso ao painel (segurança de contas), cadastrar pedidos de compra a fornecedores, registrar contagens de inventário, executar o fechamento de estoque em si (bater os insumos em lote), confirmar o pagamento em dinheiro de um pedido (exige contar o troco na mão), e mudar o status de um pedido no quadro da cozinha (recebido/em preparo/pronto/entregue) — mas você PODE consultar a fila de pendentes de fechamento (consultar_fechamento), os pedidos de compra já cadastrados (consultar_compras), as contagens já feitas (consultar_inventarios), e o estado atual dos pedidos (consultar_pedidos_atuais). Fora isso, praticamente todo cadastro do painel (cardápio, adicionais, copo pronto, composição de estoque, insumos, fornecedores, impostos, gorjetas, fechamento automático, movimentações e perdas de estoque) você lê E edita — nunca diga que não consegue sem antes checar se existe uma ferramenta pra isso.`
+Fora do seu alcance (fica pra a equipe fazer direto no painel, sempre por decisão de segurança ou porque exige conferir algo físico na hora): gerenciar usuários com acesso ao painel (segurança de contas), cadastrar pedidos de compra a fornecedores, registrar contagens de inventário, executar o fechamento de estoque em si (bater os insumos em lote), confirmar o pagamento em dinheiro de um pedido (exige contar o troco na mão) ou por Twint (exige conferir o recebimento no celular do caixa), e mudar o status de um pedido no quadro da cozinha (recebido/em preparo/pronto/entregue) — mas você PODE consultar a fila de pendentes de fechamento (consultar_fechamento), os pedidos de compra já cadastrados (consultar_compras), as contagens já feitas (consultar_inventarios), e o estado atual dos pedidos (consultar_pedidos_atuais). Fora isso, praticamente todo cadastro do painel (cardápio, adicionais, copo pronto, composição de estoque, insumos, fornecedores, impostos, gorjetas, fechamento automático, movimentações e perdas de estoque) você lê E edita — nunca diga que não consegue sem antes checar se existe uma ferramenta pra isso.`
 }
 
 const RETRY_DELAYS_MS = [800, 2000]
@@ -501,28 +501,34 @@ async function consultarPedidosAtuais(supabase: SupabaseClient, args: { nome_cli
   const inicioHoje = new Date()
   inicioHoje.setHours(0, 0, 0, 0)
 
-  const [hojeRes, dinheiroRes] = await Promise.all([
+  const [hojeRes, dinheiroRes, twintRes] = await Promise.all([
     supabase
       .from('orders')
       .select('status, nome_cliente, valor_pago, criado_em')
       .in('status', PAID_STATUSES)
       .gte('criado_em', inicioHoje.toISOString()),
     supabase.from('orders').select('status, nome_cliente, valor_pago, criado_em').eq('status', 'aguardando_dinheiro'),
+    supabase.from('orders').select('status, nome_cliente, valor_pago, criado_em').eq('status', 'aguardando_twint'),
   ])
   if (hojeRes.error) return { error: hojeRes.error.message }
   if (dinheiroRes.error) return { error: dinheiroRes.error.message }
+  if (twintRes.error) return { error: twintRes.error.message }
 
   const hoje = (hojeRes.data ?? []) as PedidoAtualRow[]
   const contagemPorStatus: Record<string, number> = {}
   for (const p of hoje) contagemPorStatus[p.status] = (contagemPorStatus[p.status] ?? 0) + 1
 
   const dinheiro = (dinheiroRes.data ?? []) as PedidoAtualRow[]
+  const twint = (twintRes.data ?? []) as PedidoAtualRow[]
   const resultado: Record<string, unknown> = {
     pedidos_hoje_por_status: contagemPorStatus,
     aguardando_confirmacao_dinheiro: dinheiro.length,
+    aguardando_confirmacao_twint: twint.length,
     // Lista de quem está esperando a equipe conferir o troco no caixa — a
     // confirmação em si (contar o dinheiro na mão) não é algo que você faz.
     pedidos_aguardando_dinheiro: dinheiro.map((p) => ({ nome_cliente: p.nome_cliente, valor_chf: p.valor_pago, criado_em: p.criado_em })),
+    // Idem, para quem pagou por Twint e ainda não teve o recebimento conferido.
+    pedidos_aguardando_twint: twint.map((p) => ({ nome_cliente: p.nome_cliente, valor_chf: p.valor_pago, criado_em: p.criado_em })),
     // Lista completa de hoje, com nome do cliente — pra perguntas tipo "quem
     // comprou hoje?" sem precisar já saber um nome pra filtrar.
     pedidos_hoje: hoje
@@ -532,7 +538,7 @@ async function consultarPedidosAtuais(supabase: SupabaseClient, args: { nome_cli
 
   if (args.nome_cliente) {
     const termo = args.nome_cliente.toLowerCase()
-    const todos = [...hoje, ...((dinheiroRes.data ?? []) as PedidoAtualRow[])]
+    const todos = [...hoje, ...dinheiro, ...twint]
     resultado.pedidos_encontrados = todos
       .filter((p) => p.nome_cliente?.toLowerCase().includes(termo))
       .map((p) => ({ nome_cliente: p.nome_cliente, status: p.status, valor_chf: p.valor_pago, criado_em: p.criado_em }))
@@ -829,7 +835,7 @@ async function consultarFechamento(supabase: SupabaseClient) {
   const { data, error } = await supabase
     .from('orders')
     .select('criado_em, valor_pago, gorjeta, forma_pagamento')
-    .not('status', 'in', '(aguardando_pagamento,aguardando_dinheiro,cancelado)')
+    .not('status', 'in', '(aguardando_pagamento,aguardando_dinheiro,aguardando_twint,cancelado)')
     .eq('estoque_baixado', false)
     .order('criado_em', { ascending: false })
   if (error) return { error: error.message }
@@ -1753,7 +1759,7 @@ const TOOLS = [
       {
         name: 'consultar_pedidos_atuais',
         description:
-          'Consulta o estado operacional agora: quantos pedidos estão em cada etapa da cozinha hoje (recebido/em preparo/pronto/entregue), a lista de quem está esperando a equipe confirmar o troco (pedidos_aguardando_dinheiro), e a lista completa de pedidos pagos hoje com nome do cliente, status e valor (pedidos_hoje) — use isso pra perguntas tipo "quem comprou hoje?" ou "quais os nomes dos clientes de hoje?". Informe nome_cliente só quando quiser filtrar por um cliente específico. Só cobre HOJE: para clientes/pedidos de outros dias (ontem, uma data, a semana), use consultar_pedidos_periodo.',
+          'Consulta o estado operacional agora: quantos pedidos estão em cada etapa da cozinha hoje (recebido/em preparo/pronto/entregue), a lista de quem está esperando a equipe confirmar o troco (pedidos_aguardando_dinheiro), a lista de quem está esperando a equipe confirmar o recebimento no Twint (pedidos_aguardando_twint), e a lista completa de pedidos pagos hoje com nome do cliente, status e valor (pedidos_hoje) — use isso pra perguntas tipo "quem comprou hoje?" ou "quais os nomes dos clientes de hoje?". Informe nome_cliente só quando quiser filtrar por um cliente específico. Só cobre HOJE: para clientes/pedidos de outros dias (ontem, uma data, a semana), use consultar_pedidos_periodo.',
         parametersJsonSchema: {
           type: 'object',
           properties: {

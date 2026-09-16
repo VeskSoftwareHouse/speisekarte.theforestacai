@@ -1552,6 +1552,34 @@
 .order-summary__payment-options .option-pill--cash.option-pill--active svg {
   color: #340261;
 }
+/* Twint puxa o azul da própria marca, distinto do roxo (cartão) e do dourado
+   (dinheiro) — mesma lógica de aura pulsando das outras duas opções. */
+.order-summary__payment-options .option-pill--twint {
+  border-color: color-mix(in srgb, var(--color-twint) 55%, var(--color-border));
+  color: #00728f;
+  animation: payment-pill-pulse-twint 2.6s ease-in-out infinite;
+  animation-delay: 0.6s;
+}
+.order-summary__payment-options .option-pill--twint svg {
+  color: var(--color-twint);
+}
+.order-summary__payment-options .option-pill--twint.option-pill--active {
+  background: linear-gradient(135deg, var(--color-twint-light), var(--color-twint));
+  border-color: transparent;
+  color: #fff;
+}
+.order-summary__payment-options .option-pill--twint.option-pill--active svg {
+  color: #fff;
+}
+@keyframes payment-pill-pulse-twint {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 177, 234, 0);
+  }
+  50% {
+    box-shadow: 0 0 10px 2px rgba(0, 177, 234, 0.45), 0 0 20px 6px rgba(0, 177, 234, 0.22);
+  }
+}
 @keyframes payment-pill-pulse-card {
   0%,
   100% {
@@ -1652,6 +1680,31 @@
 }
 .confirmation-screen__icon--error {
   background: var(--color-danger);
+}
+.confirmation-screen__icon--twint {
+  background: var(--color-twint);
+}
+.payment-status__twint-phone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-twint) 12%, var(--color-surface));
+  border: 1.5px solid color-mix(in srgb, var(--color-twint) 45%, var(--color-border));
+}
+.payment-status__twint-phone-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+.payment-status__twint-phone-number {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #00728f;
 }
 .confirmation-screen__actions {
   display: flex;

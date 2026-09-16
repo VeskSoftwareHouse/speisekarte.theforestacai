@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, CreditCard, Banknote } from 'lucide-react'
+import { ArrowLeft, CreditCard, Banknote, Smartphone } from 'lucide-react'
 import { formatCHF, formatSelectedOptionLabel, formatTipLabel } from '@shared/format'
 import { FallbackPhotoIcon } from '../categoryIcons'
 import { useLanguage } from '../i18n/LanguageContext'
@@ -120,6 +120,14 @@ export default function OrderSummaryScreen({ items, sending, onConfirm, onBack }
                 <Banknote size={18} strokeWidth={2} aria-hidden />
                 {t('paymentMethodCash')}
               </button>
+              <button
+                type="button"
+                className={`option-pill option-pill--twint ${paymentMethod === 'twint' ? 'option-pill--active' : ''}`}
+                onClick={() => setPaymentMethod('twint')}
+              >
+                <Smartphone size={18} strokeWidth={2} aria-hidden />
+                {t('paymentMethodTwint')}
+              </button>
             </div>
           </div>
 
@@ -171,7 +179,11 @@ export default function OrderSummaryScreen({ items, sending, onConfirm, onBack }
             disabled={items.length === 0 || sending || !customerName.trim()}
             onClick={() => onConfirm(customerName.trim(), tip, paymentMethod)}
           >
-            {sending ? t('sending') : paymentMethod === 'dinheiro' ? t('confirmOrderButton') : t('confirmAndPayButton')}
+            {sending
+              ? t('sending')
+              : paymentMethod === 'dinheiro'
+                ? t('confirmOrderButton')
+                : t('confirmAndPayButton')}
           </button>
         </footer>
       </div>

@@ -12,6 +12,9 @@
   --color-accent: #2f8f52;
   --color-gold: #d6a93b;
   --color-gold-light: #e9c874;
+  /* Azul da marca Twint, só para a forma de pagamento — não faz parte da paleta Forest Açaí. */
+  --color-twint: #00b1ea;
+  --color-twint-light: #5cd0f5;
   --color-success: #2f8f52;
   --color-warning: #c98a02;
   --color-danger: #c1272d;
@@ -48,6 +51,7 @@
   --shadow-lg: 0 20px 48px rgba(21, 15, 32, 0.22);
   --shadow-glow-primary: 0 10px 26px rgba(108, 60, 230, 0.35);
   --shadow-glow-gold: 0 8px 22px rgba(214, 169, 59, 0.35);
+  --shadow-glow-twint: 0 8px 22px rgba(0, 177, 234, 0.35);
 
   color-scheme: light;
 }

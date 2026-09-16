@@ -35,7 +35,7 @@ export function useFechamento(currentUserId: string) {
         supabase
           .from('orders')
           .select('*, order_items(*)')
-          .not('status', 'in', '(aguardando_pagamento,aguardando_dinheiro,cancelado)')
+          .not('status', 'in', '(aguardando_pagamento,aguardando_dinheiro,aguardando_twint,cancelado)')
           .eq('estoque_baixado', false)
           .order('criado_em', { ascending: false }),
       (r) => !!r.error,

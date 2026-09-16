@@ -16,6 +16,8 @@ type View =
   | 'payment_failed'
   | 'awaiting_cash'
   | 'cash_timeout'
+  | 'awaiting_twint'
+  | 'twint_timeout'
   | 'confirmation'
 
 /** Quanto tempo o totem espera o cliente aproximar o cartão antes de desistir. */
@@ -87,6 +89,7 @@ export default function App() {
       status !== null &&
       status !== 'aguardando_pagamento' &&
       status !== 'aguardando_dinheiro' &&
+      status !== 'aguardando_twint' &&
       status !== 'cancelado'
     )
   }
@@ -174,6 +177,35 @@ export default function App() {
   }
 
   /**
+   * Twint: mesmo esquema do dinheiro — o pedido já está criado como
+   * `aguardando_twint`, e quem o tira dali é a equipe, conferindo o
+   * recebimento no painel.
+   */
+  async function waitForTwint(orderId: string) {
+    setConfirmingOrderId(orderId)
+    setView('awaiting_twint')
+    setSending(false)
+    const deadline = Date.now() + CASH_TIMEOUT_MS
+
+    while (Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, CASH_POLL_INTERVAL_MS))
+      let status: string | null = null
+      try {
+        status = await fetchOrderStatus(orderId)
+      } catch {
+        continue
+      }
+      if (isPaid(status)) {
+        setCart([])
+        setView('confirmation')
+        return
+      }
+      if (status === 'cancelado') break
+    }
+    setView('twint_timeout')
+  }
+
+  /**
    * Traduz a falha que o servidor devolveu. Ele responde com um código, não
    * com a frase: a mensagem pronta chegava sempre em português, e aparecia
    * assim para um cliente lendo o cardápio em alemão. Código desconhecido —
@@ -199,9 +231,10 @@ export default function App() {
       preco_unitario: item.unitPrice,
     }))
 
-    if (paymentMethod === 'dinheiro') {
+    if (paymentMethod === 'dinheiro' || paymentMethod === 'twint') {
+      const endpoint = paymentMethod === 'dinheiro' ? '/api/create-cash-order' : '/api/create-twint-order'
       try {
-        const res = await fetch('/api/create-cash-order', {
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ items: itemsPayload, customerName, tip }),
@@ -212,7 +245,11 @@ export default function App() {
           setSending(false)
           return
         }
-        await waitForCash(data.orderId)
+        if (paymentMethod === 'dinheiro') {
+          await waitForCash(data.orderId)
+        } else {
+          await waitForTwint(data.orderId)
+        }
       } catch {
         setSendError(t('genericOrderError'))
         setSending(false)
@@ -284,6 +321,20 @@ export default function App() {
       )
     }
 
+    if (view === 'awaiting_twint') {
+      return <PaymentStatusScreen status="awaiting_twint" />
+    }
+
+    if (view === 'twint_timeout') {
+      return (
+        <PaymentStatusScreen
+          status="twint_timeout"
+          onRetry={() => confirmingOrderId && waitForTwint(confirmingOrderId)}
+          onBack={() => setView('dashboard')}
+        />
+      )
+    }
+
     if (view === 'confirmation') {
       return (
         <ConfirmationScreen
@@ -342,7 +393,7 @@ export default function App() {
   // são folga de sobra para quem ficou esperando: ao primeiro toque a tela
   // desperta normalmente, como em qualquer outra — o pedido continua
   // pendente no painel da equipe, e quem confirma o troco tira ele dali.
-  const PAYMENT_VIEWS: View[] = ['awaiting_tap', 'confirming_payment', 'awaiting_cash']
+  const PAYMENT_VIEWS: View[] = ['awaiting_tap', 'confirming_payment', 'awaiting_cash', 'awaiting_twint']
 
   return (
     <>

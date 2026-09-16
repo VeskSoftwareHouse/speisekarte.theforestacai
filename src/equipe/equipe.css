@@ -910,6 +910,58 @@ body {
     font-size: 0.82rem;
   }
 }
+/* Mesmo botão flutuante do dinheiro, mas em azul Twint — e empilhado abaixo
+   dele (top maior) para as duas filas conviverem sem se sobrepor no raro
+   caso de haver pendentes dos dois tipos ao mesmo tempo. */
+.twint-pending-fab {
+  position: fixed;
+  top: 172px;
+  left: var(--space-4);
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: calc(100vw - var(--space-4) * 2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, var(--color-twint-light), var(--color-twint));
+  color: #fff;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-align: left;
+  box-shadow: var(--shadow-glow-twint);
+  animation: twint-pending-fab-blink 1.4s ease-in-out infinite;
+}
+.twint-pending-fab svg {
+  flex: 0 0 auto;
+}
+@keyframes twint-pending-fab-blink {
+  0%,
+  100% {
+    box-shadow: var(--shadow-glow-twint);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(0, 177, 234, 0.35), 0 8px 22px rgba(0, 177, 234, 0.55);
+    transform: scale(1.035);
+  }
+}
+@media (max-width: 1000px) {
+  .twint-pending-fab {
+    top: 298px;
+    font-size: 0.82rem;
+  }
+}
+.twint-pending-card {
+  border-color: var(--color-twint);
+  box-shadow: var(--shadow-glow-twint);
+}
+.twint-pending-card .cash-pending-card__total {
+  color: #00728f;
+}
+
 .cash-pending-modal {
   max-width: 640px;
 }

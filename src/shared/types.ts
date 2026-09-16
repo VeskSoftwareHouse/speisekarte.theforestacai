@@ -3,12 +3,18 @@ export type ModifierSelecao = 'unica' | 'multipla'
 /** Status visíveis no quadro da cozinha (Painel da Equipe). */
 export type OrderStatus = 'recebido' | 'em_preparo' | 'pronto' | 'entregue'
 /**
- * Status completo, incluindo os três estados de pagamento que nunca chegam
+ * Status completo, incluindo os quatro estados de pagamento que nunca chegam
  * ao quadro da cozinha: `aguardando_pagamento` (cartão, aguardando a SumUp),
- * `aguardando_dinheiro` (aguardando a equipe confirmar o troco no caixa) e
+ * `aguardando_dinheiro` (aguardando a equipe confirmar o troco no caixa),
+ * `aguardando_twint` (aguardando a equipe confirmar o recebimento no Twint) e
  * `cancelado`.
  */
-export type FullOrderStatus = 'aguardando_pagamento' | 'aguardando_dinheiro' | OrderStatus | 'cancelado'
+export type FullOrderStatus =
+  | 'aguardando_pagamento'
+  | 'aguardando_dinheiro'
+  | 'aguardando_twint'
+  | OrderStatus
+  | 'cancelado'
 
 export const ORDER_STATUS_FLOW: OrderStatus[] = ['recebido', 'em_preparo', 'pronto', 'entregue']
 
@@ -133,7 +139,7 @@ export interface Order {
   valor_pago: number | null
   nome_cliente: string | null
   gorjeta: number
-  /** Como a SumUp reportou o pagamento, em alemão: "Kontaktlos · VISA". "Dinheiro" nos pagamentos em espécie. null = pedido antigo ou não informado. */
+  /** Como a SumUp reportou o pagamento, em alemão: "Kontaktlos · VISA". "Dinheiro" nos pagamentos em espécie, "Twint" nos pagamentos por Twint. null = pedido antigo ou não informado. */
   forma_pagamento: string | null
   /** Quanto o cliente entregou em espécie. Só preenchido em pedidos pagos em dinheiro; o troco é este valor menos `valor_pago`. */
   valor_recebido_dinheiro: number | null

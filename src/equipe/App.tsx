@@ -4,10 +4,12 @@ import { formatCHF } from '@shared/format'
 import { useOrders } from './hooks/useOrders'
 import { useCopoProntoIngredientes } from './hooks/useCopoProntoIngredientes'
 import { useCashPendingOrders } from './hooks/useCashPendingOrders'
+import { useTwintPendingOrders } from './hooks/useTwintPendingOrders'
 import { useAuth } from './hooks/useAuth'
 import OrderCard from './components/OrderCard'
 import ConfirmDialog from './components/ConfirmDialog'
 import CashPendingPanel from './components/CashPendingPanel'
+import TwintPendingPanel from './components/TwintPendingPanel'
 import DateStrip from './components/DateStrip'
 import MenuManager from './components/MenuManager'
 import EstoqueManager from './components/EstoqueManager'
@@ -36,6 +38,7 @@ export default function App() {
   const { orders, orderCountByDate, loading, error, realtimeConnected, newOrderIds, markSeen, advanceStatus, excluirPedido } =
     useOrders(selectedDateKey, viewedMonthKey)
   const { orders: cashPendingOrders, confirmCash } = useCashPendingOrders(user?.id ?? '')
+  const { orders: twintPendingOrders, confirmTwint } = useTwintPendingOrders(user?.id ?? '')
   const ingredientesCopoPronto = useCopoProntoIngredientes()
   // Confirmação antes de excluir um pedido (ex: pedido de teste) — nunca
   // apaga direto no clique da lixeira, ver OrderCard.
@@ -141,6 +144,7 @@ export default function App() {
           {error && <p className="equipe-app__error">Erro ao carregar pedidos: {error}</p>}
 
           <CashPendingPanel orders={cashPendingOrders} onConfirm={confirmCash} />
+          <TwintPendingPanel orders={twintPendingOrders} onConfirm={confirmTwint} />
 
           {showDelivered && (
             <main className="history-list">

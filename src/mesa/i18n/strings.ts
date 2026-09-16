@@ -59,12 +59,21 @@ export interface StringDict {
   paymentMethodLabel: string
   paymentMethodCard: string
   paymentMethodCash: string
+  paymentMethodTwint: string
   /** Botão do fluxo de dinheiro — não "paga" nada no app, só confirma o pedido pro caixa. */
   confirmOrderButton: string
   awaitingCashTitle: string
   awaitingCashBody: string
   cashTimeoutTitle: string
   cashTimeoutBody: string
+  /** Título da tela de espera do Twint — o cliente ainda precisa efetivamente pagar pelo app dele. */
+  awaitingTwintTitle: string
+  /** Corpo com `{phone}` — o número Twint para o cliente pagar (ver VITE_TWINT_PHONE). */
+  awaitingTwintBody: string
+  /** Rótulo acima do número de telefone Twint mostrado em destaque. */
+  twintPhoneLabel: string
+  twintTimeoutTitle: string
+  twintTimeoutBody: string
   /** Aviso no cardápio de só-consulta (/cardapio), no lugar do "vai pra cozinha" do totem. */
   catalogNotice: string
   /** Botão no card de um "copo pronto" (MenuItem.copo_pronto) que abre o popup de ingredientes. */
@@ -132,11 +141,17 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     paymentMethodLabel: 'Zahlungsart',
     paymentMethodCard: 'Karte',
     paymentMethodCash: 'Bargeld',
+    paymentMethodTwint: 'Twint',
     confirmOrderButton: 'Bestellung bestätigen',
     awaitingCashTitle: 'Bitte an der Kasse bezahlen',
     awaitingCashBody: 'Sag dem Team den Betrag. Sobald bestätigt, geht deine Bestellung in die Küche.',
     cashTimeoutTitle: 'Noch nicht bestätigt',
     cashTimeoutBody: 'Wende dich an unser Team an der Kasse, um die Barzahlung zu bestätigen.',
+    awaitingTwintTitle: 'Mit Twint bezahlen',
+    awaitingTwintBody: 'Zahle die Bestellung per Twint an diese Nummer. Sobald bestätigt, geht deine Bestellung in die Küche.',
+    twintPhoneLabel: 'Twint-Nummer',
+    twintTimeoutTitle: 'Noch nicht bestätigt',
+    twintTimeoutBody: 'Wende dich an unser Team, um die Twint-Zahlung zu bestätigen.',
     catalogNotice: 'Nur zum Anschauen — bestelle am Totem oder bei unserem Team.',
     ingredientsButton: 'Zutaten ansehen',
     ingredientsTitle: 'Zutaten',
@@ -197,11 +212,17 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     paymentMethodLabel: 'Mode de paiement',
     paymentMethodCard: 'Carte',
     paymentMethodCash: 'Espèces',
+    paymentMethodTwint: 'Twint',
     confirmOrderButton: 'Confirmer la commande',
     awaitingCashTitle: 'Merci de payer à la caisse',
     awaitingCashBody: "Indiquez le montant à l'équipe. Dès que c'est confirmé, votre commande part en cuisine.",
     cashTimeoutTitle: 'Toujours pas confirmé',
     cashTimeoutBody: "Adressez-vous à l'équipe à la caisse pour confirmer le paiement en espèces.",
+    awaitingTwintTitle: 'Payez avec Twint',
+    awaitingTwintBody: "Payez la commande via Twint à ce numéro. Dès que c'est confirmé, votre commande part en cuisine.",
+    twintPhoneLabel: 'Numéro Twint',
+    twintTimeoutTitle: 'Toujours pas confirmé',
+    twintTimeoutBody: "Adressez-vous à notre équipe pour confirmer le paiement Twint.",
     catalogNotice: 'Uniquement pour consultation — commandez à la borne ou auprès de notre équipe.',
     ingredientsButton: 'Voir les ingrédients',
     ingredientsTitle: 'Ingrédients',
@@ -262,11 +283,17 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     paymentMethodLabel: 'Metodo di pagamento',
     paymentMethodCard: 'Carta',
     paymentMethodCash: 'Contanti',
+    paymentMethodTwint: 'Twint',
     confirmOrderButton: 'Conferma ordine',
     awaitingCashTitle: 'Paga alla cassa',
     awaitingCashBody: "Comunica l'importo al team. Appena confermato, il tuo ordine passa in cucina.",
     cashTimeoutTitle: 'Ancora da confermare',
     cashTimeoutBody: 'Parla con il nostro team alla cassa per confermare il pagamento in contanti.',
+    awaitingTwintTitle: 'Paga con Twint',
+    awaitingTwintBody: 'Paga l\'ordine tramite Twint a questo numero. Appena confermato, il tuo ordine passa in cucina.',
+    twintPhoneLabel: 'Numero Twint',
+    twintTimeoutTitle: 'Ancora da confermare',
+    twintTimeoutBody: 'Parla con il nostro team per confermare il pagamento Twint.',
     catalogNotice: 'Solo per consultazione — ordina al totem o con il nostro team.',
     ingredientsButton: 'Vedi ingredienti',
     ingredientsTitle: 'Ingredienti',
@@ -327,11 +354,17 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     paymentMethodLabel: 'Payment method',
     paymentMethodCard: 'Card',
     paymentMethodCash: 'Cash',
+    paymentMethodTwint: 'Twint',
     confirmOrderButton: 'Confirm order',
     awaitingCashTitle: 'Please pay at the counter',
     awaitingCashBody: 'Tell our team the amount. Once confirmed, your order goes to the kitchen.',
     cashTimeoutTitle: 'Still waiting for confirmation',
     cashTimeoutBody: 'Please check with our team at the counter to confirm your cash payment.',
+    awaitingTwintTitle: 'Pay with Twint',
+    awaitingTwintBody: 'Pay for the order via Twint to this number. Once confirmed, your order goes to the kitchen.',
+    twintPhoneLabel: 'Twint number',
+    twintTimeoutTitle: 'Still waiting for confirmation',
+    twintTimeoutBody: 'Please check with our team to confirm your Twint payment.',
     catalogNotice: 'For browsing only — order at the kiosk or with our team.',
     ingredientsButton: 'View ingredients',
     ingredientsTitle: 'Ingredients',
@@ -392,11 +425,17 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     paymentMethodLabel: 'Forma de pagamento',
     paymentMethodCard: 'Cartão',
     paymentMethodCash: 'Dinheiro',
+    paymentMethodTwint: 'Twint',
     confirmOrderButton: 'Confirmar pedido',
     awaitingCashTitle: 'Pague no caixa',
     awaitingCashBody: 'Informe o valor à equipe. Assim que confirmarem, seu pedido segue para a cozinha.',
     cashTimeoutTitle: 'Ainda aguardando confirmação',
     cashTimeoutBody: 'Fale com a equipe no caixa para confirmar o pagamento em dinheiro.',
+    awaitingTwintTitle: 'Pague com Twint',
+    awaitingTwintBody: 'Pague o pedido pelo Twint para este número. Assim que confirmarem, seu pedido segue para a cozinha.',
+    twintPhoneLabel: 'Número Twint',
+    twintTimeoutTitle: 'Ainda aguardando confirmação',
+    twintTimeoutBody: 'Fale com a equipe para confirmar o pagamento por Twint.',
     catalogNotice: 'Somente para consulta — peça no totem ou com a equipe.',
     ingredientsButton: 'Ver ingredientes',
     ingredientsTitle: 'Ingredientes',
@@ -457,11 +496,17 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     paymentMethodLabel: 'Forma de pago',
     paymentMethodCard: 'Tarjeta',
     paymentMethodCash: 'Efectivo',
+    paymentMethodTwint: 'Twint',
     confirmOrderButton: 'Confirmar pedido',
     awaitingCashTitle: 'Paga en caja',
     awaitingCashBody: 'Indica el importe al equipo. En cuanto lo confirmen, tu pedido pasa a cocina.',
     cashTimeoutTitle: 'Aún sin confirmar',
     cashTimeoutBody: 'Habla con el equipo en caja para confirmar el pago en efectivo.',
+    awaitingTwintTitle: 'Paga con Twint',
+    awaitingTwintBody: 'Paga el pedido por Twint a este número. En cuanto lo confirmen, tu pedido pasa a cocina.',
+    twintPhoneLabel: 'Número Twint',
+    twintTimeoutTitle: 'Aún sin confirmar',
+    twintTimeoutBody: 'Habla con el equipo para confirmar el pago por Twint.',
     catalogNotice: 'Solo para consulta — pide en el totem o con nuestro equipo.',
     ingredientsButton: 'Ver ingredientes',
     ingredientsTitle: 'Ingredientes',
