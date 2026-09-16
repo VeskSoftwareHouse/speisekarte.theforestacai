@@ -1693,10 +1693,15 @@ body {
 .admin-composition-list__row input[type='number'] {
   width: 90px;
 }
+/* flex-shrink: 0, e não um min-width fixo — a unidade vem por extenso
+   (ver UNIDADE_LABEL, ex: "quilogramas"), e um min-width menor que o texto
+   deixava o flexbox encolher a caixa abaixo do próprio conteúdo, com a
+   palavra vazando visualmente por cima do campo de preço ao lado. */
 .admin-composition-list__row span {
   color: var(--color-text-muted);
   font-size: 0.85rem;
-  min-width: 2.5ch;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .admin-composition-list__remove {
   background: none;
