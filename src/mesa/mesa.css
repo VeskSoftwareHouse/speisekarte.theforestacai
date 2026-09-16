@@ -529,6 +529,9 @@
 .sidebar__item-icon--grape {
   animation: icon-grape 4.2s ease-in-out infinite;
 }
+.sidebar__item-icon--flex {
+  animation: icon-flex 2.6s ease-in-out infinite;
+}
 @keyframes icon-flame {
   0%,
   100% {
@@ -619,6 +622,20 @@
   }
   50% {
     transform: rotate(4deg) translateY(-1px);
+  }
+}
+/* Halter: um "flex" rápido — encolhe e estica de volta, como um músculo. */
+@keyframes icon-flex {
+  0%,
+  55%,
+  100% {
+    transform: scale(1);
+  }
+  75% {
+    transform: scale(0.86, 1.1);
+  }
+  88% {
+    transform: scale(1.08, 0.94);
   }
 }
 @keyframes sidebar-item-in {

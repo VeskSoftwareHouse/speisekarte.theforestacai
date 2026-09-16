@@ -1,10 +1,10 @@
-import { Soup, Gift, CupSoda, Citrus, Sparkles, Grape, Flame, type LucideIcon } from 'lucide-react'
+import { Soup, BicepsFlexed, Gift, CupSoda, Citrus, Sparkles, Grape, Flame, type LucideIcon } from 'lucide-react'
 
 // Cada ícone da sidebar ganha um movimento com a cara do que ele representa: a
 // chama tremula, o presente chacoalha, o copo balança. O nome vira a classe
 // sidebar__item-icon--<motion>, definida no mesa.css. Ícone e movimento moram
 // no mesmo registro justamente para não descolarem um do outro.
-export type IconMotion = 'flame' | 'bowl' | 'gift' | 'cup' | 'citrus' | 'sparkle' | 'grape'
+export type IconMotion = 'flame' | 'bowl' | 'gift' | 'cup' | 'citrus' | 'sparkle' | 'grape' | 'flex'
 
 interface CategoryIcon {
   icon: LucideIcon
@@ -13,6 +13,10 @@ interface CategoryIcon {
 
 const CATEGORY_ICON: Record<string, CategoryIcon> = {
   'Açaí im Becher': { icon: Soup, motion: 'bowl' },
+  'Açaí  becher 500ml': { icon: Soup, motion: 'bowl' },
+  'Açaí bowl 300ml': { icon: Soup, motion: 'bowl' },
+  'Stelle deinen eigenen Açaí-Becher zusammen!': { icon: Soup, motion: 'bowl' },
+  'Protein shake': { icon: BicepsFlexed, motion: 'flex' },
   Kombos: { icon: Gift, motion: 'gift' },
   'Säfte Klassiker': { icon: CupSoda, motion: 'cup' },
   'Säfte Exotisch': { icon: Citrus, motion: 'citrus' },
