@@ -125,6 +125,7 @@ export default function ReportMarginList({ rows, insumoById, limit, empty }: Pro
                       </div>
                       <span className="report-margin-row__detalhe-item__qtd">
                         {formatQuantidade(d.quantidade)} {insumo ? UNIDADE_LABEL[insumo.unidade] : ''} usados nesse período
+                        {d.imposto > 0.005 && ` · ${formatCHF(d.imposto)} de imposto`}
                       </span>
                     </div>
                   )

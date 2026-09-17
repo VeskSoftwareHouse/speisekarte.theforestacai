@@ -315,6 +315,7 @@ export default function EstoqueManager({ currentUserId }: Props) {
           <CompraPanel
             pedidos={pedidos}
             fornecedoresById={fornecedoresById}
+            insumosById={insumosById}
             impostos={impostos}
             onAdd={() => setCompraForm('new')}
             onEdit={(p) => setCompraForm(p)}

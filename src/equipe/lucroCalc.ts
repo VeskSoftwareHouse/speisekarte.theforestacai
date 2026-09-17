@@ -1,5 +1,5 @@
 import type { Imposto, OrderItem, ReportOrder } from '@shared/types'
-import { valorUnitarioComImposto } from './estoqueCalc'
+import { impostoEmbutidoUnitario, valorUnitarioComImposto } from './estoqueCalc'
 import type { ReferenceMaps } from './estoqueConsumo'
 import { isPaid, lineTotal } from './reportMetrics'
 
@@ -8,6 +8,13 @@ export interface ItemCompraRecebida {
   insumo_id: string
   quantidade: number
   valor_unitario: number | null
+}
+
+/** Custo médio de um insumo — com o imposto já embutido — e quanto desse
+ * custo médio é imposto, pra poder mostrar o valor separado na tela. */
+export interface CustoMedioInsumo {
+  custoUnitario: number
+  impostoUnitario: number
 }
 
 /**
@@ -19,25 +26,29 @@ export interface ItemCompraRecebida {
  * desconhecido é diferente de custo zero, e tratar os dois igual inflaria a
  * margem de qualquer produto que use esse insumo.
  */
-export function custoMedioPorInsumo(itens: ItemCompraRecebida[], impostos: Imposto[]): Map<string, number> {
-  const soma = new Map<string, { valor: number; quantidade: number }>()
+export function custoMedioPorInsumo(itens: ItemCompraRecebida[], impostos: Imposto[]): Map<string, CustoMedioInsumo> {
+  const soma = new Map<string, { valor: number; imposto: number; quantidade: number }>()
   for (const item of itens) {
     if (item.valor_unitario == null || item.quantidade <= 0) continue
     const custoComImposto = valorUnitarioComImposto(item.valor_unitario, item.insumo_id, impostos)
-    const acc = soma.get(item.insumo_id) ?? { valor: 0, quantidade: 0 }
+    const acc = soma.get(item.insumo_id) ?? { valor: 0, imposto: 0, quantidade: 0 }
     acc.valor += custoComImposto * item.quantidade
+    acc.imposto += impostoEmbutidoUnitario(item.valor_unitario, item.insumo_id, impostos) * item.quantidade
     acc.quantidade += item.quantidade
     soma.set(item.insumo_id, acc)
   }
-  const custos = new Map<string, number>()
-  for (const [insumoId, { valor, quantidade }] of soma) custos.set(insumoId, valor / quantidade)
+  const custos = new Map<string, CustoMedioInsumo>()
+  for (const [insumoId, { valor, imposto, quantidade }] of soma) {
+    custos.set(insumoId, { custoUnitario: valor / quantidade, impostoUnitario: imposto / quantidade })
+  }
   return custos
 }
 
-/** Quanto de custo e de quantidade um insumo específico contribuiu. */
+/** Quanto de custo, de imposto e de quantidade um insumo específico contribuiu. */
 interface DetalheInsumo {
   quantidade: number
   custo: number
+  imposto: number
 }
 
 interface CustoItem {
@@ -53,21 +64,22 @@ interface CustoItem {
 
 /** Custo de UM item vendido — composição do produto + adicionais vinculados
  * a insumo — já multiplicado pela quantidade do item. */
-function custoDoItem(item: OrderItem, maps: ReferenceMaps, custoPorInsumo: Map<string, number>): CustoItem {
+function custoDoItem(item: OrderItem, maps: ReferenceMaps, custoPorInsumo: Map<string, CustoMedioInsumo>): CustoItem {
   let custoUnitario = 0
   let completo = true
   const detalheUnitario = new Map<string, DetalheInsumo>()
 
   function acumular(insumoId: string, quantidadeUnitaria: number) {
-    const custo = custoPorInsumo.get(insumoId)
-    if (custo == null) {
+    const info = custoPorInsumo.get(insumoId)
+    if (info == null) {
       completo = false
       return
     }
-    custoUnitario += custo * quantidadeUnitaria
-    const acc = detalheUnitario.get(insumoId) ?? { quantidade: 0, custo: 0 }
+    custoUnitario += info.custoUnitario * quantidadeUnitaria
+    const acc = detalheUnitario.get(insumoId) ?? { quantidade: 0, custo: 0, imposto: 0 }
     acc.quantidade += quantidadeUnitaria
-    acc.custo += custo * quantidadeUnitaria
+    acc.custo += info.custoUnitario * quantidadeUnitaria
+    acc.imposto += info.impostoUnitario * quantidadeUnitaria
     detalheUnitario.set(insumoId, acc)
   }
 
@@ -97,7 +109,11 @@ function custoDoItem(item: OrderItem, maps: ReferenceMaps, custoPorInsumo: Map<s
 
   const detalhe = new Map<string, DetalheInsumo>()
   for (const [insumoId, v] of detalheUnitario) {
-    detalhe.set(insumoId, { quantidade: v.quantidade * item.quantidade, custo: v.custo * item.quantidade })
+    detalhe.set(insumoId, {
+      quantidade: v.quantidade * item.quantidade,
+      custo: v.custo * item.quantidade,
+      imposto: v.imposto * item.quantidade,
+    })
   }
 
   return { custo: custoUnitario * item.quantidade, completo, detalhe }
@@ -108,6 +124,8 @@ export interface MarginRowInsumo {
   insumoId: string
   quantidade: number
   custo: number
+  /** Parte de `custo` que é imposto (já embutido, ver `valorUnitarioComImposto`) — 0 quando o insumo não tem imposto vinculado. */
+  imposto: number
 }
 
 export interface MarginRow {
@@ -158,7 +176,7 @@ interface MarginRowAcc extends Omit<MarginRow, 'detalheInsumos'> {
 export function buildMarginReport(
   orders: ReportOrder[],
   maps: ReferenceMaps,
-  custoPorInsumo: Map<string, number>,
+  custoPorInsumo: Map<string, CustoMedioInsumo>,
 ): MarginReport {
   const acc = new Map<string, MarginRowAcc>()
   let receitaLiquida = 0
@@ -194,9 +212,10 @@ export function buildMarginReport(
       row.custo += custo
       if (!completo) row.custoCompleto = false
       for (const [insumoId, v] of detalhe) {
-        const linha = row.detalheInsumos.get(insumoId) ?? { insumoId, quantidade: 0, custo: 0 }
+        const linha = row.detalheInsumos.get(insumoId) ?? { insumoId, quantidade: 0, custo: 0, imposto: 0 }
         linha.quantidade += v.quantidade
         linha.custo += v.custo
+        linha.imposto += v.imposto
         row.detalheInsumos.set(insumoId, linha)
       }
       acc.set(key, row)

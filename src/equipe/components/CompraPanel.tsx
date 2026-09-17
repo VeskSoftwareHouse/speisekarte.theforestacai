@@ -1,7 +1,7 @@
 import { Plus, Pencil, Trash2, PackageCheck, Ban } from 'lucide-react'
-import type { Fornecedor, Imposto, PedidoCompraStatus, PedidoCompraWithItens } from '@shared/types'
+import type { Fornecedor, Imposto, Insumo, PedidoCompraStatus, PedidoCompraWithItens } from '@shared/types'
 import { formatCHF } from '@shared/format'
-import { valorUnitarioComImposto } from '../estoqueCalc'
+import { impostoEmbutidoUnitario, valorUnitarioComImposto } from '../estoqueCalc'
 
 const STATUS_LABEL: Record<PedidoCompraStatus, string> = {
   rascunho: 'Rascunho',
@@ -13,6 +13,7 @@ const STATUS_LABEL: Record<PedidoCompraStatus, string> = {
 interface Props {
   pedidos: PedidoCompraWithItens[]
   fornecedoresById: Record<string, Fornecedor>
+  insumosById: Record<string, Insumo>
   impostos: Imposto[]
   onAdd: () => void
   onEdit: (pedido: PedidoCompraWithItens) => void
@@ -24,6 +25,7 @@ interface Props {
 export default function CompraPanel({
   pedidos,
   fornecedoresById,
+  insumosById,
   impostos,
   onAdd,
   onEdit,
@@ -49,6 +51,16 @@ export default function CompraPanel({
             (sum, it) => sum + valorUnitarioComImposto(it.valor_unitario ?? 0, it.insumo_id, impostos) * it.quantidade,
             0,
           )
+          // Parte do valor pago que é imposto (percentual embutido no valor
+          // digitado + imposto fixo) — soma zero quando nenhum item tem
+          // imposto vinculado.
+          const totalImposto = pedido.itens.reduce((sum, it) => {
+            if (it.valor_unitario == null) return sum
+            return sum + impostoEmbutidoUnitario(it.valor_unitario, it.insumo_id, impostos) * it.quantidade
+          }, 0)
+          const nomesInsumos = pedido.itens
+            .map((it) => insumosById[it.insumo_id]?.nome ?? 'Insumo removido')
+            .join(', ')
           const podeEditar = pedido.status === 'rascunho'
           const podeReceberOuCancelar = pedido.status === 'rascunho' || pedido.status === 'aguardando_recebimento'
           return (
@@ -59,8 +71,9 @@ export default function CompraPanel({
                   <span className={`status-pill status-pill--${pedido.status}`}>{STATUS_LABEL[pedido.status]}</span>
                 </div>
                 <p className="admin-product-row__desc">
-                  {pedido.itens.length} {pedido.itens.length === 1 ? 'item' : 'itens'}
+                  {nomesInsumos || 'Sem itens'}
                   {total > 0 && ` · ${formatCHF(total)}`}
+                  {totalImposto > 0.005 && ` (dos quais ${formatCHF(totalImposto)} de imposto)`}
                   {' · '}
                   {new Date(pedido.criado_em).toLocaleDateString('pt-BR')}
                 </p>

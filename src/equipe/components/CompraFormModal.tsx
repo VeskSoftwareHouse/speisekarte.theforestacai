@@ -3,7 +3,7 @@ import { X, Trash2 } from 'lucide-react'
 import type { Fornecedor, Imposto, Insumo, PedidoCompraStatus, PedidoCompraWithItens } from '@shared/types'
 import { formatCHF } from '@shared/format'
 import { UNIDADE_LABEL } from '@shared/unidadeLabel'
-import { valorUnitarioComImposto } from '../estoqueCalc'
+import { impostoEmbutidoUnitario, valorUnitarioComImposto } from '../estoqueCalc'
 import type { PedidoCompraInput, PedidoCompraItemInput } from '../hooks/useComprasAdmin'
 
 interface Props {
@@ -114,10 +114,10 @@ export default function CompraFormModal({ pedido, fornecedores, insumos, imposto
               <div className="admin-composition-list">
                 {itens.map((row, idx) => {
                   const insumo = insumos.find((i) => i.id === row.insumo_id)
-                  const valorComImposto = row.valor_unitario
-                    ? valorUnitarioComImposto(row.valor_unitario, row.insumo_id, impostos)
-                    : null
-                  const temImposto = valorComImposto != null && row.valor_unitario != null && valorComImposto !== row.valor_unitario
+                  // O percentual já está embutido no valor digitado (só é separado, nunca somado
+                  // de novo); só o imposto fixo muda o custo total em relação ao que foi digitado.
+                  const impostoEmbutido = row.valor_unitario ? impostoEmbutidoUnitario(row.valor_unitario, row.insumo_id, impostos) : 0
+                  const custoTotal = row.valor_unitario ? valorUnitarioComImposto(row.valor_unitario, row.insumo_id, impostos) : null
                   const saldoAtual = saldoPorInsumo[row.insumo_id] ?? 0
                   const saldoAposCompra = saldoAtual + (row.quantidade || 0)
                   return (
@@ -159,8 +159,13 @@ export default function CompraFormModal({ pedido, fornecedores, insumos, imposto
                           <Trash2 size={16} strokeWidth={2} />
                         </button>
                       </div>
-                      {temImposto && (
-                        <p className="admin-form__hint">Com imposto: {formatCHF(valorComImposto)}/un.</p>
+                      {impostoEmbutido > 0.005 && (
+                        <p className="admin-form__hint">
+                          Inclui {formatCHF(impostoEmbutido)}/un. de imposto
+                          {custoTotal != null && row.valor_unitario != null && custoTotal !== row.valor_unitario
+                            ? ` · custo real ${formatCHF(custoTotal)}/un. com a taxa adicional`
+                            : ''}
+                        </p>
                       )}
                       {insumo?.estoque_maximo != null && row.quantidade > 0 && (
                         <p className="admin-form__hint">
@@ -182,7 +187,7 @@ export default function CompraFormModal({ pedido, fornecedores, insumos, imposto
             )}
             {itens.length > 0 && itens.some((r) => r.valor_unitario) && (
               <p className="admin-form__hint">
-                Total com imposto:{' '}
+                Total do pedido:{' '}
                 {formatCHF(
                   itens.reduce(
                     (soma, r) => soma + valorUnitarioComImposto(r.valor_unitario ?? 0, r.insumo_id, impostos) * r.quantidade,

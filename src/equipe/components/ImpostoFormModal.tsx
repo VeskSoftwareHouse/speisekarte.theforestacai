@@ -61,7 +61,7 @@ export default function ImpostoFormModal({ imposto, insumos, onClose, onSave }: 
                 onClick={() => setTipo('percentual')}
               >
                 <strong>Percentual</strong>
-                <small>% sobre o valor unitário</small>
+                <small>% já incluso no valor unitário</small>
               </button>
               <button
                 type="button"
@@ -69,7 +69,7 @@ export default function ImpostoFormModal({ imposto, insumos, onClose, onSave }: 
                 onClick={() => setTipo('fixo')}
               >
                 <strong>Valor fixo</strong>
-                <small>Por unidade comprada</small>
+                <small>Somado ao valor unitário</small>
               </button>
             </div>
           </div>
@@ -97,8 +97,9 @@ export default function ImpostoFormModal({ imposto, insumos, onClose, onSave }: 
               ))}
             </select>
             <p className="admin-form__hint">
-              Quando vinculado a um insumo, este imposto entra automaticamente no custo de qualquer compra desse
-              insumo.
+              {tipo === 'percentual'
+                ? 'O percentual já é considerado parte do valor unitário digitado na compra — o sistema só separa quanto disso é imposto, nunca soma de novo.'
+                : 'O valor fixo é somado ao valor unitário digitado na compra (uma taxa que não vem na nota, cobrada à parte).'}
             </p>
           </label>
 

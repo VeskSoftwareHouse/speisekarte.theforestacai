@@ -3,7 +3,7 @@ import { supabase } from '@shared/supabaseClient'
 import type { Imposto, Insumo, OrderItem, ReportOrder } from '@shared/types'
 import { addMonths, endOfDay, startOfMonth } from '../dateUtils'
 import { fetchReferenceMaps, type ReferenceMaps } from '../estoqueConsumo'
-import { custoMedioPorInsumo, type ItemCompraRecebida } from '../lucroCalc'
+import { custoMedioPorInsumo, type CustoMedioInsumo, type ItemCompraRecebida } from '../lucroCalc'
 import type { Period, ReportCategory, ReportMenuItem, TrendOrder } from '../reportMetrics'
 import { PAID_STATUSES, previousPeriod } from '../reportMetrics'
 import { fetchPaged } from './fetchPaged'
@@ -26,7 +26,7 @@ export interface ReportData {
   maps: ReferenceMaps
   /** Custo médio por insumo, calculado das compras já recebidas com o
    * imposto de hoje aplicado. Um insumo nunca comprado não aparece aqui. */
-  custoPorInsumo: Map<string, number>
+  custoPorInsumo: Map<string, CustoMedioInsumo>
   /** Nome e unidade dos insumos — só o suficiente pra rotular o
    * detalhamento por insumo da margem por produto. */
   insumoById: Map<string, Pick<Insumo, 'nome' | 'unidade'>>
@@ -63,7 +63,7 @@ export function useReports(period: Period): ReportData {
   const [menuItems, setMenuItems] = useState<ReportMenuItem[]>([])
   const [categories, setCategories] = useState<ReportCategory[]>([])
   const [maps, setMaps] = useState<ReferenceMaps>(EMPTY_MAPS)
-  const [custoPorInsumo, setCustoPorInsumo] = useState<Map<string, number>>(new Map())
+  const [custoPorInsumo, setCustoPorInsumo] = useState<Map<string, CustoMedioInsumo>>(new Map())
   const [insumoById, setInsumoById] = useState<Map<string, Pick<Insumo, 'nome' | 'unidade'>>>(new Map())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
