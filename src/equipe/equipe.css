@@ -1516,7 +1516,7 @@ body {
   font-family: var(--font-ui);
 }
 .admin-modal--sm {
-  max-width: 380px;
+  max-width: 450px;
 }
 /* No celular a folga de 24px dos dois lados do overlay (--space-5) mais o
    padding do formulário já comem quase 100px de uma tela de ~360px — dá pra
