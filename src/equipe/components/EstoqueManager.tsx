@@ -301,6 +301,7 @@ export default function EstoqueManager({ currentUserId }: Props) {
         <div className="menu-manager__single">
           <InsumoPanel
             insumos={insumos}
+            saldoPorInsumo={saldoPorInsumo}
             onAdd={() => setInsumoForm('new')}
             onEdit={(i) => setInsumoForm(i)}
             onDelete={(i) => setDeleteTarget({ kind: 'insumo', item: i })}
@@ -408,6 +409,7 @@ export default function EstoqueManager({ currentUserId }: Props) {
           fornecedores={fornecedores}
           insumos={insumos}
           impostos={impostos}
+          saldoPorInsumo={saldoPorInsumo}
           onClose={() => setCompraForm(null)}
           onSave={async (input, itens) => {
             if (compraForm === 'new') await createPedido(input, itens)

@@ -806,6 +806,14 @@ create table if not exists insumos (
 -- src/shared/insumoConversao.ts). null = composição na própria unidade.
 alter table insumos add column if not exists gramas_por_litro numeric(10,2);
 
+-- capacidade máxima de estoque, na unidade de controle — usada só pra
+-- mostrar o quanto uma compra preenche do estoque. null = sem limite.
+alter table insumos add column if not exists estoque_maximo numeric(10,3);
+
+-- preço de referência por unidade de controle (CHF), pra pré-preencher o
+-- valor unitário ao lançar uma compra deste insumo.
+alter table insumos add column if not exists valor_unitario_padrao numeric(10,2);
+
 create index if not exists idx_insumos_ordem on insumos(ordem);
 
 -- ---------------------------------------------------------------------

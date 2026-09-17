@@ -11,11 +11,12 @@ interface Props {
   fornecedores: Fornecedor[]
   insumos: Insumo[]
   impostos: Imposto[]
+  saldoPorInsumo: Record<string, number>
   onClose: () => void
   onSave: (input: PedidoCompraInput, itens: PedidoCompraItemInput[]) => Promise<void>
 }
 
-export default function CompraFormModal({ pedido, fornecedores, insumos, impostos, onClose, onSave }: Props) {
+export default function CompraFormModal({ pedido, fornecedores, insumos, impostos, saldoPorInsumo, onClose, onSave }: Props) {
   const [fornecedorId, setFornecedorId] = useState(pedido?.fornecedor_id ?? fornecedores[0]?.id ?? '')
   const [status, setStatus] = useState<PedidoCompraStatus>(pedido?.status ?? 'rascunho')
   const [observacoes, setObservacoes] = useState(pedido?.observacoes ?? '')
@@ -30,11 +31,22 @@ export default function CompraFormModal({ pedido, fornecedores, insumos, imposto
     const used = new Set(itens.map((r) => r.insumo_id))
     const next = insumos.find((i) => !used.has(i.id))
     if (!next) return
-    setItens((prev) => [...prev, { insumo_id: next.id, quantidade: 0, valor_unitario: null }])
+    setItens((prev) => [...prev, { insumo_id: next.id, quantidade: 0, valor_unitario: next.valor_unitario_padrao }])
   }
 
   function updateRow(idx: number, patch: Partial<PedidoCompraItemInput>) {
-    setItens((prev) => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)))
+    setItens((prev) =>
+      prev.map((r, i) => {
+        if (i !== idx) return r
+        // Trocar de insumo troca também o preço sugerido, a menos que a
+        // pessoa já tenha digitado um valor manualmente nesta linha.
+        if (patch.insumo_id && patch.insumo_id !== r.insumo_id && r.valor_unitario === insumos.find((x) => x.id === r.insumo_id)?.valor_unitario_padrao) {
+          const novoInsumo = insumos.find((x) => x.id === patch.insumo_id)
+          return { ...r, ...patch, valor_unitario: novoInsumo?.valor_unitario_padrao ?? null }
+        }
+        return { ...r, ...patch }
+      }),
+    )
   }
 
   function removeRow(idx: number) {
@@ -106,6 +118,8 @@ export default function CompraFormModal({ pedido, fornecedores, insumos, imposto
                     ? valorUnitarioComImposto(row.valor_unitario, row.insumo_id, impostos)
                     : null
                   const temImposto = valorComImposto != null && row.valor_unitario != null && valorComImposto !== row.valor_unitario
+                  const saldoAtual = saldoPorInsumo[row.insumo_id] ?? 0
+                  const saldoAposCompra = saldoAtual + (row.quantidade || 0)
                   return (
                     <div key={idx} className="admin-inventario-row">
                       <div className="admin-composition-list__row">
@@ -135,6 +149,7 @@ export default function CompraFormModal({ pedido, fornecedores, insumos, imposto
                           }
                           placeholder="CHF/un."
                         />
+                        <span>CHF</span>
                         <button
                           type="button"
                           className="admin-composition-list__remove"
@@ -146,6 +161,14 @@ export default function CompraFormModal({ pedido, fornecedores, insumos, imposto
                       </div>
                       {temImposto && (
                         <p className="admin-form__hint">Com imposto: {formatCHF(valorComImposto)}/un.</p>
+                      )}
+                      {insumo?.estoque_maximo != null && row.quantidade > 0 && (
+                        <p className="admin-form__hint">
+                          Estoque atual: {saldoAtual} {UNIDADE_LABEL[insumo.unidade]}. Com esta compra vai para{' '}
+                          {saldoAposCompra} / {insumo.estoque_maximo} {UNIDADE_LABEL[insumo.unidade]} (
+                          {Math.min(100, Math.round((saldoAposCompra / insumo.estoque_maximo) * 100))}%
+                          {saldoAposCompra > insumo.estoque_maximo ? ' — acima do máximo' : ''})
+                        </p>
                       )}
                     </div>
                   )

@@ -6,6 +6,20 @@ import { valorUnitarioComImposto } from '../estoqueCalc'
 
 const RECENTES_LIMIT = 8
 
+/**
+ * Verde (estoque cheio) → amarelo (metade) → vermelho (vazio), sempre a
+ * partir das cores do tema (funciona em claro/escuro). `pct` já vem
+ * limitado a [0, 100] por quem chama.
+ */
+function corDoNivel(pct: number): string {
+  if (pct >= 50) {
+    const t = ((pct - 50) / 50) * 100
+    return `color-mix(in srgb, var(--color-success) ${t}%, var(--color-warning) ${100 - t}%)`
+  }
+  const t = (pct / 50) * 100
+  return `color-mix(in srgb, var(--color-warning) ${t}%, var(--color-danger) ${100 - t}%)`
+}
+
 interface Props {
   insumos: Insumo[]
   saldoPorInsumo: Record<string, number>
@@ -71,13 +85,22 @@ export default function VisaoGeralPanel({ insumos, saldoPorInsumo, movimentos, p
               .map((i) => {
                 const saldo = saldoPorInsumo[i.id] ?? 0
                 const baixo = i.estoque_minimo != null && saldo < i.estoque_minimo
+                const pctCheio = i.estoque_maximo != null && i.estoque_maximo > 0 ? Math.min(100, Math.max(0, (saldo / i.estoque_maximo) * 100)) : null
                 return (
                   <div key={i.id} className={`visao-geral__insumo-card ${baixo ? 'visao-geral__insumo-card--warn' : ''}`}>
-                    <span className="visao-geral__insumo-card__nome">{i.nome}</span>
-                    <strong className="visao-geral__insumo-card__saldo">
-                      {saldo} <small>{UNIDADE_LABEL[i.unidade]}</small>
-                    </strong>
-                    {baixo && <span className="visao-geral__insumo-card__badge">Saldo baixo</span>}
+                    {pctCheio != null && (
+                      <div
+                        className="visao-geral__insumo-card__gauge"
+                        style={{ height: `${pctCheio}%`, background: corDoNivel(pctCheio) }}
+                      />
+                    )}
+                    <div className="visao-geral__insumo-card__content">
+                      <span className="visao-geral__insumo-card__nome">{i.nome}</span>
+                      <strong className="visao-geral__insumo-card__saldo">
+                        {saldo} <small>{UNIDADE_LABEL[i.unidade]}</small>
+                      </strong>
+                      {baixo && <span className="visao-geral__insumo-card__badge">Saldo baixo</span>}
+                    </div>
                   </div>
                 )
               })}

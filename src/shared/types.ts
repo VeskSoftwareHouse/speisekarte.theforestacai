@@ -232,6 +232,12 @@ export interface Insumo {
   unidade: Unidade
   /** Abaixo deste saldo, o insumo aparece como "saldo baixo" no dashboard de estoque. null = sem alerta. */
   estoque_minimo: number | null
+  /** Capacidade máxima de estoque, na unidade de controle. Usado para mostrar
+   * o quanto uma compra preenche do estoque. null = sem limite definido. */
+  estoque_maximo: number | null
+  /** Preço de referência por unidade de controle (CHF) — pré-preenche o valor
+   * unitário ao lançar uma compra deste insumo, editável linha a linha. */
+  valor_unitario_padrao: number | null
   /** Peso de 1 litro deste insumo, em gramas (ex: açaí puro ≈ 1030). Só faz
    * sentido quando `unidade` é 'l' ou 'ml' — permite compor a receita do
    * produto em gramas mesmo controlando o estoque em volume (ver

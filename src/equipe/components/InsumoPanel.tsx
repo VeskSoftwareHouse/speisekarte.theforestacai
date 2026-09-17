@@ -1,15 +1,17 @@
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import type { Insumo } from '@shared/types'
 import { UNIDADE_LABEL } from '@shared/unidadeLabel'
+import { formatCHF } from '@shared/format'
 
 interface Props {
   insumos: Insumo[]
+  saldoPorInsumo: Record<string, number>
   onAdd: () => void
   onEdit: (insumo: Insumo) => void
   onDelete: (insumo: Insumo) => void
 }
 
-export default function InsumoPanel({ insumos, onAdd, onEdit, onDelete }: Props) {
+export default function InsumoPanel({ insumos, saldoPorInsumo, onAdd, onEdit, onDelete }: Props) {
   return (
     <section className="admin-panel admin-panel--products">
       <header className="admin-panel__header">
@@ -36,9 +38,20 @@ export default function InsumoPanel({ insumos, onAdd, onEdit, onDelete }: Props)
                 <span className="admin-product-row__category">{UNIDADE_LABEL[insumo.unidade]}</span>
                 {!insumo.ativo && <span className="admin-product-row__category">Inativo</span>}
               </div>
+              {insumo.estoque_maximo != null && (
+                <p className="admin-product-row__desc">
+                  Estoque: {saldoPorInsumo[insumo.id] ?? 0} / {insumo.estoque_maximo} {UNIDADE_LABEL[insumo.unidade]} (
+                  {Math.min(100, Math.round(((saldoPorInsumo[insumo.id] ?? 0) / insumo.estoque_maximo) * 100))}%)
+                </p>
+              )}
               {insumo.estoque_minimo != null && (
                 <p className="admin-product-row__desc">
                   Alerta de saldo baixo abaixo de {insumo.estoque_minimo} {UNIDADE_LABEL[insumo.unidade]}
+                </p>
+              )}
+              {insumo.valor_unitario_padrao != null && (
+                <p className="admin-product-row__desc">
+                  {formatCHF(insumo.valor_unitario_padrao)} / {UNIDADE_LABEL[insumo.unidade].replace(/s$/, '')}
                 </p>
               )}
             </div>

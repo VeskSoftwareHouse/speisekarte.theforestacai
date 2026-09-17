@@ -20,6 +20,8 @@ export default function InsumoFormModal({ insumo, proximaOrdem, onClose, onSave 
   const [nome, setNome] = useState(insumo?.nome ?? '')
   const [unidade, setUnidade] = useState<Unidade>(insumo?.unidade ?? 'g')
   const [estoqueMinimo, setEstoqueMinimo] = useState(insumo?.estoque_minimo ?? '')
+  const [estoqueMaximo, setEstoqueMaximo] = useState(insumo?.estoque_maximo ?? '')
+  const [valorUnitarioPadrao, setValorUnitarioPadrao] = useState(insumo?.valor_unitario_padrao ?? '')
   const [gramasPorLitro, setGramasPorLitro] = useState(insumo?.gramas_por_litro ?? '')
   const [ordem, setOrdem] = useState(insumo?.ordem ?? proximaOrdem)
   const [ativo, setAtivo] = useState(insumo?.ativo ?? true)
@@ -36,6 +38,8 @@ export default function InsumoFormModal({ insumo, proximaOrdem, onClose, onSave 
         nome: nome.trim(),
         unidade,
         estoque_minimo: estoqueMinimo === '' ? null : Number(estoqueMinimo),
+        estoque_maximo: estoqueMaximo === '' ? null : Number(estoqueMaximo),
+        valor_unitario_padrao: valorUnitarioPadrao === '' ? null : Number(valorUnitarioPadrao),
         // Só faz sentido controlando em volume — trocar pra kg/g/unidade
         // descarta a densidade em vez de deixar um valor órfão no banco.
         gramas_por_litro: (unidade === 'l' || unidade === 'ml') && gramasPorLitro !== '' ? Number(gramasPorLitro) : null,
@@ -101,17 +105,49 @@ export default function InsumoFormModal({ insumo, proximaOrdem, onClose, onSave 
             </label>
           )}
 
+          <div className="admin-form__row">
+            <label className="admin-form__field">
+              <span>Alerta de saldo baixo (opcional)</span>
+              <input
+                type="number"
+                min={0}
+                step="0.001"
+                value={estoqueMinimo}
+                onChange={(e) => setEstoqueMinimo(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="Ex: 2"
+              />
+            </label>
+            <label className="admin-form__field">
+              <span>Estoque máximo (opcional)</span>
+              <input
+                type="number"
+                min={0}
+                step="0.001"
+                value={estoqueMaximo}
+                onChange={(e) => setEstoqueMaximo(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="Ex: 10"
+              />
+            </label>
+          </div>
+          <p className="admin-form__hint">
+            Em {UNIDADE_LABEL[unidade]}. Informando o máximo, o formulário de compra mostra quanto cada compra
+            preenche do estoque.
+          </p>
+
           <label className="admin-form__field">
-            <span>Alerta de saldo baixo (opcional)</span>
+            <span>Valor por unidade (CHF, opcional)</span>
             <input
               type="number"
               min={0}
-              step="0.001"
-              value={estoqueMinimo}
-              onChange={(e) => setEstoqueMinimo(e.target.value === '' ? '' : Number(e.target.value))}
-              placeholder="Ex: 2"
+              step="0.01"
+              value={valorUnitarioPadrao}
+              onChange={(e) => setValorUnitarioPadrao(e.target.value === '' ? '' : Number(e.target.value))}
+              placeholder="Ex: 12.50"
             />
-            <p className="admin-form__hint">Abaixo deste saldo, o insumo aparece com alerta no painel de estoque.</p>
+            <p className="admin-form__hint">
+              Preço de referência por {UNIDADE_LABEL[unidade].replace(/s$/, '')} — pré-preenche o valor ao lançar uma
+              compra deste insumo.
+            </p>
           </label>
 
           <label className="admin-form__checkbox">
