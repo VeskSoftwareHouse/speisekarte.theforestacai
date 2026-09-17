@@ -43,13 +43,13 @@ Responda em texto simples, sem markdown: nunca use **negrito**, *itálico*, list
 
 Você só sabe o que as ferramentas disponíveis te contam. Nunca invente números — se a pergunta precisar de dado real, chame a ferramenta certa antes de responder. Você tem acesso a todo o painel da equipe: vendas/relatórios, incluindo lucro bruto e margem por produto (consultar_vendas), estado atual dos pedidos de hoje (consultar_pedidos_atuais), pedidos e nomes de clientes de qualquer dia ou período, inclusive dias anteriores (consultar_pedidos_periodo),cardápio e adicionais (consultar_cardapio), saldo de estoque (consultar_estoque), histórico de movimentações de estoque (consultar_movimentacoes_estoque), pedidos de compra (consultar_compras), fornecedores (consultar_fornecedores), perdas (consultar_perdas), contagens de inventário (consultar_inventarios), fila de pedidos pendentes de fechamento de estoque (consultar_fechamento), impostos (consultar_impostos), e gorjetas/usuários da equipe/fechamento automático de estoque (consultar_configuracoes). Você é a especialista em tudo que está no painel — qualquer pergunta sobre o que ele mostra ou faz, tente responder chamando a ferramenta certa antes de dizer que não sabe. Se o resultado de uma ferramenta não trouxer o dado que a pergunta pediu, isso significa que a informação não está disponível nessa ferramenta — nunca conclua "zero" ou "nenhum" por conta própria a partir disso; diga que você não tem acesso a esse dado específico. Fale sempre na primeira pessoa ("eu não tenho", "eu não consigo calcular") — nunca em terceira pessoa como se fosse outra coisa respondendo (nunca "o painel não consegue" ou "o sistema não tem"): é você quem está conversando, não o painel. Se a pergunta não tiver nada a ver com a operação desta loja, diga que só sabe responder sobre isso.
 
-CADASTRO E EDIÇÃO (criar_categoria, criar_produto, criar_insumo, criar_grupo_adicional, criar_opcao_adicional, vincular_grupo_adicional, definir_ingredientes_copo_pronto, definir_composicao_produto, criar_fornecedor, criar_imposto, criar_gorjeta, definir_fechamento_automatico, registrar_movimentacao_estoque, registrar_perda): quando o usuário pedir pra cadastrar OU editar/alterar/atualizar algo (ex: "configura um alerta de saldo baixo no açaí", "muda o preço do X", "desativa o fornecedor Y"), use a ferramenta correspondente — a maioria serve tanto pra criar quanto pra editar: informando o campo "*_atual" (ex: nome_atual, valor_atual) você EDITA o registro existente daquele nome; sem isso, você CRIA um novo. Nunca diga que não sabe editar algo antes de checar se a ferramenta certa aceita isso. Pra ligar/desligar um grupo de adicionais num produto (ex: "coloca o Toppings no Açaí 500ml"), use vincular_grupo_adicional — não é a mesma coisa que criar o grupo ou a opção. Pra marcar um produto como "copo pronto" (o botão "Ver ingredientes" no cardápio) e escolher quais adicionais já cadastrados aparecem nele, use definir_ingredientes_copo_pronto. Pra definir quais insumos de estoque (e quanto de cada) são debitados em toda venda de um produto, use definir_composicao_produto — não confunda com definir_ingredientes_copo_pronto, que é só informativo pro cliente e usa adicionais, não insumos. Nunca diga que não consegue mexer em nada disso.
+CADASTRO E EDIÇÃO (criar_categoria, criar_produto, criar_insumo, criar_grupo_adicional, criar_opcao_adicional, vincular_grupo_adicional, definir_ingredientes_copo_pronto, definir_composicao_produto, criar_fornecedor, criar_pedido_compra, criar_imposto, criar_gorjeta, definir_fechamento_automatico, registrar_movimentacao_estoque, registrar_perda): quando o usuário pedir pra cadastrar OU editar/alterar/atualizar algo (ex: "configura um alerta de saldo baixo no açaí", "muda o preço do X", "desativa o fornecedor Y"), use a ferramenta correspondente — a maioria serve tanto pra criar quanto pra editar: informando o campo "*_atual" (ex: nome_atual, valor_atual) você EDITA o registro existente daquele nome; sem isso, você CRIA um novo. Nunca diga que não sabe editar algo antes de checar se a ferramenta certa aceita isso. Pra ligar/desligar um grupo de adicionais num produto (ex: "coloca o Toppings no Açaí 500ml"), use vincular_grupo_adicional — não é a mesma coisa que criar o grupo ou a opção. Pra marcar um produto como "copo pronto" (o botão "Ver ingredientes" no cardápio) e escolher quais adicionais já cadastrados aparecem nele, use definir_ingredientes_copo_pronto. Pra definir quais insumos de estoque (e quanto de cada) são debitados em toda venda de um produto, use definir_composicao_produto — não confunda com definir_ingredientes_copo_pronto, que é só informativo pro cliente e usa adicionais, não insumos. Pra lançar um novo pedido de compra a um fornecedor (ex: "faz um pedido pra Distribuidora X com 10kg de banana e 5L de açaí"), use criar_pedido_compra, pedindo fornecedor e a lista de insumo+quantidade (valor unitário é opcional) — essa ferramenta só CRIA pedidos novos, nunca edita um já existente, e nunca marca como "recebido" (isso dá entrada no estoque e só se faz manualmente na lista de Compras, ao confirmar a entrega física). Nunca diga que não consegue mexer em nada disso.
 
 Você também pode receber uma FOTO junto da mensagem (às vezes sem nenhum texto junto). Trate a imagem como faria com uma frase digitada, usando as mesmas ferramentas de CADASTRO E EDIÇÃO: se for uma foto de uma lista escrita à mão ou impressa (ex: lista de insumos ou produtos a cadastrar), leia cada item e cadastre um por um com criar_insumo/criar_produto (confirme a unidade de cada insumo se não estiver escrita, nunca invente). Se for uma foto de um produto físico (ex: um saco ou caixa de um insumo que chegou), identifique de qual insumo cadastrado ela mais parece se tratar e pergunte a quantidade que chegou pra dar entrada no estoque com registrar_movimentacao_estoque — nunca invente uma quantidade que não veio escrita em lugar nenhum (nota, embalagem) nem foi dita pelo usuário. Se a imagem estiver ilegível, não bater com nenhum insumo/produto já cadastrado, ou faltar informação obrigatória (ex: quantidade, preço), pergunte antes de gravar qualquer coisa, do mesmo jeito que faria numa conversa só de texto.
 
 Faça perguntas UMA DE CADA VEZ, como numa conversa normal — nunca liste todos os campos de uma vez feito um formulário. Ao editar, peça só os campos que o usuário quer mudar (não pergunte os que não mudam). Ao criar, peça só o que for obrigatório; campos opcionais (disponível, destaque, descrição, estoque mínimo, preço adicional...) só pergunte se fizer sentido, senão use o padrão da própria ferramenta. Assim que tiver o necessário, chame a ferramenta direto — ela já grava, sem passo de confirmação nenhum, então nunca pare pra perguntar "posso confirmar?" nem liste um resumo do que vai mudar antes de chamar. Depois que a ferramenta responder com sucesso, avise o usuário em uma frase curta o que foi feito. Se a ferramenta devolver "erro" (ex: item não encontrado), explique o problema ao usuário e pergunte como prosseguir — não insista repetindo a mesma chamada.
 
-Fora do seu alcance (fica pra a equipe fazer direto no painel, sempre por decisão de segurança ou porque exige conferir algo físico na hora): gerenciar usuários com acesso ao painel (segurança de contas), cadastrar pedidos de compra a fornecedores, registrar contagens de inventário, executar o fechamento de estoque em si (bater os insumos em lote), confirmar o pagamento em dinheiro de um pedido (exige contar o troco na mão) ou por Twint (exige conferir o recebimento no celular do caixa), e mudar o status de um pedido no quadro da cozinha (recebido/em preparo/pronto/entregue) — mas você PODE consultar a fila de pendentes de fechamento (consultar_fechamento), os pedidos de compra já cadastrados (consultar_compras), as contagens já feitas (consultar_inventarios), e o estado atual dos pedidos (consultar_pedidos_atuais). Fora isso, praticamente todo cadastro do painel (cardápio, adicionais, copo pronto, composição de estoque, insumos, fornecedores, impostos, gorjetas, fechamento automático, movimentações e perdas de estoque) você lê E edita — nunca diga que não consegue sem antes checar se existe uma ferramenta pra isso.`
+Fora do seu alcance (fica pra a equipe fazer direto no painel, sempre por decisão de segurança ou porque exige conferir algo físico na hora): gerenciar usuários com acesso ao painel (segurança de contas), editar um pedido de compra já existente ou marcá-lo como "recebido" (o que dá entrada no estoque, exige conferir a entrega física), registrar contagens de inventário, executar o fechamento de estoque em si (bater os insumos em lote), confirmar o pagamento em dinheiro de um pedido (exige contar o troco na mão) ou por Twint (exige conferir o recebimento no celular do caixa), e mudar o status de um pedido no quadro da cozinha (recebido/em preparo/pronto/entregue) — mas você PODE criar um pedido de compra novo (criar_pedido_compra), consultar a fila de pendentes de fechamento (consultar_fechamento), os pedidos de compra já cadastrados (consultar_compras), as contagens já feitas (consultar_inventarios), e o estado atual dos pedidos (consultar_pedidos_atuais). Fora isso, praticamente todo cadastro do painel (cardápio, adicionais, copo pronto, composição de estoque, insumos, fornecedores, pedidos de compra, impostos, gorjetas, fechamento automático, movimentações e perdas de estoque) você lê E edita — nunca diga que não consegue sem antes checar se existe uma ferramenta pra isso.`
 }
 
 const RETRY_DELAYS_MS = [800, 2000]
@@ -1510,6 +1510,78 @@ async function criarFornecedor(supabase: SupabaseClient, args: FornecedorArgs) {
   return { sucesso: true, mensagem: `Fornecedor "${nome}" criado.` }
 }
 
+interface PedidoCompraArgs {
+  fornecedor?: string
+  status?: string
+  observacoes?: string
+  itens?: { insumo?: string; quantidade?: number; valor_unitario?: number }[]
+}
+
+/** Cria um novo pedido de compra a um fornecedor, com os itens já lançados —
+ * só cria, nunca edita um pedido existente (mesma limitação do formulário
+ * manual, que só deixa editar rascunhos direto na lista). "Recebido" (o que
+ * dá entrada no estoque) nunca é aceito aqui: só se marca manualmente na
+ * lista de Compras, ao confirmar a entrega física. */
+async function criarPedidoCompra(supabase: SupabaseClient, args: PedidoCompraArgs) {
+  if (!args.fornecedor?.trim()) return { erro: 'Fornecedor é obrigatório.' }
+  const { encontrado: fornecedor, todos: fornecedores, erro: erroFornecedor } = await buscarPorNome<{
+    id: string
+    nome: string
+  }>(supabase, 'fornecedores', 'id, nome', args.fornecedor)
+  if (erroFornecedor) return { erro: erroFornecedor }
+  if (!fornecedor) {
+    return { erro: `Fornecedor "${args.fornecedor}" não encontrado.`, fornecedores_existentes: fornecedores.map((f) => f.nome) }
+  }
+
+  if (!args.itens || args.itens.length === 0) {
+    return { erro: 'Informe pelo menos um item (insumo e quantidade) pra este pedido.' }
+  }
+
+  const status = args.status === 'aguardando_recebimento' ? 'aguardando_recebimento' : 'rascunho'
+
+  const { data: todosInsumos, error: erroInsumos } = await supabase.from('insumos').select('id, nome').eq('ativo', true)
+  if (erroInsumos) return { erro: erroInsumos.message }
+  const insumos = (todosInsumos ?? []) as { id: string; nome: string }[]
+
+  const linhas: { insumo_id: string; quantidade: number; valor_unitario: number | null }[] = []
+  const naoEncontrados: string[] = []
+  for (const item of args.itens) {
+    if (!item.insumo?.trim() || !(Number(item.quantidade) > 0)) {
+      return { erro: 'Cada item precisa de um insumo e uma quantidade maior que zero.' }
+    }
+    const termo = item.insumo.trim().toLowerCase()
+    const insumo = insumos.find((i) => i.nome.toLowerCase() === termo) ?? insumos.find((i) => i.nome.toLowerCase().includes(termo))
+    if (!insumo) {
+      naoEncontrados.push(item.insumo)
+      continue
+    }
+    linhas.push({ insumo_id: insumo.id, quantidade: Number(item.quantidade), valor_unitario: item.valor_unitario ?? null })
+  }
+  if (naoEncontrados.length > 0) {
+    return { erro: `Insumo não encontrado: ${naoEncontrados.join(', ')}.`, insumos_existentes: insumos.map((i) => i.nome) }
+  }
+
+  const { data: pedido, error: erroPedido } = await supabase
+    .from('pedidos_compra')
+    .insert({ fornecedor_id: fornecedor.id, status, observacoes: args.observacoes?.trim() || null })
+    .select('id')
+    .single()
+  if (erroPedido) return { erro: erroPedido.message }
+
+  const { error: erroItens } = await supabase
+    .from('pedido_compra_itens')
+    .insert(linhas.map((l) => ({ ...l, pedido_compra_id: pedido.id })))
+  if (erroItens) {
+    await supabase.from('pedidos_compra').delete().eq('id', pedido.id)
+    return { erro: erroItens.message }
+  }
+
+  return {
+    sucesso: true,
+    mensagem: `Pedido de compra criado para "${fornecedor.nome}" com ${linhas.length} item(ns), status "${status === 'rascunho' ? 'rascunho' : 'aguardando recebimento'}". Pra dar entrada no estoque, marque como recebido na lista de Compras.`,
+  }
+}
+
 interface ImpostoArgs {
   nome_atual?: string
   nome?: string
@@ -2071,6 +2143,35 @@ const TOOLS = [
         },
       },
       {
+        name: 'criar_pedido_compra',
+        description:
+          'Cria um novo pedido de compra a um fornecedor, com os itens (insumo, quantidade e opcionalmente valor unitário) já lançados. Só cria — não edita um pedido existente. O status só pode ser rascunho ou aguardando_recebimento: "recebido" (o que dá entrada no estoque) nunca se define aqui, só manualmente na lista de Compras, ao confirmar a entrega física.',
+        parametersJsonSchema: {
+          type: 'object',
+          properties: {
+            fornecedor: { type: 'string', description: 'Nome de um fornecedor já cadastrado (obrigatório).' },
+            status: {
+              type: 'string',
+              enum: ['rascunho', 'aguardando_recebimento'],
+              description: 'Padrão: rascunho. Use aguardando_recebimento quando o pedido já foi confirmado com o fornecedor.',
+            },
+            observacoes: { type: 'string', description: 'Observações do pedido, opcional.' },
+            itens: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  insumo: { type: 'string', description: 'Nome de um insumo já cadastrado.' },
+                  quantidade: { type: 'number', description: 'Quantidade comprada, na unidade de controle do insumo.' },
+                  valor_unitario: { type: 'number', description: 'Preço por unidade em CHF, opcional.' },
+                },
+              },
+              description: 'Itens do pedido — pelo menos um item, com insumo e quantidade, é obrigatório.',
+            },
+          },
+        },
+      },
+      {
         name: 'criar_imposto',
         description:
           'Cadastra um novo imposto, OU edita um já existente (informe nome_atual).',
@@ -2337,6 +2438,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           else if (call.name === 'definir_composicao_produto') resultado = await definirComposicaoProduto(supabase, args)
           else if (call.name === 'definir_fechamento_automatico') resultado = await definirFechamentoAutomatico(supabase, args)
           else if (call.name === 'criar_fornecedor') resultado = await criarFornecedor(supabase, args)
+          else if (call.name === 'criar_pedido_compra') resultado = await criarPedidoCompra(supabase, args)
           else if (call.name === 'criar_imposto') resultado = await criarImposto(supabase, args)
           else if (call.name === 'criar_gorjeta') resultado = await criarGorjeta(supabase, args)
           else if (call.name === 'registrar_movimentacao_estoque')
