@@ -34,12 +34,21 @@ export function custoMedioPorInsumo(itens: ItemCompraRecebida[], impostos: Impos
   return custos
 }
 
+/** Quanto de custo e de quantidade um insumo específico contribuiu. */
+interface DetalheInsumo {
+  quantidade: number
+  custo: number
+}
+
 interface CustoItem {
   custo: number
   /** false quando algum insumo usado (composição ou adicional vinculado) não
    * tem custo conhecido ainda — o custo devolvido é uma SUBESTIMATIVA, não a
    * conta completa. */
   completo: boolean
+  /** Abertura do custo por insumo (só os com custo conhecido), já
+   * multiplicada pela quantidade do item — alimenta o detalhamento na tela. */
+  detalhe: Map<string, DetalheInsumo>
 }
 
 /** Custo de UM item vendido — composição do produto + adicionais vinculados
@@ -47,20 +56,27 @@ interface CustoItem {
 function custoDoItem(item: OrderItem, maps: ReferenceMaps, custoPorInsumo: Map<string, number>): CustoItem {
   let custoUnitario = 0
   let completo = true
+  const detalheUnitario = new Map<string, DetalheInsumo>()
+
+  function acumular(insumoId: string, quantidadeUnitaria: number) {
+    const custo = custoPorInsumo.get(insumoId)
+    if (custo == null) {
+      completo = false
+      return
+    }
+    custoUnitario += custo * quantidadeUnitaria
+    const acc = detalheUnitario.get(insumoId) ?? { quantidade: 0, custo: 0 }
+    acc.quantidade += quantidadeUnitaria
+    acc.custo += custo * quantidadeUnitaria
+    detalheUnitario.set(insumoId, acc)
+  }
 
   if (item.menu_item_id) {
     const composicao = maps.composicaoPorItem.get(item.menu_item_id)
     if (!composicao || composicao.length === 0) {
       completo = false
     } else {
-      for (const linha of composicao) {
-        const custo = custoPorInsumo.get(linha.insumo_id)
-        if (custo == null) {
-          completo = false
-          continue
-        }
-        custoUnitario += custo * linha.quantidade
-      }
+      for (const linha of composicao) acumular(linha.insumo_id, linha.quantidade)
     }
   } else {
     // Produto apagado do cardápio — só sobrou o nome gravado no pedido, sem
@@ -74,17 +90,24 @@ function custoDoItem(item: OrderItem, maps: ReferenceMaps, custoPorInsumo: Map<s
   for (const mod of item.modifiers_selecionados) {
     const opcao = maps.optionById.get(mod.option_id)
     if (!opcao?.insumo_id || !opcao.quantidade_padrao) continue
-    const custo = custoPorInsumo.get(opcao.insumo_id)
-    if (custo == null) {
-      completo = false
-      continue
-    }
     // `?? 1`: pedidos gravados antes de existir quantidade por opção ficam
     // como 1 porção, o comportamento de sempre.
-    custoUnitario += custo * opcao.quantidade_padrao * (mod.quantidade ?? 1)
+    acumular(opcao.insumo_id, opcao.quantidade_padrao * (mod.quantidade ?? 1))
   }
 
-  return { custo: custoUnitario * item.quantidade, completo }
+  const detalhe = new Map<string, DetalheInsumo>()
+  for (const [insumoId, v] of detalheUnitario) {
+    detalhe.set(insumoId, { quantidade: v.quantidade * item.quantidade, custo: v.custo * item.quantidade })
+  }
+
+  return { custo: custoUnitario * item.quantidade, completo, detalhe }
+}
+
+/** Uma linha do detalhamento por insumo de um produto — ex: "Açaí: 0,364 l, CHF 3,09". */
+export interface MarginRowInsumo {
+  insumoId: string
+  quantidade: number
+  custo: number
 }
 
 export interface MarginRow {
@@ -97,6 +120,9 @@ export interface MarginRow {
    * mostrado é uma subestimativa, e a margem não deve ser mostrada como um
    * número exato. */
   custoCompleto: boolean
+  /** Custo total do produto aberto por insumo, do mais caro pro mais barato —
+   * só cobre a parte com custo conhecido (mesma ressalva de `custoCompleto`). */
+  detalheInsumos: MarginRowInsumo[]
 }
 
 export interface GrossProfitSummary {
@@ -124,12 +150,17 @@ export interface MarginReport {
  * mesmo espírito do Fechamento) e do custo médio pago nas compras já
  * recebidas. Só pedidos pagos entram, mesmo filtro do resto dos relatórios.
  */
+/** Acumulador interno de uma linha — `detalheInsumos` só vira array na saída. */
+interface MarginRowAcc extends Omit<MarginRow, 'detalheInsumos'> {
+  detalheInsumos: Map<string, MarginRowInsumo>
+}
+
 export function buildMarginReport(
   orders: ReportOrder[],
   maps: ReferenceMaps,
   custoPorInsumo: Map<string, number>,
 ): MarginReport {
-  const acc = new Map<string, MarginRow>()
+  const acc = new Map<string, MarginRowAcc>()
   let receitaLiquida = 0
   let receitaSemCustoCompleto = 0
   let custoConhecido = 0
@@ -139,7 +170,7 @@ export function buildMarginReport(
     if (!isPaid(order)) continue
     for (const item of order.items) {
       const receita = lineTotal(item)
-      const { custo, completo } = custoDoItem(item, maps, custoPorInsumo)
+      const { custo, completo, detalhe } = custoDoItem(item, maps, custoPorInsumo)
 
       receitaLiquida += receita
       if (completo) custoConhecido += custo
@@ -156,11 +187,18 @@ export function buildMarginReport(
         receita: 0,
         custo: 0,
         custoCompleto: true,
+        detalheInsumos: new Map<string, MarginRowInsumo>(),
       }
       row.quantidade += item.quantidade
       row.receita += receita
       row.custo += custo
       if (!completo) row.custoCompleto = false
+      for (const [insumoId, v] of detalhe) {
+        const linha = row.detalheInsumos.get(insumoId) ?? { insumoId, quantidade: 0, custo: 0 }
+        linha.quantidade += v.quantidade
+        linha.custo += v.custo
+        row.detalheInsumos.set(insumoId, linha)
+      }
       acc.set(key, row)
     }
   }
@@ -168,7 +206,9 @@ export function buildMarginReport(
   const receitaComCustoCompleto = receitaLiquida - receitaSemCustoCompleto
 
   return {
-    linhas: [...acc.values()].sort((a, b) => b.receita - a.receita),
+    linhas: [...acc.values()]
+      .map((row) => ({ ...row, detalheInsumos: [...row.detalheInsumos.values()].sort((a, b) => b.custo - a.custo) }))
+      .sort((a, b) => b.receita - a.receita),
     resumo: {
       receitaLiquida,
       custoTotal: custoConhecido,

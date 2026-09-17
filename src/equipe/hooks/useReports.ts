@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@shared/supabaseClient'
-import type { Imposto, OrderItem, ReportOrder } from '@shared/types'
+import type { Imposto, Insumo, OrderItem, ReportOrder } from '@shared/types'
 import { addMonths, endOfDay, startOfMonth } from '../dateUtils'
 import { fetchReferenceMaps, type ReferenceMaps } from '../estoqueConsumo'
 import { custoMedioPorInsumo, type ItemCompraRecebida } from '../lucroCalc'
@@ -27,6 +27,9 @@ export interface ReportData {
   /** Custo médio por insumo, calculado das compras já recebidas com o
    * imposto de hoje aplicado. Um insumo nunca comprado não aparece aqui. */
   custoPorInsumo: Map<string, number>
+  /** Nome e unidade dos insumos — só o suficiente pra rotular o
+   * detalhamento por insumo da margem por produto. */
+  insumoById: Map<string, Pick<Insumo, 'nome' | 'unidade'>>
   loading: boolean
   error: string | null
   /** Recarrega tudo. Os relatórios não escutam o Realtime: quem olha um mês fechado não quer a tela se mexendo sozinha. */
@@ -61,6 +64,7 @@ export function useReports(period: Period): ReportData {
   const [categories, setCategories] = useState<ReportCategory[]>([])
   const [maps, setMaps] = useState<ReferenceMaps>(EMPTY_MAPS)
   const [custoPorInsumo, setCustoPorInsumo] = useState<Map<string, number>>(new Map())
+  const [insumoById, setInsumoById] = useState<Map<string, Pick<Insumo, 'nome' | 'unidade'>>>(new Map())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reloadToken, setReloadToken] = useState(0)
@@ -98,7 +102,7 @@ export function useReports(period: Period): ReportData {
         .range(from, to)
 
     try {
-      const [orderRows, previousRows, trendRows, itemRows, categoryRows, impostoRows, comprasRows] = await Promise.all([
+      const [orderRows, previousRows, trendRows, itemRows, categoryRows, impostoRows, comprasRows, insumoRows] = await Promise.all([
         fetchPaged<OrderRow>((from, to) => withItems(from, to, startIso, endIso)),
         // O período anterior também vem com itens: um pedido sem `valor_pago`
         // gravado só pode ser somado pelo que tem dentro, e sem isso ele
@@ -134,6 +138,9 @@ export function useReports(period: Period): ReportData {
             .eq('status', 'recebido')
             .range(from, to),
         ),
+        fetchPaged<Pick<Insumo, 'id' | 'nome' | 'unidade'>>((from, to) =>
+          supabase.from('insumos').select('id, nome, unidade').range(from, to),
+        ),
       ])
 
       if (generation.current !== mine) return
@@ -155,6 +162,7 @@ export function useReports(period: Period): ReportData {
       setCategories(categoryRows)
       setMaps(referenceMaps)
       setCustoPorInsumo(custoMedioPorInsumo(itensCompraRecebida, impostoRows))
+      setInsumoById(new Map(insumoRows.map((i) => [i.id, { nome: i.nome, unidade: i.unidade }])))
       setError(null)
     } catch (err) {
       if (generation.current !== mine) return
@@ -170,5 +178,5 @@ export function useReports(period: Period): ReportData {
 
   const reload = useCallback(() => setReloadToken((n) => n + 1), [])
 
-  return { orders, previousOrders, trendOrders, menuItems, categories, maps, custoPorInsumo, loading, error, reload }
+  return { orders, previousOrders, trendOrders, menuItems, categories, maps, custoPorInsumo, insumoById, loading, error, reload }
 }

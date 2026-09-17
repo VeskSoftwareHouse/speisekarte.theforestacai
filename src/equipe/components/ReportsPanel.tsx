@@ -58,7 +58,7 @@ function ReportsBody() {
     [preset, customStart, customEnd],
   )
 
-  const { orders, previousOrders, trendOrders, menuItems, categories, maps, custoPorInsumo, loading, error, reload } =
+  const { orders, previousOrders, trendOrders, menuItems, categories, maps, custoPorInsumo, insumoById, loading, error, reload } =
     useReports(period)
 
   const report = useMemo(
@@ -271,7 +271,7 @@ function ReportsBody() {
                   }
                 />
               </div>
-              <ReportMarginList rows={margin.linhas} limit={TOP_ITENS} empty="Sem vendas no período." />
+              <ReportMarginList rows={margin.linhas} insumoById={insumoById} limit={TOP_ITENS} empty="Sem vendas no período." />
             </Block>
 
             <Block title="Faturamento mês a mês" hint={`Últimos ${TREND_MONTHS} meses, sem gorjeta`}>
