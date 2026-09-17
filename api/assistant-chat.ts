@@ -614,12 +614,17 @@ interface InsumoRow {
   nome: string
   unidade: string
   estoque_minimo: number | null
+  estoque_maximo: number | null
+  valor_unitario_padrao: number | null
   gramas_por_litro: number | null
 }
 
 async function consultarEstoque(supabase: SupabaseClient, args: { insumo?: string }) {
   const [insumosRes, saldosRes] = await Promise.all([
-    supabase.from('insumos').select('id, nome, unidade, estoque_minimo, gramas_por_litro').eq('ativo', true),
+    supabase
+      .from('insumos')
+      .select('id, nome, unidade, estoque_minimo, estoque_maximo, valor_unitario_padrao, gramas_por_litro')
+      .eq('ativo', true),
     supabase.from('insumo_saldos').select('insumo_id, saldo_atual'),
   ])
   if (insumosRes.error) return { error: insumosRes.error.message }
@@ -641,6 +646,9 @@ async function consultarEstoque(supabase: SupabaseClient, args: { insumo?: strin
         nome: i.nome,
         saldo,
         unidade: i.unidade,
+        estoque_minimo: i.estoque_minimo,
+        estoque_maximo: i.estoque_maximo,
+        valor_unitario_padrao: i.valor_unitario_padrao,
         saldo_baixo: i.estoque_minimo != null && saldo < i.estoque_minimo,
         // Só relevante pra unidade l/ml: peso de 1 litro em gramas, usado pra
         // compor a receita do produto em gramas (ver criar_insumo).
@@ -1068,7 +1076,10 @@ interface InsumoArgs {
   nome?: string
   unidade?: string
   estoque_minimo?: number
+  estoque_maximo?: number
+  valor_unitario_padrao?: number
   gramas_por_litro?: number | null
+  ordem?: number
   ativo?: boolean
 }
 
@@ -1093,7 +1104,10 @@ async function criarInsumo(supabase: SupabaseClient, args: InsumoArgs) {
     if (args.nome?.trim()) patch.nome = args.nome.trim()
     if (args.unidade) patch.unidade = args.unidade
     if (args.estoque_minimo !== undefined) patch.estoque_minimo = args.estoque_minimo
+    if (args.estoque_maximo !== undefined) patch.estoque_maximo = args.estoque_maximo
+    if (args.valor_unitario_padrao !== undefined) patch.valor_unitario_padrao = args.valor_unitario_padrao
     if (args.gramas_por_litro !== undefined) patch.gramas_por_litro = args.gramas_por_litro
+    if (args.ordem !== undefined) patch.ordem = args.ordem
     if (args.ativo !== undefined) patch.ativo = args.ativo
     if (Object.keys(patch).length === 0) return { erro: 'Nada pra alterar — informe pelo menos um campo novo.' }
 
@@ -1106,11 +1120,13 @@ async function criarInsumo(supabase: SupabaseClient, args: InsumoArgs) {
   if (!args.unidade) return { erro: `Unidade é obrigatória e precisa ser uma de: ${UNIDADES_VALIDAS.join(', ')}.` }
   const nome = args.nome.trim()
 
-  const ordem = await proximaOrdem(supabase, 'insumos')
+  const ordem = args.ordem ?? (await proximaOrdem(supabase, 'insumos'))
   const { error } = await supabase.from('insumos').insert({
     nome,
     unidade: args.unidade,
     estoque_minimo: args.estoque_minimo ?? null,
+    estoque_maximo: args.estoque_maximo ?? null,
+    valor_unitario_padrao: args.valor_unitario_padrao ?? null,
     gramas_por_litro: (args.unidade === 'l' || args.unidade === 'ml') ? (args.gramas_por_litro ?? null) : null,
     ativo: true,
     ordem,
@@ -1916,18 +1932,27 @@ const TOOLS = [
       {
         name: 'criar_insumo',
         description:
-          'Cadastra um novo insumo de estoque, OU edita um já existente (informe nome_atual) — inclusive pra configurar/alterar o alerta de saldo baixo (estoque_minimo) de um insumo que já existe. Ao editar, só envie os campos que devem mudar.',
+          'Cadastra um novo insumo de estoque, OU edita um já existente (informe nome_atual) — cobre todo campo do cadastro: nome, unidade de controle, alerta de saldo baixo (estoque_minimo), estoque máximo (estoque_maximo), valor de referência por unidade (valor_unitario_padrao), ordem de exibição e se está ativo. Ao editar, só envie os campos que devem mudar.',
         parametersJsonSchema: {
           type: 'object',
           properties: {
             nome_atual: { type: 'string', description: 'Nome de um insumo JÁ EXISTENTE — informe isso pra EDITAR em vez de criar.' },
             nome: { type: 'string', description: 'Nome do insumo (obrigatório ao criar).' },
             unidade: { type: 'string', enum: ['kg', 'g', 'l', 'ml', 'unidade'], description: 'Unidade de controle (obrigatório ao criar).' },
-            estoque_minimo: { type: 'number', description: 'Alerta de saldo baixo — opcional ao criar; é o campo típico pra editar num insumo existente.' },
+            estoque_minimo: { type: 'number', description: 'Alerta de saldo baixo — abaixo deste saldo o insumo aparece com alerta no painel. Opcional ao criar.' },
+            estoque_maximo: {
+              type: 'number',
+              description: 'Capacidade máxima de estoque, na unidade de controle do insumo — usada pra mostrar quanto uma compra preenche do estoque. Opcional ao criar.',
+            },
+            valor_unitario_padrao: {
+              type: 'number',
+              description: 'Preço de referência por unidade de controle, em CHF — pré-preenche o valor ao lançar uma compra deste insumo. Opcional ao criar.',
+            },
             gramas_por_litro: {
               type: 'number',
               description: 'Só pra unidade "l" ou "ml": peso de 1 litro deste insumo em gramas (ex: 1030 pro açaí). Preenchendo isso, a composição dos produtos passa a aceitar a quantidade em gramas em vez de litros/mililitros — o estoque continua controlado na unidade escolhida.',
             },
+            ordem: { type: 'number', description: 'Posição de exibição na lista de insumos. Opcional — sem isso, um insumo novo vai pro fim da lista.' },
             ativo: { type: 'boolean', description: 'Se o insumo está ativo. Só ao editar.' },
           },
         },
