@@ -1,10 +1,37 @@
 import { useEffect, useRef, useState } from 'react'
-import { History, Mic, Plus, Send, Trash2, X } from 'lucide-react'
-import { useAssistant, type ConversaResumo } from '../hooks/useAssistant'
+import { History, Image as ImageIcon, Mic, Plus, Send, Trash2, X } from 'lucide-react'
+import { useAssistant, type AssistantImagem, type ConversaResumo } from '../hooks/useAssistant'
 import { useVoice } from '../hooks/useVoice'
 
 interface Props {
   accessToken: string
+}
+
+/** Maior lado da imagem, em pixels, depois de redimensionada — uma foto de
+ * celular (3000px+) vira uma requisição pesada à toa; o Tuco lê etiqueta e
+ * lista de compras tranquilamente numa imagem bem menor que isso. */
+const IMAGEM_MAX_LADO = 1600
+const IMAGEM_QUALIDADE = 0.82
+
+/** Lê o arquivo escolhido, redimensiona no canvas (mantendo proporção) e
+ * devolve já em JPEG — tanto pra caber com folga no limite de payload da
+ * function do Vercel quanto pra gastar menos tokens de imagem no Gemini. */
+async function prepararImagem(file: File): Promise<AssistantImagem> {
+  const bitmap = await createImageBitmap(file)
+  const escala = Math.min(1, IMAGEM_MAX_LADO / Math.max(bitmap.width, bitmap.height))
+  const largura = Math.round(bitmap.width * escala)
+  const altura = Math.round(bitmap.height * escala)
+
+  const canvas = document.createElement('canvas')
+  canvas.width = largura
+  canvas.height = altura
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Não foi possível processar a imagem.')
+  ctx.drawImage(bitmap, 0, 0, largura, altura)
+
+  const dataUrl = canvas.toDataURL('image/jpeg', IMAGEM_QUALIDADE)
+  const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1)
+  return { base64, mimeType: 'image/jpeg' }
 }
 
 /**
@@ -20,6 +47,9 @@ export default function AssistantChat({ accessToken }: Props) {
   const [mostrarHistorico, setMostrarHistorico] = useState(false)
   const [conversas, setConversas] = useState<ConversaResumo[]>([])
   const [input, setInput] = useState('')
+  const [imagem, setImagem] = useState<AssistantImagem | null>(null)
+  const [imagemErro, setImagemErro] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const {
     messages,
     sending,
@@ -93,11 +123,24 @@ export default function AssistantChat({ accessToken }: Props) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!input.trim()) return
+    if (!input.trim() && !imagem) return
     // Libera o áudio ainda dentro do clique — a resposta falada chega depois.
     prepararAudio()
-    sendMessage(input)
+    sendMessage(input, imagem ?? undefined)
     setInput('')
+    setImagem(null)
+  }
+
+  async function handleAnexarImagem(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setImagemErro(null)
+    try {
+      setImagem(await prepararImagem(file))
+    } catch {
+      setImagemErro('Não consegui ler essa imagem — tenta outra foto.')
+    }
   }
 
   async function handleAbrirConversa(id: string) {
@@ -216,6 +259,9 @@ export default function AssistantChat({ accessToken }: Props) {
                     </div>
                   ) : (
                     <div key={i} className="assistant-bubble assistant-bubble--user">
+                      {m.imagemPreview && (
+                        <img src={m.imagemPreview} alt="Foto enviada" className="assistant-bubble__imagem" />
+                      )}
                       {m.text}
                     </div>
                   ),
@@ -235,13 +281,41 @@ export default function AssistantChat({ accessToken }: Props) {
                 )}
                 {error && <p className="admin-form__error">{error}</p>}
                 {sttError && <p className="admin-form__error">{sttError}</p>}
+                {imagemErro && <p className="admin-form__error">{imagemErro}</p>}
               </div>
+
+              {imagem && (
+                <div className="assistant-panel__anexo">
+                  <img src={`data:${imagem.mimeType};base64,${imagem.base64}`} alt="Foto pronta pra enviar" />
+                  <span>Foto anexada — descreva o que quer fazer com ela (ou mande assim mesmo)</span>
+                  <button type="button" onClick={() => setImagem(null)} aria-label="Remover foto">
+                    <X size={14} strokeWidth={2} />
+                  </button>
+                </div>
+              )}
 
               <form className="assistant-panel__form" onSubmit={handleSubmit}>
                 <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="visually-hidden"
+                  onChange={handleAnexarImagem}
+                />
+                <button
+                  type="button"
+                  className="assistant-panel__anexar-btn"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={sending || loadingHistorico}
+                  aria-label="Anexar uma foto"
+                  title="Anexar uma foto (lista pra cadastrar, produto pra dar entrada no estoque...)"
+                >
+                  <ImageIcon size={16} strokeWidth={2} />
+                </button>
+                <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder={listening ? 'Ouvindo…' : 'Pergunte alguma coisa…'}
+                  placeholder={listening ? 'Ouvindo…' : imagem ? 'O que devo fazer com essa foto?' : 'Pergunte alguma coisa…'}
                   disabled={sending || loadingHistorico || listening}
                 />
                 {sttSupported && (
@@ -259,7 +333,7 @@ export default function AssistantChat({ accessToken }: Props) {
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={sending || loadingHistorico || !input.trim()}
+                  disabled={sending || loadingHistorico || (!input.trim() && !imagem)}
                   aria-label="Enviar"
                 >
                   <Send size={16} strokeWidth={2} />

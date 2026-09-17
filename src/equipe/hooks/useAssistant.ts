@@ -5,6 +5,16 @@ import { authFetch } from '@shared/authFetch'
 export interface AssistantMessage {
   role: 'user' | 'assistant'
   text: string
+  /** Preview da foto anexada nesta mensagem (data URL) — só existe na sessão
+   * atual; ao recarregar uma conversa salva, a imagem em si não volta, só o
+   * texto que o Tuco já tiver extraído dela. */
+  imagemPreview?: string
+}
+
+export interface AssistantImagem {
+  /** Bytes da imagem em base64, sem o prefixo "data:...;base64,". */
+  base64: string
+  mimeType: string
 }
 
 export interface ConversaResumo {
@@ -68,19 +78,26 @@ export function useAssistant(accessToken: string) {
   }, [accessToken])
 
   const sendMessage = useCallback(
-    async (text: string) => {
+    async (text: string, imagem?: AssistantImagem) => {
       const trimmed = text.trim()
-      if (!trimmed || sending) return
+      if ((!trimmed && !imagem) || sending) return
       setSending(true)
       setError(null)
-      setMessages((prev) => [...prev, { role: 'user', text: trimmed }])
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'user',
+          text: trimmed,
+          imagemPreview: imagem ? `data:${imagem.mimeType};base64,${imagem.base64}` : undefined,
+        },
+      ])
       try {
         const res = await authFetch(
           '/api/assistant-chat',
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: trimmed, contents, conversaId }),
+            body: JSON.stringify({ message: trimmed, imagem, contents, conversaId }),
           },
           accessToken,
         )
