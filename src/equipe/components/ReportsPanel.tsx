@@ -271,7 +271,7 @@ function ReportsBody() {
                   }
                 />
               </div>
-              <ReportMarginList rows={margin.linhas} insumoById={insumoById} limit={TOP_ITENS} empty="Sem vendas no período." />
+              <ReportMarginList rows={margin.linhas} insumoById={insumoById} empty="Sem vendas no período." />
             </Block>
 
             <Block title="Faturamento mês a mês" hint={`Últimos ${TREND_MONTHS} meses, sem gorjeta`}>
