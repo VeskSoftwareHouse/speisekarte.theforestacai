@@ -980,6 +980,13 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* Sem isto, um pedido grande (muitos itens) era espremido pelo flexbox do
+     .cash-pending-modal__list pra caber no espaço sobrando — e como o card
+     corta o que não cabe (overflow: hidden), os últimos itens e o botão de
+     confirmar desapareciam sem aviso nem rolagem nenhuma alcançando eles.
+     flex-shrink: 0 garante que o card sempre renderiza na altura real do
+     conteúdo; quem passa a rolar é a lista de pedidos, como já era a ideia. */
+  flex-shrink: 0;
 }
 .cash-pending-card__header {
   display: flex;
@@ -1503,12 +1510,24 @@ body {
   justify-content: center;
   padding: var(--space-5);
   z-index: 60;
+  /* Se o modal (mesmo limitado a 88dvh) ainda não couber — pedido gigante,
+     celular pequeno — o overlay rola em vez de simplesmente cortar o resto
+     fora da tela sem jeito nenhum de alcançar. */
+  overflow-y: auto;
 }
 .admin-modal {
   background: var(--color-surface);
   width: 100%;
   max-width: 660px;
+  flex-shrink: 0;
+  /* `dvh`, não só `vh`: no celular a barra de endereço entra e sai da tela,
+     e `vh` conta a altura como se ela nunca estivesse ali — o modal podia
+     se achar com mais espaço do que a tela realmente mostra e nascer com a
+     lista de itens e o botão de confirmar cortados, sem rolagem nenhuma
+     alcançando eles (era exatamente o pedido grande de Twint/dinheiro que
+     ficava cortado). */
   max-height: 88vh;
+  max-height: 88dvh;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -1524,6 +1543,11 @@ body {
 @media (max-width: 480px) {
   .admin-modal-overlay {
     padding: var(--space-3);
+    /* Começa do topo em vez de centralizado: com o overlay rolável, um
+       modal centralizado que passa da tela faz a pessoa rolar pra cima
+       primeiro só pra achar o começo — no celular já nasce ancorado no
+       topo, e o scroll sempre vai só pra baixo, até o botão de confirmar. */
+    align-items: flex-start;
   }
 }
 .admin-modal__header {
@@ -1687,8 +1711,28 @@ body {
   align-items: center;
   gap: var(--space-2);
 }
+/* select/input aqui nunca tiveram estilo próprio — caíam na aparência crua
+   do navegador (sem borda visível, sem raio de canto), destoando do resto
+   do formulário. */
+.admin-composition-list__row select,
+.admin-composition-list__row input[type='number'] {
+  min-height: 38px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--color-surface);
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  color: var(--color-ink);
+}
+.admin-composition-list__row select:focus,
+.admin-composition-list__row input[type='number']:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
 .admin-composition-list__row select {
   flex: 1;
+  min-width: 0;
 }
 .admin-composition-list__row input[type='number'] {
   width: 90px;
@@ -1723,10 +1767,29 @@ body {
   gap: var(--space-2);
 }
 .admin-inventario-row__motivo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin-left: var(--space-4);
   padding: var(--space-2) var(--space-3);
   background: color-mix(in srgb, var(--color-danger) 6%, transparent);
   border-radius: var(--radius-sm, 8px);
+}
+.admin-inventario-row__motivo select {
+  flex: 1;
+  min-width: 0;
+  min-height: 38px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 8px);
+  background: var(--color-surface);
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  color: var(--color-ink);
+}
+.admin-inventario-row__motivo select:focus {
+  outline: none;
+  border-color: var(--color-primary);
 }
 
 /* Fechamento — texto de apoio e interruptor de automático, antes da lista
