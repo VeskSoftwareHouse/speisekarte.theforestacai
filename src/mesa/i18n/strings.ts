@@ -82,6 +82,9 @@ export interface StringDict {
   ingredientsTitle: string
   /** Botão nas telas de espera de dinheiro/Twint — cliente desiste do pedido. */
   cancelOrderButton: string
+  /** Botão nas telas de espera de dinheiro/Twint — cliente quer pagar de outro
+   * jeito, mantendo os itens escolhidos. */
+  changePaymentMethodButton: string
   /** Pergunta de confirmação antes de cancelar o pedido. */
   cancelOrderConfirmTitle: string
   cancelOrderConfirmBody: string
@@ -164,6 +167,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     catalogNotice: 'Nur zum Anschauen — bestelle am Totem oder bei unserem Team.',
     ingredientsButton: 'Zutaten ansehen',
     ingredientsTitle: 'Zutaten',
+    changePaymentMethodButton: 'Zahlungsart ändern',
     cancelOrderButton: 'Bestellung stornieren',
     cancelOrderConfirmTitle: 'Bestellung wirklich stornieren?',
     cancelOrderConfirmBody: 'Diese Aktion kann nicht rückgängig gemacht werden.',
@@ -241,6 +245,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     catalogNotice: 'Uniquement pour consultation — commandez à la borne ou auprès de notre équipe.',
     ingredientsButton: 'Voir les ingrédients',
     ingredientsTitle: 'Ingrédients',
+    changePaymentMethodButton: 'Changer de mode de paiement',
     cancelOrderButton: 'Annuler la commande',
     cancelOrderConfirmTitle: 'Annuler vraiment la commande ?',
     cancelOrderConfirmBody: 'Cette action est irréversible.',
@@ -318,6 +323,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     catalogNotice: 'Solo per consultazione — ordina al totem o con il nostro team.',
     ingredientsButton: 'Vedi ingredienti',
     ingredientsTitle: 'Ingredienti',
+    changePaymentMethodButton: 'Cambia metodo di pagamento',
     cancelOrderButton: "Annulla l'ordine",
     cancelOrderConfirmTitle: "Annullare davvero l'ordine?",
     cancelOrderConfirmBody: "Questa azione non può essere annullata.",
@@ -395,6 +401,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     catalogNotice: 'For browsing only — order at the kiosk or with our team.',
     ingredientsButton: 'View ingredients',
     ingredientsTitle: 'Ingredients',
+    changePaymentMethodButton: 'Change payment method',
     cancelOrderButton: 'Cancel order',
     cancelOrderConfirmTitle: 'Cancel this order?',
     cancelOrderConfirmBody: 'This cannot be undone.',
@@ -472,6 +479,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     catalogNotice: 'Somente para consulta — peça no totem ou com a equipe.',
     ingredientsButton: 'Ver ingredientes',
     ingredientsTitle: 'Ingredientes',
+    changePaymentMethodButton: 'Trocar forma de pagamento',
     cancelOrderButton: 'Cancelar pedido',
     cancelOrderConfirmTitle: 'Cancelar este pedido?',
     cancelOrderConfirmBody: 'Essa ação não pode ser desfeita.',
@@ -549,6 +557,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     catalogNotice: 'Solo para consulta — pide en el totem o con nuestro equipo.',
     ingredientsButton: 'Ver ingredientes',
     ingredientsTitle: 'Ingredientes',
+    changePaymentMethodButton: 'Cambiar forma de pago',
     cancelOrderButton: 'Cancelar pedido',
     cancelOrderConfirmTitle: '¿Cancelar este pedido?',
     cancelOrderConfirmBody: 'Esta acción no se puede deshacer.',

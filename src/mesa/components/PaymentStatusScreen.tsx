@@ -8,20 +8,31 @@ interface Props {
   onBack?: () => void
   /** Só nas telas de espera de dinheiro/Twint — cliente desiste do pedido. */
   onCancel?: () => void
+  /** Só nas telas de espera de dinheiro/Twint — cliente quer pagar de outro
+   * jeito, sem perder os itens já escolhidos. */
+  onChangePaymentMethod?: () => void
 }
 
 const TWINT_PHONE = import.meta.env.VITE_TWINT_PHONE
 
 /**
- * Botão de cancelar com uma confirmação inline — pedir de novo evita que um
- * toque acidental jogue fora um pedido que a equipe já pode estar preparando
- * para receber o pagamento.
+ * Ações da tela de espera: trocar forma de pagamento (direto, sem
+ * confirmação — o cliente não perde nada, só volta a escolher) e cancelar,
+ * com uma confirmação inline pra pedir de novo evitar que um toque
+ * acidental jogue fora um pedido que a equipe já pode estar preparando para
+ * receber o pagamento.
  */
-function CancelOrder({ onCancel }: { onCancel: () => void }) {
+function PaymentActions({
+  onCancel,
+  onChangePaymentMethod,
+}: {
+  onCancel: () => void
+  onChangePaymentMethod: () => void
+}) {
   const { t } = useLanguage()
-  const [confirming, setConfirming] = useState(false)
+  const [confirmingCancel, setConfirmingCancel] = useState(false)
 
-  if (confirming) {
+  if (confirmingCancel) {
     return (
       <div className="payment-status__cancel-confirm">
         <p>{t('cancelOrderConfirmTitle')}</p>
@@ -30,7 +41,7 @@ function CancelOrder({ onCancel }: { onCancel: () => void }) {
           <button className="btn btn-danger" onClick={onCancel}>
             {t('cancelOrderConfirmYes')}
           </button>
-          <button className="btn btn-outline" onClick={() => setConfirming(false)}>
+          <button className="btn btn-outline" onClick={() => setConfirmingCancel(false)}>
             {t('cancelOrderConfirmNo')}
           </button>
         </div>
@@ -39,13 +50,18 @@ function CancelOrder({ onCancel }: { onCancel: () => void }) {
   }
 
   return (
-    <button className="payment-status__cancel-link" onClick={() => setConfirming(true)}>
-      {t('cancelOrderButton')}
-    </button>
+    <div className="payment-status__actions">
+      <button className="payment-status__change-link" onClick={onChangePaymentMethod}>
+        {t('changePaymentMethodButton')}
+      </button>
+      <button className="payment-status__cancel-link" onClick={() => setConfirmingCancel(true)}>
+        {t('cancelOrderButton')}
+      </button>
+    </div>
   )
 }
 
-export default function PaymentStatusScreen({ status, onRetry, onBack, onCancel }: Props) {
+export default function PaymentStatusScreen({ status, onRetry, onBack, onCancel, onChangePaymentMethod }: Props) {
   const { t } = useLanguage()
 
   if (status === 'awaiting_tap') {
@@ -68,7 +84,9 @@ export default function PaymentStatusScreen({ status, onRetry, onBack, onCancel 
         </div>
         <h1>{t('awaitingCashTitle')}</h1>
         <p>{t('awaitingCashBody')}</p>
-        {onCancel && <CancelOrder onCancel={onCancel} />}
+        {onCancel && onChangePaymentMethod && (
+          <PaymentActions onCancel={onCancel} onChangePaymentMethod={onChangePaymentMethod} />
+        )}
       </div>
     )
   }
@@ -87,7 +105,9 @@ export default function PaymentStatusScreen({ status, onRetry, onBack, onCancel 
             <strong className="payment-status__twint-phone-number">{TWINT_PHONE}</strong>
           </div>
         )}
-        {onCancel && <CancelOrder onCancel={onCancel} />}
+        {onCancel && onChangePaymentMethod && (
+          <PaymentActions onCancel={onCancel} onChangePaymentMethod={onChangePaymentMethod} />
+        )}
       </div>
     )
   }

@@ -1712,23 +1712,43 @@
   flex-wrap: wrap;
   justify-content: center;
 }
-.payment-status__cancel-link {
+.payment-status__actions {
   margin-top: var(--space-6);
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.payment-status__change-link,
+.payment-status__cancel-link {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-5);
   border-radius: var(--radius-md);
-  border: 1.5px solid color-mix(in srgb, var(--color-danger) 45%, var(--color-border));
-  background: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface));
-  color: var(--color-danger);
   font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.1s ease;
 }
+.payment-status__change-link:active,
 .payment-status__cancel-link:active {
   transform: scale(0.97);
+}
+.payment-status__change-link {
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.payment-status__change-link:active {
+  background: var(--color-bg);
+}
+.payment-status__cancel-link {
+  border: 1.5px solid color-mix(in srgb, var(--color-danger) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface));
+  color: var(--color-danger);
+}
+.payment-status__cancel-link:active {
   background: color-mix(in srgb, var(--color-danger) 16%, var(--color-surface));
 }
 .payment-status__cancel-confirm {

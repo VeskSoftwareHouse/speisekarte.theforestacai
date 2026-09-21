@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import DashboardScreen from './components/DashboardScreen'
 import OrderSummaryScreen from './components/OrderSummaryScreen'
 import ConfirmationScreen from './components/ConfirmationScreen'
@@ -44,6 +44,15 @@ export default function App() {
   const [sendError, setSendError] = useState<string | null>(null)
   const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null)
   const { t } = useLanguage()
+  /**
+   * O que fazer quando o poll em segundo plano (waitForCash/waitForTwint)
+   * perceber que o pedido virou "cancelado" — pra onde ir depende de quem
+   * pediu o cancelamento: handleCancelOrder quer o cardápio (esvazia o
+   * carrinho), handleChangePaymentMethod quer voltar pro resumo com os itens
+   * intactos. Sem isso, o próximo poll (até 3s depois) sobrescrevia a
+   * navegação do resumo com a do cardápio.
+   */
+  const cancelIntentRef = useRef<'dashboard' | 'resumo'>('dashboard')
 
   useKeepFullscreen()
 
@@ -171,13 +180,18 @@ export default function App() {
         setView('confirmation')
         return
       }
-      // Só chega aqui pelo botão de cancelar (handleCancelOrder já levou de
-      // volta ao cardápio) — não há outro jeito de um pedido em dinheiro
-      // virar "cancelado". Repetir a navegação é inofensivo.
+      // Só chega aqui pelos botões de cancelar/trocar forma de pagamento
+      // (handleCancelOrder/handleChangePaymentMethod já navegaram na hora) —
+      // não há outro jeito de um pedido em dinheiro virar "cancelado".
+      // Repetir a navegação é inofensivo.
       if (status === 'cancelado') {
-        setCart([])
         setConfirmingOrderId(null)
-        setView('dashboard')
+        if (cancelIntentRef.current === 'resumo') {
+          setView('resumo')
+        } else {
+          setCart([])
+          setView('dashboard')
+        }
         return
       }
     }
@@ -210,21 +224,25 @@ export default function App() {
       }
       // Ver comentário equivalente em waitForCash.
       if (status === 'cancelado') {
-        setCart([])
         setConfirmingOrderId(null)
-        setView('dashboard')
+        if (cancelIntentRef.current === 'resumo') {
+          setView('resumo')
+        } else {
+          setCart([])
+          setView('dashboard')
+        }
         return
       }
     }
     setView('twint_timeout')
   }
 
-  /**
-   * O cliente desistiu na tela de espera de dinheiro/Twint. Marca o pedido
-   * como cancelado no servidor (some do painel da equipe, que só lista
-   * `aguardando_dinheiro`/`aguardando_twint`) e volta pro cardápio.
-   */
-  async function handleCancelOrder(orderId: string) {
+  /** Marca o pedido como cancelado no servidor — some do painel da equipe,
+   * que só lista `aguardando_dinheiro`/`aguardando_twint`. Se a chamada
+   * falhar, o pedido continua pendente lá — a equipe ainda consegue lidar
+   * com isso manualmente no caixa; o cliente segue em frente de qualquer
+   * jeito, já que do lado dele não há mais nada esperando. */
+  async function cancelPendingOrder(orderId: string) {
     try {
       await fetch('/api/cancel-order', {
         method: 'POST',
@@ -232,12 +250,28 @@ export default function App() {
         body: JSON.stringify({ orderId }),
       })
     } catch {
-      // Se a chamada falhar, o pedido continua pendente no painel — a
-      // equipe ainda consegue lidar com isso manualmente no caixa.
+      // Ver comentário acima.
     }
+  }
+
+  /** O cliente desistiu na tela de espera de dinheiro/Twint — cancela e volta pro cardápio. */
+  async function handleCancelOrder(orderId: string) {
+    cancelIntentRef.current = 'dashboard'
+    await cancelPendingOrder(orderId)
     setCart([])
     setConfirmingOrderId(null)
     setView('dashboard')
+  }
+
+  /** O cliente quer pagar de outro jeito — cancela o pedido em espera e
+   * volta pro resumo, mantendo os itens do carrinho pra só escolher outra
+   * forma de pagamento. */
+  async function handleChangePaymentMethod(orderId: string) {
+    cancelIntentRef.current = 'resumo'
+    await cancelPendingOrder(orderId)
+    setConfirmingOrderId(null)
+    setSendError(null)
+    setView('resumo')
   }
 
   /**
@@ -347,6 +381,7 @@ export default function App() {
         <PaymentStatusScreen
           status="awaiting_cash"
           onCancel={() => confirmingOrderId && handleCancelOrder(confirmingOrderId)}
+          onChangePaymentMethod={() => confirmingOrderId && handleChangePaymentMethod(confirmingOrderId)}
         />
       )
     }
@@ -366,6 +401,7 @@ export default function App() {
         <PaymentStatusScreen
           status="awaiting_twint"
           onCancel={() => confirmingOrderId && handleCancelOrder(confirmingOrderId)}
+          onChangePaymentMethod={() => confirmingOrderId && handleChangePaymentMethod(confirmingOrderId)}
         />
       )
     }
