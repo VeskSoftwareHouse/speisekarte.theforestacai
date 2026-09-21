@@ -41,6 +41,8 @@ import VisaoGeralPanel from './VisaoGeralPanel'
 import ImpostoPanel from './ImpostoPanel'
 import ImpostoFormModal from './ImpostoFormModal'
 import ConfirmDialog from './ConfirmDialog'
+import DeleteBlockedDialog from './DeleteBlockedDialog'
+import { DeleteBlockedError } from '../hooks/errors'
 
 type DeleteTarget =
   | { kind: 'fornecedor'; item: Fornecedor }
@@ -150,6 +152,10 @@ export default function EstoqueManager({ currentUserId }: Props) {
   const [impostoForm, setImpostoForm] = useState<'new' | Imposto | null>(null)
   const [fechamentoSelecionados, setFechamentoSelecionados] = useState<OrderWithItems[] | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
+  // Fornecedor com pedido de compra já registrado não pode ser excluído (FK
+  // em pedidos_compra) — ver DeleteBlockedError. Oferece desativar em vez
+  // de só mostrar o erro puro do Postgres.
+  const [fornecedorBlocked, setFornecedorBlocked] = useState<Fornecedor | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
   const fornecedoresById = useMemo(() => {
@@ -175,8 +181,29 @@ export default function EstoqueManager({ currentUserId }: Props) {
       else await deleteImposto(deleteTarget.item.id)
       setDeleteTarget(null)
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Não foi possível excluir.')
+      if (err instanceof DeleteBlockedError && deleteTarget.kind === 'fornecedor') {
+        setFornecedorBlocked(deleteTarget.item)
+      } else {
+        setActionError(err instanceof Error ? err.message : 'Não foi possível excluir.')
+      }
       setDeleteTarget(null)
+    }
+  }
+
+  async function handleDeactivateFornecedor(fornecedor: Fornecedor) {
+    setActionError(null)
+    try {
+      await updateFornecedor(fornecedor.id, {
+        nome: fornecedor.nome,
+        contato: fornecedor.contato,
+        telefone: fornecedor.telefone,
+        email: fornecedor.email,
+        observacoes: fornecedor.observacoes,
+        ativo: false,
+      })
+      setFornecedorBlocked(null)
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Não foi possível desativar.')
     }
   }
 
@@ -499,6 +526,16 @@ export default function EstoqueManager({ currentUserId }: Props) {
           }
           onConfirm={handleDeleteConfirmed}
           onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
+      {fornecedorBlocked && (
+        <DeleteBlockedDialog
+          title="Não é possível excluir"
+          message={`"${fornecedorBlocked.nome}" já tem pedido de compra registrado, então não pode ser excluído — isso quebraria o histórico de compras. Você pode desativá-lo em vez disso: ele some da lista de fornecedores ativos, mas o histórico continua intacto.`}
+          actionLabel={fornecedorBlocked.ativo ? 'Desativar fornecedor' : undefined}
+          onAction={fornecedorBlocked.ativo ? () => handleDeactivateFornecedor(fornecedorBlocked) : undefined}
+          onClose={() => setFornecedorBlocked(null)}
         />
       )}
     </main>

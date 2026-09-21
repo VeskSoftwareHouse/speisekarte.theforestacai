@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@shared/supabaseClient'
 import { retryLoad } from '@shared/retryLoad'
 import type { Fornecedor } from '@shared/types'
+import { DeleteBlockedError } from './errors'
 
 export interface FornecedorInput {
   nome: string
@@ -55,7 +56,10 @@ export function useFornecedorAdmin() {
 
   async function deleteFornecedor(id: string) {
     const { error: err } = await supabase.from('fornecedores').delete().eq('id', id)
-    if (err) throw new Error(err.message)
+    if (err) {
+      if (err.code === '23503') throw new DeleteBlockedError()
+      throw new Error(err.message)
+    }
     await fetchAll()
   }
 

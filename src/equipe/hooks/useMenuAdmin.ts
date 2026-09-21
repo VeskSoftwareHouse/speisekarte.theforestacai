@@ -2,14 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@shared/supabaseClient'
 import { retryLoad } from '@shared/retryLoad'
 import type { Category, MenuItem, MenuItemIngrediente, MenuItemInsumo } from '@shared/types'
+import { DeleteBlockedError } from './errors'
 
-/** Lançado ao tentar excluir uma categoria/produto que já apareceu em algum pedido (viola FK com order_items). */
-export class DeleteBlockedError extends Error {
-  constructor() {
-    super('Não é possível excluir: já existe um pedido que referencia este item.')
-    this.name = 'DeleteBlockedError'
-  }
-}
+export { DeleteBlockedError }
 
 export interface CategoryInput {
   nome: string
