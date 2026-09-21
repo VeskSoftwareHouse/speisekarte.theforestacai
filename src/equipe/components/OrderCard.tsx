@@ -48,8 +48,9 @@ interface Props {
   /** Pede confirmação pra excluir este pedido — pra tirar da tela e dos
    * relatórios um pedido de teste (ver App.tsx). Nunca exclui na hora. */
   onRequestDelete: (order: OrderWithItems) => void
-  /** Abre o diálogo de impressão do sistema com a comanda deste pedido
-   * (nome do cliente + itens), ver ComandaPrint. */
+  /** Abre o diálogo de impressão do sistema com uma etiqueta só do nome do
+   * cliente — pra colar no copo, numa impressora pequena de adesivo. Ver
+   * ComandaPrint. */
   onPrint: (order: OrderWithItems) => void
   /** Ingredientes do copo pronto de cada produto, por menu_item_id (ver
    * useCopoProntoIngredientes) — pra mostrar a receita fixa categorizada
@@ -135,8 +136,8 @@ export default function OrderCard({ order, isNew, now, onAdvance, onSeen, onRequ
             e.stopPropagation()
             onPrint(order)
           }}
-          aria-label="Imprimir comanda"
-          title="Imprimir comanda"
+          aria-label="Imprimir etiqueta com o nome do cliente"
+          title="Imprimir etiqueta com o nome do cliente (pra colar no copo)"
         >
           <Printer size={15} strokeWidth={2} />
         </button>

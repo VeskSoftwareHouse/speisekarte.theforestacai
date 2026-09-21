@@ -44,16 +44,17 @@ export default function App() {
   // Confirmação antes de excluir um pedido (ex: pedido de teste) — nunca
   // apaga direto no clique da lixeira, ver OrderCard.
   const [deleteOrderTarget, setDeleteOrderTarget] = useState<OrderWithItems | null>(null)
-  // Comanda em impressão — ver ComandaPrint. `body.printing-comanda` some com
-  // o resto da tela só durante o print (CSS em equipe.css), então o quadro
-  // kanban não pisca escondido enquanto a pessoa só está olhando a tela.
+  // Pedido cuja etiqueta de nome está sendo impressa — ver ComandaPrint.
+  // `body.printing-comanda` some com o resto da tela só durante o print (CSS
+  // em equipe.css), então o quadro kanban não pisca escondido enquanto a
+  // pessoa só está olhando a tela.
   const [printOrder, setPrintOrder] = useState<OrderWithItems | null>(null)
 
   useEffect(() => {
     if (!printOrder) return
-    // O React já commitou a comanda no DOM (via ComandaPrint) antes de rodar
-    // este efeito, então dá pra imprimir direto — sem esperar mais nenhum
-    // tick.
+    // O React já commitou a etiqueta no DOM (via ComandaPrint) antes de
+    // rodar este efeito, então dá pra imprimir direto — sem esperar mais
+    // nenhum tick.
     document.body.classList.add('printing-comanda')
     const handleAfterPrint = () => setPrintOrder(null)
     window.addEventListener('afterprint', handleAfterPrint)
