@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { AlertTriangle, Banknote, Loader2, Nfc, Smartphone } from 'lucide-react'
 import { useLanguage } from '../i18n/LanguageContext'
 
@@ -5,11 +6,46 @@ interface Props {
   status: 'awaiting_tap' | 'awaiting_cash' | 'awaiting_twint' | 'confirming' | 'failed' | 'cash_timeout' | 'twint_timeout'
   onRetry?: () => void
   onBack?: () => void
+  /** Só nas telas de espera de dinheiro/Twint — cliente desiste do pedido. */
+  onCancel?: () => void
 }
 
 const TWINT_PHONE = import.meta.env.VITE_TWINT_PHONE
 
-export default function PaymentStatusScreen({ status, onRetry, onBack }: Props) {
+/**
+ * Botão de cancelar com uma confirmação inline — pedir de novo evita que um
+ * toque acidental jogue fora um pedido que a equipe já pode estar preparando
+ * para receber o pagamento.
+ */
+function CancelOrder({ onCancel }: { onCancel: () => void }) {
+  const { t } = useLanguage()
+  const [confirming, setConfirming] = useState(false)
+
+  if (confirming) {
+    return (
+      <div className="payment-status__cancel-confirm">
+        <p>{t('cancelOrderConfirmTitle')}</p>
+        <p className="payment-status__cancel-confirm-hint">{t('cancelOrderConfirmBody')}</p>
+        <div className="confirmation-screen__actions">
+          <button className="btn btn-danger" onClick={onCancel}>
+            {t('cancelOrderConfirmYes')}
+          </button>
+          <button className="btn btn-outline" onClick={() => setConfirming(false)}>
+            {t('cancelOrderConfirmNo')}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <button className="payment-status__cancel-link" onClick={() => setConfirming(true)}>
+      {t('cancelOrderButton')}
+    </button>
+  )
+}
+
+export default function PaymentStatusScreen({ status, onRetry, onBack, onCancel }: Props) {
   const { t } = useLanguage()
 
   if (status === 'awaiting_tap') {
@@ -32,6 +68,7 @@ export default function PaymentStatusScreen({ status, onRetry, onBack }: Props) 
         </div>
         <h1>{t('awaitingCashTitle')}</h1>
         <p>{t('awaitingCashBody')}</p>
+        {onCancel && <CancelOrder onCancel={onCancel} />}
       </div>
     )
   }
@@ -50,6 +87,7 @@ export default function PaymentStatusScreen({ status, onRetry, onBack }: Props) 
             <strong className="payment-status__twint-phone-number">{TWINT_PHONE}</strong>
           </div>
         )}
+        {onCancel && <CancelOrder onCancel={onCancel} />}
       </div>
     )
   }

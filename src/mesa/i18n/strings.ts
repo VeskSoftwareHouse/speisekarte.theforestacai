@@ -80,6 +80,15 @@ export interface StringDict {
   ingredientsButton: string
   /** Título do popup de ingredientes. */
   ingredientsTitle: string
+  /** Botão nas telas de espera de dinheiro/Twint — cliente desiste do pedido. */
+  cancelOrderButton: string
+  /** Pergunta de confirmação antes de cancelar o pedido. */
+  cancelOrderConfirmTitle: string
+  cancelOrderConfirmBody: string
+  cancelOrderConfirmYes: string
+  cancelOrderConfirmNo: string
+  /** Erro ao tentar cancelar (ex: equipe já confirmou o pagamento). */
+  cancelOrderError: string
 }
 
 export type StringKey = keyof StringDict
@@ -155,6 +164,12 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     catalogNotice: 'Nur zum Anschauen — bestelle am Totem oder bei unserem Team.',
     ingredientsButton: 'Zutaten ansehen',
     ingredientsTitle: 'Zutaten',
+    cancelOrderButton: 'Bestellung stornieren',
+    cancelOrderConfirmTitle: 'Bestellung wirklich stornieren?',
+    cancelOrderConfirmBody: 'Diese Aktion kann nicht rückgängig gemacht werden.',
+    cancelOrderConfirmYes: 'Ja, stornieren',
+    cancelOrderConfirmNo: 'Zurück',
+    cancelOrderError: 'Die Bestellung konnte nicht storniert werden. Bitte wende dich an unser Team.',
   },
   fr: {
     sidebarTagline: "Savoure l'Amazonie, ressens l'énergie",
@@ -226,6 +241,12 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     catalogNotice: 'Uniquement pour consultation — commandez à la borne ou auprès de notre équipe.',
     ingredientsButton: 'Voir les ingrédients',
     ingredientsTitle: 'Ingrédients',
+    cancelOrderButton: 'Annuler la commande',
+    cancelOrderConfirmTitle: 'Annuler vraiment la commande ?',
+    cancelOrderConfirmBody: 'Cette action est irréversible.',
+    cancelOrderConfirmYes: 'Oui, annuler',
+    cancelOrderConfirmNo: 'Retour',
+    cancelOrderError: "Impossible d'annuler la commande. Merci de vous adresser à notre équipe.",
   },
   it: {
     sidebarTagline: "Assapora l'Amazzonia, senti l'energia",
@@ -297,6 +318,12 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     catalogNotice: 'Solo per consultazione — ordina al totem o con il nostro team.',
     ingredientsButton: 'Vedi ingredienti',
     ingredientsTitle: 'Ingredienti',
+    cancelOrderButton: "Annulla l'ordine",
+    cancelOrderConfirmTitle: "Annullare davvero l'ordine?",
+    cancelOrderConfirmBody: "Questa azione non può essere annullata.",
+    cancelOrderConfirmYes: 'Sì, annulla',
+    cancelOrderConfirmNo: 'Indietro',
+    cancelOrderError: "Non è stato possibile annullare l'ordine. Parla con il nostro team.",
   },
   en: {
     sidebarTagline: 'Taste the Amazon, feel the energy',
@@ -368,6 +395,12 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     catalogNotice: 'For browsing only — order at the kiosk or with our team.',
     ingredientsButton: 'View ingredients',
     ingredientsTitle: 'Ingredients',
+    cancelOrderButton: 'Cancel order',
+    cancelOrderConfirmTitle: 'Cancel this order?',
+    cancelOrderConfirmBody: 'This cannot be undone.',
+    cancelOrderConfirmYes: 'Yes, cancel',
+    cancelOrderConfirmNo: 'Back',
+    cancelOrderError: 'Could not cancel the order. Please check with our team.',
   },
   pt: {
     sidebarTagline: 'Prove a Amazônia, sinta a energia',
@@ -439,6 +472,12 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     catalogNotice: 'Somente para consulta — peça no totem ou com a equipe.',
     ingredientsButton: 'Ver ingredientes',
     ingredientsTitle: 'Ingredientes',
+    cancelOrderButton: 'Cancelar pedido',
+    cancelOrderConfirmTitle: 'Cancelar este pedido?',
+    cancelOrderConfirmBody: 'Essa ação não pode ser desfeita.',
+    cancelOrderConfirmYes: 'Sim, cancelar',
+    cancelOrderConfirmNo: 'Voltar',
+    cancelOrderError: 'Não foi possível cancelar o pedido. Fale com a nossa equipe.',
   },
   es: {
     sidebarTagline: 'Prueba la Amazonía, siente la energía',
@@ -510,5 +549,11 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     catalogNotice: 'Solo para consulta — pide en el totem o con nuestro equipo.',
     ingredientsButton: 'Ver ingredientes',
     ingredientsTitle: 'Ingredientes',
+    cancelOrderButton: 'Cancelar pedido',
+    cancelOrderConfirmTitle: '¿Cancelar este pedido?',
+    cancelOrderConfirmBody: 'Esta acción no se puede deshacer.',
+    cancelOrderConfirmYes: 'Sí, cancelar',
+    cancelOrderConfirmNo: 'Volver',
+    cancelOrderError: 'No se pudo cancelar el pedido. Habla con nuestro equipo.',
   },
 }

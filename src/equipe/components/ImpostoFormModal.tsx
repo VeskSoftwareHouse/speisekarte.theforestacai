@@ -79,7 +79,7 @@ export default function ImpostoFormModal({ imposto, insumos, onClose, onSave }: 
             <input
               type="number"
               min={0}
-              step={tipo === 'percentual' ? 0.5 : 0.01}
+              step={0.01}
               value={valor || ''}
               onChange={(e) => setValor(Number(e.target.value))}
               required

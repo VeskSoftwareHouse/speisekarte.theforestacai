@@ -171,7 +171,15 @@ export default function App() {
         setView('confirmation')
         return
       }
-      if (status === 'cancelado') break
+      // Só chega aqui pelo botão de cancelar (handleCancelOrder já levou de
+      // volta ao cardápio) — não há outro jeito de um pedido em dinheiro
+      // virar "cancelado". Repetir a navegação é inofensivo.
+      if (status === 'cancelado') {
+        setCart([])
+        setConfirmingOrderId(null)
+        setView('dashboard')
+        return
+      }
     }
     setView('cash_timeout')
   }
@@ -200,9 +208,36 @@ export default function App() {
         setView('confirmation')
         return
       }
-      if (status === 'cancelado') break
+      // Ver comentário equivalente em waitForCash.
+      if (status === 'cancelado') {
+        setCart([])
+        setConfirmingOrderId(null)
+        setView('dashboard')
+        return
+      }
     }
     setView('twint_timeout')
+  }
+
+  /**
+   * O cliente desistiu na tela de espera de dinheiro/Twint. Marca o pedido
+   * como cancelado no servidor (some do painel da equipe, que só lista
+   * `aguardando_dinheiro`/`aguardando_twint`) e volta pro cardápio.
+   */
+  async function handleCancelOrder(orderId: string) {
+    try {
+      await fetch('/api/cancel-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      })
+    } catch {
+      // Se a chamada falhar, o pedido continua pendente no painel — a
+      // equipe ainda consegue lidar com isso manualmente no caixa.
+    }
+    setCart([])
+    setConfirmingOrderId(null)
+    setView('dashboard')
   }
 
   /**
@@ -308,7 +343,12 @@ export default function App() {
     }
 
     if (view === 'awaiting_cash') {
-      return <PaymentStatusScreen status="awaiting_cash" />
+      return (
+        <PaymentStatusScreen
+          status="awaiting_cash"
+          onCancel={() => confirmingOrderId && handleCancelOrder(confirmingOrderId)}
+        />
+      )
     }
 
     if (view === 'cash_timeout') {
@@ -322,7 +362,12 @@ export default function App() {
     }
 
     if (view === 'awaiting_twint') {
-      return <PaymentStatusScreen status="awaiting_twint" />
+      return (
+        <PaymentStatusScreen
+          status="awaiting_twint"
+          onCancel={() => confirmingOrderId && handleCancelOrder(confirmingOrderId)}
+        />
+      )
     }
 
     if (view === 'twint_timeout') {
