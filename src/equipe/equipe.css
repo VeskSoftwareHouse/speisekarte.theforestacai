@@ -674,9 +674,9 @@ body {
 .order-card__time--warning {
   color: var(--color-danger);
 }
-/* Excluir pedido (ex: um pedido de teste) — discreto de propósito, não é uma
-   ação do dia a dia como avançar o pedido. */
-.order-card__delete {
+/* Imprimir comanda e excluir pedido (ex: um pedido de teste) — discretos de
+   propósito, não são ações do dia a dia como avançar o pedido. */
+.order-card__icon-btn {
   flex: 0 0 auto;
   width: 28px;
   height: 28px;
@@ -688,10 +688,64 @@ body {
   align-items: center;
   justify-content: center;
 }
-.order-card__delete:hover,
-.order-card__delete:active {
+.order-card__icon-btn:hover,
+.order-card__icon-btn:active {
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+}
+.order-card__icon-btn--danger:hover,
+.order-card__icon-btn--danger:active {
   background: color-mix(in srgb, var(--color-danger) 12%, transparent);
   color: var(--color-danger);
+}
+
+/* Comanda impressa — fora da tela por padrão; @media print troca pra block
+   quando body.printing-comanda está ativo (ver App.tsx/ComandaPrint). Nome
+   do cliente em destaque é o motivo de existir: é a primeira coisa que a
+   cozinha precisa achar na folha. */
+.comanda-print {
+  display: none;
+}
+@media print {
+  body.printing-comanda > *:not(.comanda-print) {
+    display: none !important;
+  }
+  body.printing-comanda .comanda-print {
+    display: block;
+    padding: 12px;
+    font-family: var(--font-ui, sans-serif);
+    color: #000;
+  }
+}
+.comanda-print__customer {
+  margin: 0 0 4px;
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+.comanda-print__meta {
+  margin: 0 0 16px;
+  font-size: 0.85rem;
+  color: #444;
+}
+.comanda-print__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.comanda-print__item-head {
+  display: flex;
+  gap: 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.comanda-print__item-mods,
+.comanda-print__item-obs {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  color: #333;
 }
 
 .status-pill {

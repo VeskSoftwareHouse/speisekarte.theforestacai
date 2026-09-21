@@ -7,6 +7,7 @@ import { useCashPendingOrders } from './hooks/useCashPendingOrders'
 import { useTwintPendingOrders } from './hooks/useTwintPendingOrders'
 import { useAuth } from './hooks/useAuth'
 import OrderCard from './components/OrderCard'
+import ComandaPrint from './components/ComandaPrint'
 import ConfirmDialog from './components/ConfirmDialog'
 import CashPendingPanel from './components/CashPendingPanel'
 import TwintPendingPanel from './components/TwintPendingPanel'
@@ -43,6 +44,25 @@ export default function App() {
   // Confirmação antes de excluir um pedido (ex: pedido de teste) — nunca
   // apaga direto no clique da lixeira, ver OrderCard.
   const [deleteOrderTarget, setDeleteOrderTarget] = useState<OrderWithItems | null>(null)
+  // Comanda em impressão — ver ComandaPrint. `body.printing-comanda` some com
+  // o resto da tela só durante o print (CSS em equipe.css), então o quadro
+  // kanban não pisca escondido enquanto a pessoa só está olhando a tela.
+  const [printOrder, setPrintOrder] = useState<OrderWithItems | null>(null)
+
+  useEffect(() => {
+    if (!printOrder) return
+    // O React já commitou a comanda no DOM (via ComandaPrint) antes de rodar
+    // este efeito, então dá pra imprimir direto — sem esperar mais nenhum
+    // tick.
+    document.body.classList.add('printing-comanda')
+    const handleAfterPrint = () => setPrintOrder(null)
+    window.addEventListener('afterprint', handleAfterPrint)
+    window.print()
+    return () => {
+      window.removeEventListener('afterprint', handleAfterPrint)
+      document.body.classList.remove('printing-comanda')
+    }
+  }, [printOrder])
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 15000)
@@ -160,6 +180,7 @@ export default function App() {
                   onAdvance={advanceStatus}
                   onSeen={markSeen}
                   onRequestDelete={setDeleteOrderTarget}
+                  onPrint={setPrintOrder}
                   ingredientesCopoPronto={ingredientesCopoPronto}
                 />
               ))}
@@ -187,6 +208,7 @@ export default function App() {
                         onAdvance={advanceStatus}
                         onSeen={markSeen}
                         onRequestDelete={setDeleteOrderTarget}
+                        onPrint={setPrintOrder}
                         ingredientesCopoPronto={ingredientesCopoPronto}
                       />
                     ))}
@@ -212,6 +234,8 @@ export default function App() {
           )}
         </>
       )}
+
+      <ComandaPrint order={printOrder} />
     </div>
   )
 }

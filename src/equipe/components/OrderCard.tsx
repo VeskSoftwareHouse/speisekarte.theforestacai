@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react'
+import { Printer, Trash2 } from 'lucide-react'
 import { ORDER_STATUS_LABEL } from '@shared/types'
 import type { OrderWithItems, OrderStatus, SelectedModifierOption } from '@shared/types'
 import { elapsedLabel, formatCHF, formatSelectedOptionLabel } from '@shared/format'
@@ -48,6 +48,9 @@ interface Props {
   /** Pede confirmação pra excluir este pedido — pra tirar da tela e dos
    * relatórios um pedido de teste (ver App.tsx). Nunca exclui na hora. */
   onRequestDelete: (order: OrderWithItems) => void
+  /** Abre o diálogo de impressão do sistema com a comanda deste pedido
+   * (nome do cliente + itens), ver ComandaPrint. */
+  onPrint: (order: OrderWithItems) => void
   /** Ingredientes do copo pronto de cada produto, por menu_item_id (ver
    * useCopoProntoIngredientes) — pra mostrar a receita fixa categorizada
    * igual aos adicionais que o cliente escolhe, em vez do texto solto de
@@ -101,7 +104,7 @@ function ListaDaReceita({ texto }: { texto: string }) {
   )
 }
 
-export default function OrderCard({ order, isNew, now, onAdvance, onSeen, onRequestDelete, ingredientesCopoPronto }: Props) {
+export default function OrderCard({ order, isNew, now, onAdvance, onSeen, onRequestDelete, onPrint, ingredientesCopoPronto }: Props) {
   const nextLabel = NEXT_ACTION_LABEL[order.status]
   const itemCount = order.items.reduce((sum, i) => sum + i.quantidade, 0)
   const total = order.items.reduce((sum, i) => sum + i.preco_unitario * i.quantidade, 0)
@@ -127,7 +130,19 @@ export default function OrderCard({ order, isNew, now, onAdvance, onSeen, onRequ
         </div>
         <button
           type="button"
-          className="order-card__delete"
+          className="order-card__icon-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            onPrint(order)
+          }}
+          aria-label="Imprimir comanda"
+          title="Imprimir comanda"
+        >
+          <Printer size={15} strokeWidth={2} />
+        </button>
+        <button
+          type="button"
+          className="order-card__icon-btn order-card__icon-btn--danger"
           onClick={(e) => {
             e.stopPropagation()
             onRequestDelete(order)
