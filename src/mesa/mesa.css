@@ -1713,13 +1713,23 @@
   justify-content: center;
 }
 .payment-status__cancel-link {
-  margin-top: var(--space-5);
-  background: none;
-  border: none;
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
-  text-decoration: underline;
+  margin-top: var(--space-6);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1.5px solid color-mix(in srgb, var(--color-danger) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface));
+  color: var(--color-danger);
+  font-size: 0.95rem;
+  font-weight: 700;
   cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.payment-status__cancel-link:active {
+  transform: scale(0.97);
+  background: color-mix(in srgb, var(--color-danger) 16%, var(--color-surface));
 }
 .payment-status__cancel-confirm {
   margin-top: var(--space-5);
