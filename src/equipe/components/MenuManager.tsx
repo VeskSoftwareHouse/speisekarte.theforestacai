@@ -118,40 +118,6 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
   > | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
-  // Botão temporário de manutenção — reprocessa (redimensiona/comprime) as
-  // fotos já enviadas ao Storage antes de useMenuAdmin.uploadImage passar a
-  // comprimir no upload. Some depois de usado uma vez; não é parte do fluxo
-  // normal do painel.
-  const [reprocessing, setReprocessing] = useState(false)
-  const [reprocessResult, setReprocessResult] = useState<{
-    totalImages: number
-    reduced: number
-    skippedSmall: number
-    skippedNoGain: number
-    savedKB: number
-    errors: { path: string; error?: string }[]
-  } | null>(null)
-  const [reprocessError, setReprocessError] = useState<string | null>(null)
-
-  async function handleReprocessImages() {
-    setReprocessing(true)
-    setReprocessError(null)
-    setReprocessResult(null)
-    try {
-      const res = await fetch('/api/admin-reprocess-images', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.error ?? 'Falha ao reprocessar imagens.')
-      setReprocessResult(data)
-    } catch (err) {
-      setReprocessError(err instanceof Error ? err.message : 'Falha ao reprocessar imagens.')
-    } finally {
-      setReprocessing(false)
-    }
-  }
-
   const categoriesById = useMemo(() => {
     const map: Record<string, Category> = {}
     for (const c of categories) map[c.id] = c
@@ -276,29 +242,6 @@ export default function MenuManager({ accessToken, currentUserId }: Props) {
           </nav>
         )}
       </div>
-
-      {tab === 'cardapio' && (
-        <div className="admin-maintenance-box">
-          <div>
-            <strong>Manutenção: reprocessar fotos já enviadas</strong>
-            <p>
-              Redimensiona e comprime as fotos de produtos/adicionais que já estavam no Storage antes da compressão
-              automática existir. Pode rodar mais de uma vez sem problema — imagens já pequenas são puladas.
-            </p>
-          </div>
-          <button className="btn btn-outline" onClick={handleReprocessImages} disabled={reprocessing}>
-            {reprocessing ? 'Reprocessando…' : 'Reprocessar imagens'}
-          </button>
-          {reprocessError && <p className="equipe-app__error">{reprocessError}</p>}
-          {reprocessResult && (
-            <p className="admin-maintenance-box__result">
-              {reprocessResult.reduced} de {reprocessResult.totalImages} imagens reduzidas — economia de{' '}
-              {(reprocessResult.savedKB / 1024).toFixed(1)} MB. ({reprocessResult.skippedSmall} já eram pequenas,{' '}
-              {reprocessResult.skippedNoGain} sem ganho, {reprocessResult.errors.length} com erro)
-            </p>
-          )}
-        </div>
-      )}
 
       {tab === 'cardapio' && error && <p className="equipe-app__error">Erro ao carregar cardápio: {error}</p>}
       {tab === 'usuarios' && usersError && <p className="equipe-app__error">Erro ao carregar usuários: {usersError}</p>}
