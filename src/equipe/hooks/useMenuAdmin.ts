@@ -6,6 +6,40 @@ import { DeleteBlockedError } from './errors'
 
 export { DeleteBlockedError }
 
+/**
+ * Maior card do cardápio tem 400px de altura (ver .item-card__photo em
+ * mesa.css) — 1600px de lado maior cobre isso com folga até em tela retina
+ * 3x. Fotos de celular chegam bem maiores que isso (e mais pesadas), o que
+ * inflava o "cached egress" do Supabase: a mesma imagem enorme sendo servida
+ * de novo a cada carregamento do totem.
+ */
+const MAX_IMAGE_DIMENSION = 1600
+const JPEG_QUALITY = 0.82
+
+/** Redimensiona/comprime no navegador antes do upload. Se algo falhar (ou a
+ * imagem já for pequena o bastante), sobe o arquivo original sem travar o
+ * cadastro — a otimização é bônus, não requisito. */
+async function compressImage(file: File): Promise<File | Blob> {
+  if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') return file
+  try {
+    const bitmap = await createImageBitmap(file)
+    const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(bitmap.width, bitmap.height))
+    const width = Math.round(bitmap.width * scale)
+    const height = Math.round(bitmap.height * scale)
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return file
+    ctx.drawImage(bitmap, 0, 0, width, height)
+    bitmap.close()
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', JPEG_QUALITY))
+    return blob && blob.size < file.size ? blob : file
+  } catch {
+    return file
+  }
+}
+
 export interface CategoryInput {
   nome: string
   nome_i18n: Record<string, string>
@@ -144,11 +178,19 @@ export function useMenuAdmin() {
 
   /** Sobe uma imagem do cardápio (produto ou adicional) e devolve a URL pública. */
   async function uploadImage(file: File): Promise<string> {
-    const ext = file.name.split('.').pop() || 'jpg'
+    const upload = await compressImage(file)
+    const ext = upload === file ? file.name.split('.').pop() || 'jpg' : 'jpg'
     const path = `${crypto.randomUUID()}.${ext}`
-    const { error: err } = await supabase.storage
-      .from('menu-images')
-      .upload(path, file, { cacheControl: '3600', upsert: false })
+    const { error: err } = await supabase.storage.from('menu-images').upload(path, upload, {
+      // Um ano: o nome do arquivo é um UUID novo a cada upload (upsert:
+      // false), então o conteúdo de uma URL nunca muda — não há risco de
+      // servir uma versão velha em cache. Isso é o que reduz o "cached
+      // egress" que estourou a cota do Supabase: o mesmo tablet fixo não
+      // precisa mais rebaixar a mesma foto a cada hora.
+      cacheControl: '31536000',
+      upsert: false,
+      contentType: upload === file ? file.type : 'image/jpeg',
+    })
     if (err) throw new Error(err.message)
     const { data } = supabase.storage.from('menu-images').getPublicUrl(path)
     return data.publicUrl
