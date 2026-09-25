@@ -273,6 +273,31 @@ body {
   font-weight: 600;
 }
 
+/* Caixa temporária de manutenção/diagnóstico — some do código depois de
+   usada, ver SumupMethodsDiagnostic.tsx (e o histórico do reprocessamento
+   de imagens, que usou a mesma classe). */
+.admin-maintenance-box {
+  margin: var(--space-4) var(--space-5) 0;
+  padding: var(--space-4);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+.admin-maintenance-box p {
+  margin: var(--space-1) 0 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+.admin-maintenance-box__result {
+  width: 100%;
+  color: var(--color-text) !important;
+  font-weight: 600;
+}
+
 /* ===== Calendário horizontal ===== */
 .date-strip {
   flex: 0 0 auto;

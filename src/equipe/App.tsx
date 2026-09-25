@@ -17,6 +17,7 @@ import EstoqueManager from './components/EstoqueManager'
 import AssistantChat from './components/AssistantChat'
 import LoginScreen from './components/LoginScreen'
 import ReportsPanel from './components/ReportsPanel'
+import SumupMethodsDiagnostic from './components/SumupMethodsDiagnostic'
 import PanelHeader, { type PanelTab } from './components/PanelHeader'
 import { toDateKey, toMonthKey } from './dateUtils'
 
@@ -128,7 +129,12 @@ export default function App() {
 
       {tab === 'estoque' && <EstoqueManager currentUserId={user!.id} />}
 
-      {tab === 'relatorios' && <ReportsPanel />}
+      {tab === 'relatorios' && (
+        <>
+          <SumupMethodsDiagnostic accessToken={session.access_token} />
+          <ReportsPanel />
+        </>
+      )}
 
       {tab === 'pedidos' && (
         <>
