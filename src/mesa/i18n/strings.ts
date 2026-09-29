@@ -72,7 +72,7 @@ export interface StringDict {
   awaitingTwintBody: string
   /** Rótulo acima do número de telefone Twint mostrado em destaque. */
   twintPhoneLabel: string
-  twintAmountLabel: string
+  amountToPayLabel: string
   twintTimeoutTitle: string
   twintTimeoutBody: string
   /** Aviso no cardápio de só-consulta (/cardapio), no lugar do "vai pra cozinha" do totem. */
@@ -163,7 +163,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     awaitingTwintTitle: 'Mit Twint bezahlen',
     awaitingTwintBody: 'Zahle die Bestellung per Twint an diese Nummer. Sobald bestätigt, geht deine Bestellung in die Küche.',
     twintPhoneLabel: 'Twint-Nummer',
-    twintAmountLabel: 'Zu bezahlender Betrag',
+    amountToPayLabel: 'Zu bezahlender Betrag',
     twintTimeoutTitle: 'Noch nicht bestätigt',
     twintTimeoutBody: 'Wende dich an unser Team, um die Twint-Zahlung zu bestätigen.',
     catalogNotice: 'Nur zum Anschauen — bestelle am Totem oder bei unserem Team.',
@@ -242,7 +242,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     awaitingTwintTitle: 'Payez avec Twint',
     awaitingTwintBody: "Payez la commande via Twint à ce numéro. Dès que c'est confirmé, votre commande part en cuisine.",
     twintPhoneLabel: 'Numéro Twint',
-    twintAmountLabel: 'Montant à payer',
+    amountToPayLabel: 'Montant à payer',
     twintTimeoutTitle: 'Toujours pas confirmé',
     twintTimeoutBody: "Adressez-vous à notre équipe pour confirmer le paiement Twint.",
     catalogNotice: 'Uniquement pour consultation — commandez à la borne ou auprès de notre équipe.',
@@ -321,7 +321,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     awaitingTwintTitle: 'Paga con Twint',
     awaitingTwintBody: 'Paga l\'ordine tramite Twint a questo numero. Appena confermato, il tuo ordine passa in cucina.',
     twintPhoneLabel: 'Numero Twint',
-    twintAmountLabel: 'Importo da pagare',
+    amountToPayLabel: 'Importo da pagare',
     twintTimeoutTitle: 'Ancora da confermare',
     twintTimeoutBody: 'Parla con il nostro team per confermare il pagamento Twint.',
     catalogNotice: 'Solo per consultazione — ordina al totem o con il nostro team.',
@@ -400,7 +400,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     awaitingTwintTitle: 'Pay with Twint',
     awaitingTwintBody: 'Pay for the order via Twint to this number. Once confirmed, your order goes to the kitchen.',
     twintPhoneLabel: 'Twint number',
-    twintAmountLabel: 'Amount to pay',
+    amountToPayLabel: 'Amount to pay',
     twintTimeoutTitle: 'Still waiting for confirmation',
     twintTimeoutBody: 'Please check with our team to confirm your Twint payment.',
     catalogNotice: 'For browsing only — order at the kiosk or with our team.',
@@ -479,7 +479,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     awaitingTwintTitle: 'Pague com Twint',
     awaitingTwintBody: 'Pague o pedido pelo Twint para este número. Assim que confirmarem, seu pedido segue para a cozinha.',
     twintPhoneLabel: 'Número Twint',
-    twintAmountLabel: 'Valor a pagar',
+    amountToPayLabel: 'Valor a pagar',
     twintTimeoutTitle: 'Ainda aguardando confirmação',
     twintTimeoutBody: 'Fale com a equipe para confirmar o pagamento por Twint.',
     catalogNotice: 'Somente para consulta — peça no totem ou com a equipe.',
@@ -558,7 +558,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     awaitingTwintTitle: 'Paga con Twint',
     awaitingTwintBody: 'Paga el pedido por Twint a este número. En cuanto lo confirmen, tu pedido pasa a cocina.',
     twintPhoneLabel: 'Número Twint',
-    twintAmountLabel: 'Importe a pagar',
+    amountToPayLabel: 'Importe a pagar',
     twintTimeoutTitle: 'Aún sin confirmar',
     twintTimeoutBody: 'Habla con el equipo para confirmar el pago por Twint.',
     catalogNotice: 'Solo para consulta — pide en el totem o con nuestro equipo.',

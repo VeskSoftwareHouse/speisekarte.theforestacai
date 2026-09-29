@@ -12,7 +12,7 @@ interface Props {
   /** Só nas telas de espera de dinheiro/Twint — cliente quer pagar de outro
    * jeito, sem perder os itens já escolhidos. */
   onChangePaymentMethod?: () => void
-  /** Só na tela do Twint — valor total (com gorjeta) que o cliente deve pagar. */
+  /** Só nas telas de Twint e dinheiro — valor total (com gorjeta) que o cliente deve pagar. */
   amount?: number | null
 }
 
@@ -87,6 +87,12 @@ export default function PaymentStatusScreen({ status, onRetry, onBack, onCancel,
         </div>
         <h1>{t('awaitingCashTitle')}</h1>
         <p>{t('awaitingCashBody')}</p>
+        {typeof amount === 'number' && (
+          <div className="payment-status__payment-amount">
+            <span className="payment-status__twint-phone-label">{t('amountToPayLabel')}</span>
+            <strong className="payment-status__payment-amount-value">{formatCHF(amount)}</strong>
+          </div>
+        )}
         {onCancel && onChangePaymentMethod && (
           <PaymentActions onCancel={onCancel} onChangePaymentMethod={onChangePaymentMethod} />
         )}
@@ -103,9 +109,9 @@ export default function PaymentStatusScreen({ status, onRetry, onBack, onCancel,
         <h1>{t('awaitingTwintTitle')}</h1>
         <p>{t('awaitingTwintBody', { phone: TWINT_PHONE })}</p>
         {typeof amount === 'number' && (
-          <div className="payment-status__twint-amount">
-            <span className="payment-status__twint-phone-label">{t('twintAmountLabel')}</span>
-            <strong className="payment-status__twint-amount-value">{formatCHF(amount)}</strong>
+          <div className="payment-status__payment-amount">
+            <span className="payment-status__twint-phone-label">{t('amountToPayLabel')}</span>
+            <strong className="payment-status__payment-amount-value">{formatCHF(amount)}</strong>
           </div>
         )}
         {TWINT_PHONE && (
