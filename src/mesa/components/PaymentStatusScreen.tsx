@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AlertTriangle, Banknote, Loader2, Nfc, Smartphone } from 'lucide-react'
+import { formatCHF } from '@shared/format'
 import { useLanguage } from '../i18n/LanguageContext'
 
 interface Props {
@@ -11,6 +12,8 @@ interface Props {
   /** Só nas telas de espera de dinheiro/Twint — cliente quer pagar de outro
    * jeito, sem perder os itens já escolhidos. */
   onChangePaymentMethod?: () => void
+  /** Só na tela do Twint — valor total (com gorjeta) que o cliente deve pagar. */
+  amount?: number | null
 }
 
 const TWINT_PHONE = import.meta.env.VITE_TWINT_PHONE
@@ -61,7 +64,7 @@ function PaymentActions({
   )
 }
 
-export default function PaymentStatusScreen({ status, onRetry, onBack, onCancel, onChangePaymentMethod }: Props) {
+export default function PaymentStatusScreen({ status, onRetry, onBack, onCancel, onChangePaymentMethod, amount }: Props) {
   const { t } = useLanguage()
 
   if (status === 'awaiting_tap') {
@@ -99,6 +102,12 @@ export default function PaymentStatusScreen({ status, onRetry, onBack, onCancel,
         </div>
         <h1>{t('awaitingTwintTitle')}</h1>
         <p>{t('awaitingTwintBody', { phone: TWINT_PHONE })}</p>
+        {typeof amount === 'number' && (
+          <div className="payment-status__twint-amount">
+            <span className="payment-status__twint-phone-label">{t('twintAmountLabel')}</span>
+            <strong className="payment-status__twint-amount-value">{formatCHF(amount)}</strong>
+          </div>
+        )}
         {TWINT_PHONE && (
           <div className="payment-status__twint-phone">
             <span className="payment-status__twint-phone-label">{t('twintPhoneLabel')}</span>

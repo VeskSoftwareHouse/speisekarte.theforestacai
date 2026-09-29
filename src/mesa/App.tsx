@@ -43,6 +43,7 @@ export default function App() {
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
   const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null)
+  const [twintTotal, setTwintTotal] = useState<number | null>(null)
   const { t } = useLanguage()
   /**
    * O que fazer quando o poll em segundo plano (waitForCash/waitForTwint)
@@ -317,6 +318,7 @@ export default function App() {
         if (paymentMethod === 'dinheiro') {
           await waitForCash(data.orderId)
         } else {
+          setTwintTotal(typeof data.total === 'number' ? data.total : null)
           await waitForTwint(data.orderId)
         }
       } catch {
@@ -400,6 +402,7 @@ export default function App() {
       return (
         <PaymentStatusScreen
           status="awaiting_twint"
+          amount={twintTotal}
           onCancel={() => confirmingOrderId && handleCancelOrder(confirmingOrderId)}
           onChangePaymentMethod={() => confirmingOrderId && handleChangePaymentMethod(confirmingOrderId)}
         />
