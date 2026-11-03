@@ -4,6 +4,7 @@ import { ORDER_STATUS_FLOW } from '@shared/types'
 import type { OrderItem, OrderStatus, OrderWithItems } from '@shared/types'
 import { dateKeyToDate, endOfDay, endOfMonth, isoToDateKey, monthKeyToDate } from '../dateUtils'
 import { fetchPaged } from './fetchPaged'
+import { useLiveRefetch } from './useLiveRefetch'
 
 /** aguardando_pagamento/cancelado nunca chegam ao quadro da cozinha. */
 const KITCHEN_STATUSES = ORDER_STATUS_FLOW
@@ -186,6 +187,12 @@ export function useOrders(selectedDateKey: string, viewedMonthKey: string): UseO
       setRealtimeConnected(false)
     }
   }, [])
+
+  // Realtime perde eventos quando o canal cai; ver useLiveRefetch.
+  useLiveRefetch(() => {
+    latest.current.fetchDay()
+    latest.current.fetchMonthCounts()
+  }, 15_000, realtimeConnected)
 
   const markSeen = useCallback((orderId: string) => {
     setNewOrderIds((prev) => {

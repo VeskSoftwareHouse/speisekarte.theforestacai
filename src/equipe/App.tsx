@@ -6,6 +6,7 @@ import { useCopoProntoIngredientes } from './hooks/useCopoProntoIngredientes'
 import { useCashPendingOrders } from './hooks/useCashPendingOrders'
 import { useTwintPendingOrders } from './hooks/useTwintPendingOrders'
 import { useAuth } from './hooks/useAuth'
+import { useStalePaymentSweeper } from './hooks/useStalePaymentSweeper'
 import OrderCard from './components/OrderCard'
 import ComandaPrint from './components/ComandaPrint'
 import ConfirmDialog from './components/ConfirmDialog'
@@ -40,6 +41,7 @@ export default function App() {
     useOrders(selectedDateKey, viewedMonthKey)
   const { orders: cashPendingOrders, confirmCash } = useCashPendingOrders(user?.id ?? '')
   const { orders: twintPendingOrders, confirmTwint } = useTwintPendingOrders(user?.id ?? '')
+  useStalePaymentSweeper(!!session)
   const ingredientesCopoPronto = useCopoProntoIngredientes()
   // Confirmação antes de excluir um pedido (ex: pedido de teste) — nunca
   // apaga direto no clique da lixeira, ver OrderCard.

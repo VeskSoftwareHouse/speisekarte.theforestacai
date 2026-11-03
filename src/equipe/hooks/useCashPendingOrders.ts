@@ -3,6 +3,7 @@ import { supabase } from '@shared/supabaseClient'
 import { retryLoad } from '@shared/retryLoad'
 import type { OrderItem, ReportOrder } from '@shared/types'
 import { baixarEstoqueDoPedido, fechamentoAutomaticoAtivo } from '../estoqueConsumo'
+import { useLiveRefetch } from './useLiveRefetch'
 
 interface CashOrderRow extends Omit<ReportOrder, 'items'> {
   order_items?: OrderItem[]
@@ -41,18 +42,23 @@ export function useCashPendingOrders(currentUserId: string) {
     )
   }, [])
 
+  const [connected, setConnected] = useState(false)
+
   useEffect(() => {
     fetchPending()
 
     const channel = supabase
       .channel('equipe-cash-pending-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchPending)
-      .subscribe()
+      .subscribe((status) => setConnected(status === 'SUBSCRIBED'))
 
     return () => {
       supabase.removeChannel(channel)
     }
   }, [fetchPending])
+
+  // Cliente parado no caixa: intervalo curto, e recarrega ao reconectar.
+  useLiveRefetch(fetchPending, 8_000, connected)
 
   /**
    * Confirma o troco e destrava o pedido pra cozinha: vira "recebido", igual

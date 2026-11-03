@@ -159,11 +159,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (paid) {
     // `pago_em` é carimbado pelo gatilho do banco na troca de status.
-    await supabase
+    // Condicional ao status: duas consultas simultâneas (totem + varredura do
+    // painel) não baixam o estoque duas vezes.
+    const { data: updated, error: updateErr } = await supabase
       .from('orders')
       .update({ status: 'recebido', forma_pagamento: paymentMethod })
       .eq('id', orderId)
-    if (await fechamentoAutomaticoAtivo(supabase)) await baixarEstoqueDoPedido(supabase, orderId)
+      .eq('status', 'aguardando_pagamento')
+      .select('id')
+    if (updateErr) {
+      // Antes o erro era ignorado e o totem recebia "recebido" com o pedido
+      // ainda preso no banco: cliente satisfeito, cozinha sem comanda.
+      console.error('sumup-confirm-payment: falha ao marcar como recebido', { orderId, updateErr })
+      res.status(500).json({ error: 'Pagamento confirmado, mas não foi possível registrar o pedido.' })
+      return
+    }
+    if (updated && updated.length > 0) {
+      try {
+        if (await fechamentoAutomaticoAtivo(supabase)) await baixarEstoqueDoPedido(supabase, orderId)
+      } catch (err) {
+        // Baixa de estoque é conveniência: o pedido já está pago e na cozinha.
+        console.error('sumup-confirm-payment: falha na baixa de estoque', { orderId, err })
+      }
+    }
     res.status(200).json({ status: 'recebido' })
     return
   }
