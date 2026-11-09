@@ -6,8 +6,12 @@ import { dateKeyToDate, endOfDay, endOfMonth, isoToDateKey, monthKeyToDate } fro
 import { fetchPaged } from './fetchPaged'
 import { useLiveRefetch } from './useLiveRefetch'
 
-/** aguardando_pagamento/cancelado nunca chegam ao quadro da cozinha. */
-const KITCHEN_STATUSES = ORDER_STATUS_FLOW
+/**
+ * aguardando_pagamento/cancelado nunca chegam ao quadro da cozinha. Pedido em
+ * dinheiro chega já na criação: a comanda aparece com a tarja "Pagamento
+ * pendente" até a equipe confirmar o troco (ver OrderCard).
+ */
+const KITCHEN_STATUSES = [...ORDER_STATUS_FLOW, 'aguardando_dinheiro']
 
 interface UseOrdersResult {
   /** Pedidos do dia selecionado, com os itens. */
@@ -92,7 +96,13 @@ export function useOrders(selectedDateKey: string, viewedMonthKey: string): UseO
 
       setOrders(
         rows.map(({ order_items, ...order }) => {
-          const assembled: OrderWithItems = { ...order, items: order_items ?? [] }
+          const pendingCash = (order.status as string) === 'aguardando_dinheiro'
+          const assembled: OrderWithItems = {
+            ...order,
+            status: pendingCash ? 'recebido' : order.status,
+            aguardandoDinheiro: pendingCash,
+            items: order_items ?? [],
+          }
           const wanted = pendingStatus.current.get(order.id)
           if (!wanted) return assembled
           // O banco alcançou a tela: o avanço deixa de ser provisório.
@@ -214,7 +224,8 @@ export function useOrders(selectedDateKey: string, viewedMonthKey: string): UseO
   const advanceStatus = useCallback(async (order: OrderWithItems) => {
     const idx = ORDER_STATUS_FLOW.indexOf(order.status)
     const nextStatus = ORDER_STATUS_FLOW[idx + 1]
-    if (!nextStatus) return
+    // Pedido com pagamento pendente só anda depois de confirmado o troco.
+    if (!nextStatus || order.aguardandoDinheiro) return
 
     pendingStatus.current.set(order.id, nextStatus)
     setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: nextStatus } : o)))

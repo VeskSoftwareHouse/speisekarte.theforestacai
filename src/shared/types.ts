@@ -205,6 +205,10 @@ export interface ModifierGroup extends Modifier {
 /** Pedido "achatado" com itens, usado no App da Equipe */
 export interface OrderWithItems extends Order {
   items: OrderItem[]
+  /** Pedido em dinheiro cujo troco a equipe ainda não confirmou (no banco,
+   * `aguardando_dinheiro`). Aparece no quadro como `recebido`, com a tarja de
+   * pagamento pendente. */
+  aguardandoDinheiro?: boolean
 }
 
 // ---------------------------------------------------------------------

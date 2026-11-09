@@ -1101,6 +1101,71 @@ body {
   margin: var(--space-2) var(--space-4) 0;
 }
 
+/* ===== Comanda com pagamento em dinheiro pendente =====
+   O pedido chega ao quadro na hora, mas a comanda inteira pulsa uma aura
+   dourada e carrega a tarja + o campo do valor recebido até a equipe
+   confirmar o troco — tem um cliente parado no caixa esperando. */
+.order-card--cash-pending {
+  border-color: var(--color-gold);
+  animation: order-card-cash-aura 1.6s ease-in-out infinite;
+}
+@keyframes order-card-cash-aura {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(214, 169, 59, 0.35), 0 0 12px rgba(214, 169, 59, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(214, 169, 59, 0.28), 0 0 28px rgba(214, 169, 59, 0.7);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .order-card--cash-pending {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(214, 169, 59, 0.5), 0 0 18px rgba(214, 169, 59, 0.5);
+  }
+}
+.order-card__cash-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: linear-gradient(135deg, var(--color-gold-light), var(--color-gold));
+  color: #340261;
+  font-weight: 800;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.order-card__cash {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) 0 0;
+  margin-top: var(--space-2);
+  border-top: 1px dashed var(--color-gold);
+}
+.order-card__cash-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.order-card__cash-total strong {
+  color: var(--color-primary-dark);
+  font-size: 1.1rem;
+}
+.order-card__cash .cash-pending-card__field input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.order-card__cash .btn {
+  margin-top: var(--space-2);
+  min-height: 46px;
+}
+
 /* =====================================================================
    Gestão de cardápio — elegante e minimalista
    Fontes vêm dos tokens globais --font-display / --font-ui (base.css)

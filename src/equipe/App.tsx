@@ -10,7 +10,6 @@ import { useStalePaymentSweeper } from './hooks/useStalePaymentSweeper'
 import OrderCard from './components/OrderCard'
 import ComandaPrint from './components/ComandaPrint'
 import ConfirmDialog from './components/ConfirmDialog'
-import CashPendingPanel from './components/CashPendingPanel'
 import TwintPendingPanel from './components/TwintPendingPanel'
 import DateStrip from './components/DateStrip'
 import MenuManager from './components/MenuManager'
@@ -39,7 +38,7 @@ export default function App() {
 
   const { orders, orderCountByDate, loading, error, realtimeConnected, newOrderIds, markSeen, advanceStatus, excluirPedido } =
     useOrders(selectedDateKey, viewedMonthKey)
-  const { orders: cashPendingOrders, confirmCash } = useCashPendingOrders(user?.id ?? '')
+  const { confirmCash } = useCashPendingOrders(user?.id ?? '')
   const { orders: twintPendingOrders, confirmTwint } = useTwintPendingOrders(user?.id ?? '')
   useStalePaymentSweeper(!!session)
   const ingredientesCopoPronto = useCopoProntoIngredientes()
@@ -166,7 +165,6 @@ export default function App() {
 
           {error && <p className="equipe-app__error">Erro ao carregar pedidos: {error}</p>}
 
-          <CashPendingPanel orders={cashPendingOrders} onConfirm={confirmCash} />
           <TwintPendingPanel orders={twintPendingOrders} onConfirm={confirmTwint} />
 
           {showDelivered && (
@@ -181,6 +179,7 @@ export default function App() {
                   isNew={false}
                   now={now}
                   onAdvance={advanceStatus}
+                  onConfirmCash={confirmCash}
                   onSeen={markSeen}
                   onRequestDelete={setDeleteOrderTarget}
                   onPrint={setPrintOrder}
@@ -209,6 +208,7 @@ export default function App() {
                         isNew={newOrderIds.has(order.id)}
                         now={now}
                         onAdvance={advanceStatus}
+                        onConfirmCash={confirmCash}
                         onSeen={markSeen}
                         onRequestDelete={setDeleteOrderTarget}
                         onPrint={setPrintOrder}

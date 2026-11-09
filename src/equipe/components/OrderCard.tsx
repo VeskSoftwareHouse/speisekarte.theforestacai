@@ -1,4 +1,6 @@
-import { Printer, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { Banknote, Printer, Trash2 } from 'lucide-react'
+import CurrencyInput from '@shared/components/CurrencyInput'
 import { ORDER_STATUS_LABEL } from '@shared/types'
 import type { OrderWithItems, OrderStatus, SelectedModifierOption } from '@shared/types'
 import { elapsedLabel, formatCHF, formatSelectedOptionLabel } from '@shared/format'
@@ -44,6 +46,8 @@ interface Props {
   isNew: boolean
   now: Date
   onAdvance: (order: OrderWithItems) => void
+  /** Confirma o troco de um pedido em dinheiro pendente e libera a comanda. */
+  onConfirmCash: (orderId: string, valorRecebidoDinheiro: number) => Promise<void>
   onSeen: (orderId: string) => void
   /** Pede confirmação pra excluir este pedido — pra tirar da tela e dos
    * relatórios um pedido de teste (ver App.tsx). Nunca exclui na hora. */
@@ -105,7 +109,66 @@ function ListaDaReceita({ texto }: { texto: string }) {
   )
 }
 
-export default function OrderCard({ order, isNew, now, onAdvance, onSeen, onRequestDelete, onPrint, ingredientesCopoPronto }: Props) {
+/**
+ * Pagamento em dinheiro pendente, dentro da própria comanda: valor recebido,
+ * troco e o botão que confirma e libera o pedido para a cozinha.
+ */
+function CashConfirm({ order, onConfirm }: { order: OrderWithItems; onConfirm: Props['onConfirmCash'] }) {
+  const [valor, setValor] = useState(0)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const total = Number(order.valor_pago ?? 0)
+  const troco = Math.round((valor - total) * 100) / 100
+
+  async function handleConfirm() {
+    setSaving(true)
+    setError(null)
+    try {
+      await onConfirm(order.id, valor)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível confirmar.')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="order-card__cash" onClick={(e) => e.stopPropagation()}>
+      <div className="order-card__cash-total">
+        <span>A receber</span>
+        <strong>{formatCHF(total)}</strong>
+      </div>
+      <label className="cash-pending-card__field">
+        <span>Valor recebido</span>
+        <CurrencyInput value={valor} onChange={setValor} />
+      </label>
+      {troco > 0 ? (
+        <p className="cash-pending-card__change">Troco: {formatCHF(troco)}</p>
+      ) : troco === 0 ? (
+        <p className="cash-pending-card__exact">Valor exato</p>
+      ) : (
+        <p className="cash-pending-card__missing">Faltam {formatCHF(-troco)}</p>
+      )}
+      {error && <p className="admin-form__error">{error}</p>}
+      <button className="btn btn-primary btn-block" disabled={valor < total || saving} onClick={handleConfirm}>
+        {saving ? 'Confirmando…' : 'Confirmar pagamento'}
+      </button>
+    </div>
+  )
+}
+
+export default function OrderCard({
+  order,
+  isNew,
+  now,
+  onAdvance,
+  onConfirmCash,
+  onSeen,
+  onRequestDelete,
+  onPrint,
+  ingredientesCopoPronto,
+}: Props) {
+  const pendingCash = !!order.aguardandoDinheiro
   const nextLabel = NEXT_ACTION_LABEL[order.status]
   const itemCount = order.items.reduce((sum, i) => sum + i.quantidade, 0)
   const total = order.items.reduce((sum, i) => sum + i.preco_unitario * i.quantidade, 0)
@@ -114,9 +177,17 @@ export default function OrderCard({ order, isNew, now, onAdvance, onSeen, onRequ
 
   return (
     <article
-      className={`order-card order-card--${order.status} ${isNew ? 'order-card--new' : ''}`}
+      className={`order-card order-card--${order.status} ${isNew ? 'order-card--new' : ''} ${
+        pendingCash ? 'order-card--cash-pending' : ''
+      }`}
       onClick={() => isNew && onSeen(order.id)}
     >
+      {pendingCash && (
+        <div className="order-card__cash-banner">
+          <Banknote size={16} strokeWidth={2.5} aria-hidden />
+          Pagamento pendente
+        </div>
+      )}
       {isNew && <span className="order-card__new-badge">NOVO</span>}
 
       <header className="order-card__header">
@@ -209,7 +280,8 @@ export default function OrderCard({ order, isNew, now, onAdvance, onSeen, onRequ
           </span>
           <span>{formatCHF(total)}</span>
         </div>
-        {nextLabel && (
+        {pendingCash && <CashConfirm order={order} onConfirm={onConfirmCash} />}
+        {nextLabel && !pendingCash && (
           <button
             className="btn btn-primary btn-block order-card__advance"
             onClick={(e) => {
