@@ -2,6 +2,7 @@ import { X } from 'lucide-react'
 import type { ModifierOption } from '@shared/types'
 import { useLanguage } from '../i18n/LanguageContext'
 import { translatedField } from '../i18n/menuTranslations'
+import { optionPhoto } from '../photo'
 
 interface Props {
   nome: string
@@ -34,7 +35,7 @@ export default function IngredientsPopup({ nome, ingredientes, onClose }: Props)
             {ingredientes.map((option) => (
               <span key={option.id} className="option-pill">
                 {option.foto_url && (
-                  <img className="option-pill__photo" src={option.foto_url} alt="" loading="lazy" />
+                  <img className="option-pill__photo" {...optionPhoto(option.foto_url)} alt="" loading="lazy" />
                 )}
                 {translatedField(option.nome_i18n, lang, option.nome)}
               </span>

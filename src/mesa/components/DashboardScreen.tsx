@@ -13,6 +13,7 @@ import { translatedField } from '../i18n/menuTranslations'
 import type { CartItem } from '../types'
 import { cartItemTotal } from '../types'
 import { useFlyToCart } from './useFlyToCart'
+import { productPhoto, productPhotoUrl } from '../photo'
 
 // Precisa bater com a duração de .catalog--leaving no mesa.css.
 const CATEGORY_EXIT_MS = 180
@@ -82,7 +83,7 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
   const SectionIcon = shownCategory === FEATURED_ID ? FeaturedIcon : iconFor(shownCategoryObj?.nome ?? '')
 
   function handleAddDirect(item: MenuItemWithModifiers, card: HTMLElement) {
-    launch(card.querySelector('.item-card__photo-wrap'), item.foto_url)
+    launch(card.querySelector('.item-card__photo-wrap'), productPhotoUrl(item.foto_url))
     markAdded(item.id)
     onAddToCart({
       cartId: crypto.randomUUID(),
@@ -161,7 +162,7 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
                       <button className="item-card" onClick={(e) => handleCardClick(item, e.currentTarget)}>
                         <div className="item-card__photo-wrap">
                           {item.foto_url ? (
-                            <img className="item-card__photo" src={item.foto_url} alt={nome} loading="lazy" />
+                            <img className="item-card__photo" {...productPhoto(item.foto_url)} alt={nome} loading="lazy" />
                           ) : (
                             <FallbackPhotoIcon
                               className="item-card__photo-fallback"
@@ -249,7 +250,7 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
             // o voo parte do título — senão esses itens não teriam animação.
             launch(
               document.querySelector('.modal__photo') ?? document.querySelector('.modal__title'),
-              cartItem.menuItem.foto_url,
+              productPhotoUrl(cartItem.menuItem.foto_url),
             )
             markAdded(cartItem.menuItem.id)
             onAddToCart(cartItem)

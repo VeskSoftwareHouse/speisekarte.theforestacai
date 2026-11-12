@@ -8,6 +8,7 @@ import { tipAmountFor } from '@shared/types'
 import { useTipOptions } from '../hooks/useTipOptions'
 import type { CartItem, PaymentMethod } from '../types'
 import { cartItemTotal } from '../types'
+import { productPhoto } from '../photo'
 
 interface Props {
   items: CartItem[]
@@ -55,7 +56,7 @@ export default function OrderSummaryScreen({ items, sending, onConfirm, onBack }
               <li key={item.cartId} className="order-summary__item">
                 <div className="cart-panel__thumb">
                   {item.menuItem.foto_url ? (
-                    <img src={item.menuItem.foto_url} alt="" />
+                    <img {...productPhoto(item.menuItem.foto_url)} alt="" />
                   ) : (
                     <FallbackPhotoIcon className="cart-panel__thumb-fallback" size={22} strokeWidth={1.5} aria-hidden />
                   )}

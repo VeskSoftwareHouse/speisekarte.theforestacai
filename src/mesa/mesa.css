@@ -485,16 +485,43 @@
    seis fatias de 4.8s) e o resto do ciclo fica apagado — é o atraso em --i
    que empurra cada botão para a sua fatia, criando o efeito de luz correndo
    item a item em vez de todos pulsando ao mesmo tempo. */
+/* Só transform e opacity: animar box-shadow redesenhava a sombra borrada a cada
+   quadro, para sempre (sempre há um item pulsando), e travava totens fracos.
+   O halo agora é uma camada fixa (::after) que só acende e apaga — a placa de
+   vídeo faz isso sem repintar nada. */
 @keyframes sidebar-aura-pulse {
   0%,
   16.667%,
   100% {
-    box-shadow: 0 0 0 0 rgba(214, 169, 59, 0), 0 0 0 0 rgba(214, 169, 59, 0);
     transform: scale(1);
   }
   8.333% {
-    box-shadow: 0 0 10px 3px rgba(214, 169, 59, 0.75), 0 0 26px 8px rgba(214, 169, 59, 0.4);
     transform: scale(1.045);
+  }
+}
+.sidebar__item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: 0 0 10px 3px rgba(214, 169, 59, 0.75), 0 0 26px 8px rgba(214, 169, 59, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  animation: sidebar-aura-glow 4.8s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 0.8s);
+}
+.sidebar__item--active::after {
+  animation: none;
+}
+@keyframes sidebar-aura-glow {
+  0%,
+  16.667%,
+  100% {
+    opacity: 0;
+  }
+  8.333% {
+    opacity: 1;
   }
 }
 
@@ -2028,6 +2055,7 @@
   .logo-bird__eyelid,
   .sidebar__logo-tag,
   .sidebar__item,
+  .sidebar__item::after,
   .sidebar__item-icon,
   .sidebar__item--active .sidebar__item-icon-wrap,
   .sidebar__menu-toggle svg,
@@ -2698,7 +2726,13 @@
     gap: var(--space-5);
   }
 
+  /* Sem vidro no totem: desfocar uma faixa de 1000px de largura em toda
+     pintura custa caro em placa fraca, e por trás dela só há o degradê do
+     fundo — o efeito quase não aparecia. Branco quase sólido dá o mesmo ar. */
   .cart-panel {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.86);
     grid-column: 2;
     grid-row: 2;
     width: auto;
@@ -2747,5 +2781,15 @@
   .cart-panel__footer .btn {
     width: auto;
     flex: 0 1 380px;
+  }
+  /* O véu do modal cobre a tela inteira: o desfoque por trás era refeito a
+     cada quadro da animação de abertura. Um pouco mais escuro compensa. */
+  .modal-overlay {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(15, 10, 24, 0.68);
+  }
+  .modal__close {
+    backdrop-filter: none;
   }
 }

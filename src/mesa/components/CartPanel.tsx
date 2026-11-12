@@ -6,6 +6,7 @@ import { useLanguage } from '../i18n/LanguageContext'
 import { translatedField } from '../i18n/menuTranslations'
 import type { CartItem } from '../types'
 import { cartItemTotal } from '../types'
+import { productPhoto } from '../photo'
 
 // Precisam bater com as durações correspondentes no mesa.css.
 const ROW_EXIT_MS = 260
@@ -141,7 +142,7 @@ export default function CartPanel({ items, isOpen, onChangeQuantity, onRemove, o
             >
               <div className="cart-panel__thumb">
                 {item.menuItem.foto_url ? (
-                  <img src={item.menuItem.foto_url} alt="" />
+                  <img {...productPhoto(item.menuItem.foto_url)} alt="" />
                 ) : (
                   <FallbackPhotoIcon className="cart-panel__thumb-fallback" size={22} strokeWidth={1.5} aria-hidden />
                 )}

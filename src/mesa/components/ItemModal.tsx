@@ -5,6 +5,7 @@ import { formatCHF } from '@shared/format'
 import { useLanguage } from '../i18n/LanguageContext'
 import { translatedField } from '../i18n/menuTranslations'
 import type { CartItem } from '../types'
+import { optionPhoto, productPhoto } from '../photo'
 
 interface Props {
   item: MenuItemWithModifiers
@@ -104,7 +105,7 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
         </button>
 
         <div className="modal__scroll">
-          {item.foto_url && <img className="modal__photo" src={item.foto_url} alt={nome} />}
+          {item.foto_url && <img className="modal__photo" {...productPhoto(item.foto_url)} alt={nome} />}
           <h2 className="modal__title">{nome}</h2>
           {desc && <p className="modal__desc">{desc}</p>}
           <p className="modal__price">{formatCHF(item.preco)}</p>
@@ -141,7 +142,7 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
                           onClick={() => setOptionQuantidade(group, option, qtd > 0 ? 0 : 1)}
                         >
                           {option.foto_url && (
-                            <img className="option-pill__photo" src={option.foto_url} alt="" loading="lazy" />
+                            <img className="option-pill__photo" {...optionPhoto(option.foto_url)} alt="" loading="lazy" />
                           )}
                           {translatedField(option.nome_i18n, lang, option.nome)}
                           {option.preco_adicional > 0 && (
@@ -163,7 +164,7 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
                           onClick={() => setOptionQuantidade(group, option, qtd > 0 ? qtd : 1)}
                         >
                           {option.foto_url && (
-                            <img className="option-pill__photo" src={option.foto_url} alt="" loading="lazy" />
+                            <img className="option-pill__photo" {...optionPhoto(option.foto_url)} alt="" loading="lazy" />
                           )}
                           {translatedField(option.nome_i18n, lang, option.nome)}
                           {option.preco_adicional > 0 && (
