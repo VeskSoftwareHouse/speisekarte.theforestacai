@@ -15,7 +15,6 @@ export interface StringDict {
   badgeRequired: string
   badgeOptional: string
   observationLabel: string
-  observationPlaceholder: string
   quantityLabel: string
   decreaseQty: string
   increaseQty: string
@@ -113,7 +112,6 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     badgeRequired: 'Erforderlich',
     badgeOptional: 'Optional',
     observationLabel: 'Eine Anmerkung?',
-    observationPlaceholder: 'Z. B. ohne Zwiebeln, gut durch, Erdnussallergie…',
     quantityLabel: 'Menge',
     decreaseQty: 'Menge verringern',
     increaseQty: 'Menge erhöhen',
@@ -192,7 +190,6 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     badgeRequired: 'Obligatoire',
     badgeOptional: 'Optionnel',
     observationLabel: 'Une remarque ?',
-    observationPlaceholder: 'Ex. : sans oignon, bien cuit, allergie aux arachides…',
     quantityLabel: 'Quantité',
     decreaseQty: 'Diminuer la quantité',
     increaseQty: 'Augmenter la quantité',
@@ -271,7 +268,6 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     badgeRequired: 'Obbligatorio',
     badgeOptional: 'Facoltativo',
     observationLabel: 'Qualche indicazione?',
-    observationPlaceholder: 'Es. senza cipolla, ben cotto, allergia alle arachidi…',
     quantityLabel: 'Quantità',
     decreaseQty: 'Diminuisci quantità',
     increaseQty: 'Aumenta quantità',
@@ -350,7 +346,6 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     badgeRequired: 'Required',
     badgeOptional: 'Optional',
     observationLabel: 'Any special request?',
-    observationPlaceholder: 'E.g. no onion, well done, peanut allergy…',
     quantityLabel: 'Quantity',
     decreaseQty: 'Decrease quantity',
     increaseQty: 'Increase quantity',
@@ -429,7 +424,6 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     badgeRequired: 'Obrigatório',
     badgeOptional: 'Opcional',
     observationLabel: 'Alguma observação?',
-    observationPlaceholder: 'Ex: sem cebola, ponto bem passado, alergia a amendoim…',
     quantityLabel: 'Quantidade',
     decreaseQty: 'Diminuir quantidade',
     increaseQty: 'Aumentar quantidade',
@@ -508,7 +502,6 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
     badgeRequired: 'Obligatorio',
     badgeOptional: 'Opcional',
     observationLabel: '¿Alguna observación?',
-    observationPlaceholder: 'Ej.: sin cebolla, bien cocido, alergia al maní…',
     quantityLabel: 'Cantidad',
     decreaseQty: 'Disminuir cantidad',
     increaseQty: 'Aumentar cantidad',

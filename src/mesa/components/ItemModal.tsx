@@ -208,7 +208,6 @@ export default function ItemModal({ item, onClose, onAdd }: Props) {
             <textarea
               id="observacoes"
               className="modal__textarea"
-              placeholder={t('observationPlaceholder')}
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
               rows={2}
