@@ -4,6 +4,10 @@ import App from './App'
 import { LanguageProvider } from './i18n/LanguageContext'
 import '@shared/styles/base.css'
 import './mesa.css'
+import { applyTotemMode } from './totem'
+
+// Antes do primeiro render, para o layout já nascer na largura certa.
+applyTotemMode()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

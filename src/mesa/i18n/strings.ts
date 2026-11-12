@@ -100,7 +100,7 @@ export type StringKey = keyof StringDict
 export const STRINGS: Record<LanguageCode, StringDict> = {
   de: {
     sidebarTagline: 'Schmecke den Amazonas, spüre die Energie',
-    screensaverHint: 'Zum Bestellen tippen',
+    screensaverHint: 'Hier bestellen',
     menuLabel: 'Menü',
     navFeatured: 'Empfehlungen',
     greetingTitle: 'Hallo! Worauf hast du heute Lust?',
@@ -179,7 +179,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
   },
   fr: {
     sidebarTagline: "Savoure l'Amazonie, ressens l'énergie",
-    screensaverHint: 'Touchez pour commander',
+    screensaverHint: 'Commandez ici',
     menuLabel: 'Menu',
     navFeatured: 'Nos coups de cœur',
     greetingTitle: "Bonjour ! Qu'est-ce que ce sera aujourd'hui ?",
@@ -258,7 +258,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
   },
   it: {
     sidebarTagline: "Assapora l'Amazzonia, senti l'energia",
-    screensaverHint: 'Tocca per ordinare',
+    screensaverHint: 'Ordina qui',
     menuLabel: 'Menu',
     navFeatured: 'In evidenza',
     greetingTitle: 'Ciao! Cosa ti va oggi?',
@@ -337,7 +337,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
   },
   en: {
     sidebarTagline: 'Taste the Amazon, feel the energy',
-    screensaverHint: 'Tap to order',
+    screensaverHint: 'Order here',
     menuLabel: 'Menu',
     navFeatured: 'Highlights',
     greetingTitle: 'Hi! What will it be today?',
@@ -416,7 +416,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
   },
   pt: {
     sidebarTagline: 'Prove a Amazônia, sinta a energia',
-    screensaverHint: 'Toque para pedir',
+    screensaverHint: 'Peça aqui',
     menuLabel: 'Menu',
     navFeatured: 'Destaques',
     greetingTitle: 'Olá! O que vai ser hoje?',
@@ -495,7 +495,7 @@ export const STRINGS: Record<LanguageCode, StringDict> = {
   },
   es: {
     sidebarTagline: 'Prueba la Amazonía, siente la energía',
-    screensaverHint: 'Toca para pedir',
+    screensaverHint: 'Pide aquí',
     menuLabel: 'Menú',
     navFeatured: 'Destacados',
     greetingTitle: '¡Hola! ¿Qué va a ser hoy?',
