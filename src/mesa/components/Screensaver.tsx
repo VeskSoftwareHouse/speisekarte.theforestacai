@@ -99,8 +99,8 @@ export default function Screensaver({ enabled, onAbandoned }: Props) {
           liberado pelo navegador sem som. */}
       <video
         className="screensaver__video"
-        src="/brand/descanso-acai.mp4"
-        poster="/brand/descanso-acai-poster.jpg"
+        src="/brand/descanso-acai-2.mp4"
+        poster="/brand/descanso-acai-2-poster.jpg"
         autoPlay
         muted
         loop
