@@ -21,6 +21,22 @@ const POSTER_SRC = '/brand/descanso-acai-2-poster.jpg'
 // imagens sozinho mesmo quando bloqueia vídeo (economia de bateria), então
 // é ela que garante movimento sem ninguém tocar na tela.
 const ANIM_SRC = '/brand/descanso-acai-2.webp'
+// Versão maior para o totem (tela de 32"), onde ela substitui o vídeo de vez.
+const ANIM_TOTEM_SRC = '/brand/descanso-acai-2-720.webp'
+
+/*
+ * No totem (painel Android de sinalização, ex.: iiyama TF3239AS) o <video> não
+ * serve: o chip de vídeo desenha numa camada própria por cima da página — com
+ * os canais de cor trocados (o roxo do açaí saía azul, o bico laranja também),
+ * cobrindo o "Peça aqui" e atrapalhando o toque para acordar. Lá a tela de
+ * descanso usa só a imagem animada, que o navegador desenha junto com a página.
+ */
+const isTotem = () => document.documentElement.hasAttribute('data-totem')
+
+/** iPhone/iPad (inclui iPad que se apresenta como Mac). */
+const isIOS = () =>
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 /** Se o vídeo não andar neste tempo, o navegador bloqueou: entra o plano B. */
 const STALL_MS = 1500
 // Eventos que contam como gesto do usuário para o navegador liberar mídia.
@@ -65,13 +81,17 @@ function getVideo(): HTMLVideoElement {
   v.setAttribute('aria-hidden', 'true')
   sharedVideo = v
   // Sonda: este aparelho deixa vídeo começar sozinho? Se não deixar, já
-  // adianta o download do plano B.
-  v.play()
-    .then(() => {
-      videoUnlocked = true
-      if (!v.isConnected) v.pause()
-    })
-    .catch(preloadAnim)
+  // adianta o download do plano B. Só no iOS, que é onde o bloqueio existe:
+  // em painéis Android, ligar o decodificador de vídeo logo na abertura da
+  // página travava o navegador inteiro.
+  if (isIOS()) {
+    v.play()
+      .then(() => {
+        videoUnlocked = true
+        if (!v.isConnected) v.pause()
+      })
+      .catch(preloadAnim)
+  }
   return v
 }
 
@@ -149,13 +169,17 @@ export default function Screensaver({ enabled, onAbandoned }: Props) {
     // Atualização por função para não depender do valor capturado no momento em
     // que o ouvinte foi registrado.
     const wake = (e: Event) => {
-      if (GESTURES.has(e.type)) unlockVideo()
+      if (!totem && isIOS() && GESTURES.has(e.type)) unlockVideo()
       setPhase((p) => (p === 'on' ? 'leaving' : p))
       arm()
     }
 
-    // Já cria e começa a baixar o vídeo, para o descanso abrir sem espera.
-    getVideo()
+    // Já começa a baixar o que o descanso vai mostrar, para ele abrir sem espera.
+    const totem = isTotem()
+    if (totem) new Image().src = ANIM_TOTEM_SRC
+    // Fora do iOS o vídeo só nasce quando o descanso abre: nada de vídeo
+    // carregado em segundo plano enquanto o cliente navega no cardápio.
+    else if (isIOS()) getVideo()
 
     arm()
     for (const evt of ACTIVITY) {
@@ -170,10 +194,11 @@ export default function Screensaver({ enabled, onAbandoned }: Props) {
   }, [enabled])
 
   const showing = enabled && phase !== 'off'
+  const totem = isTotem()
 
   useEffect(() => {
     const slot = videoSlot.current
-    if (!showing || !slot) return
+    if (!showing || !slot || totem) return
     const v = getVideo()
     slot.appendChild(v)
     setVideoBlocked(false)
@@ -197,13 +222,13 @@ export default function Screensaver({ enabled, onAbandoned }: Props) {
       v.pause()
       v.remove()
     }
-  }, [showing])
+  }, [showing, totem])
 
   if (!showing) return null
 
   return (
     <div
-      className={`screensaver ${phase === 'leaving' ? 'screensaver--leaving' : ''} ${videoBlocked ? 'screensaver--still' : ''}`}
+      className={`screensaver ${phase === 'leaving' ? 'screensaver--leaving' : ''} ${totem || videoBlocked ? 'screensaver--still' : ''}`}
       onPointerDown={(e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -216,10 +241,10 @@ export default function Screensaver({ enabled, onAbandoned }: Props) {
       {/* Plano B quando o navegador não deixa o vídeo tocar: o mesmo vídeo
           como imagem animada, que começa sozinha. O quadro estático fica por
           baixo enquanto ela ainda baixa. */}
-      {videoBlocked && (
+      {(totem || videoBlocked) && (
         <>
           <img className="screensaver__still" src={POSTER_SRC} alt="" aria-hidden />
-          <img className="screensaver__still" src={ANIM_SRC} alt="" aria-hidden />
+          <img className="screensaver__still" src={totem ? ANIM_TOTEM_SRC : ANIM_SRC} alt="" aria-hidden />
         </>
       )}
       <div className="screensaver__cta">
