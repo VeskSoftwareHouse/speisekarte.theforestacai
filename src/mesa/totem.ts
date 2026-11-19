@@ -28,6 +28,31 @@ export function applyTotemMode() {
   if (meta) {
     meta.content = `width=${TOTEM_WIDTH}, user-scalable=no, viewport-fit=cover`
   }
+  keepTotemScale()
+}
+
+/**
+ * Em tela cheia o Chrome do Android ignora a meta viewport e volta à largura do
+ * aparelho (no iiyama, ~720 px em vez de 1080). Aí a página é reduzida com
+ * `zoom` para continuar montada como se tivesse 1080 px — o layout de totem
+ * do mesa.css não depende de largura (usa html[data-totem]), só precisava do
+ * espaço. Fora da tela cheia a meta viewport já entrega 1080 e o zoom some.
+ */
+function keepTotemScale() {
+  const root = document.documentElement
+  const fit = () => {
+    // Mede sem o zoom atual, para não se basear no próprio ajuste.
+    const width = window.innerWidth
+    if (width > 0 && width < TOTEM_WIDTH - 20) {
+      root.style.setProperty('zoom', String(width / TOTEM_WIDTH))
+    } else {
+      root.style.removeProperty('zoom')
+    }
+  }
+  fit()
+  window.addEventListener('resize', fit)
+  document.addEventListener('fullscreenchange', fit)
+  document.addEventListener('webkitfullscreenchange', fit)
 }
 
 /**

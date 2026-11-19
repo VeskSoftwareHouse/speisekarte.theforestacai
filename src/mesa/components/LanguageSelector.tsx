@@ -27,10 +27,14 @@ export default function LanguageSelector({ variant = 'dark' }: Props) {
         window.innerWidth - estimatedMenuWidth / 2 - 8,
       )
       const fitsBelow = rect.bottom + 8 + estimatedMenuHeight <= window.innerHeight
+      // No totem em tela cheia a página roda com `zoom` (ver totem.ts): as
+      // medidas acima são da tela, mas o navegador multiplica o estilo pelo
+      // zoom — então divide de volta.
+      const zoom = parseFloat(document.documentElement.style.getPropertyValue('zoom')) || 1
       setMenuPos(
         fitsBelow
-          ? { top: rect.bottom + 8, left }
-          : { bottom: window.innerHeight - rect.top + 8, left },
+          ? { top: (rect.bottom + 8) / zoom, left: left / zoom }
+          : { bottom: (window.innerHeight - rect.top + 8) / zoom, left: left / zoom },
       )
     }
     setOpen((v) => !v)

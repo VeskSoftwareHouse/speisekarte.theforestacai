@@ -1848,11 +1848,11 @@
 
 /* ===== Telas estreitas (tablets em pé e celulares): empilha em vez de 3 colunas ===== */
 @media (max-width: 900px) {
-  .dashboard__top {
+  html:not([data-totem]) .dashboard__top {
     flex-direction: column;
     overflow-y: auto;
   }
-  .sidebar {
+  html:not([data-totem]) .sidebar {
     flex: 0 0 auto;
     width: 100%;
     padding: var(--space-3) var(--space-4);
@@ -1860,14 +1860,14 @@
     position: relative;
     z-index: 70;
   }
-  .sidebar__bar {
+  html:not([data-totem]) .sidebar__bar {
     display: flex;
     align-items: center;
     gap: var(--space-3);
     position: relative;
     z-index: 2;
   }
-  .sidebar__menu-toggle {
+  html:not([data-totem]) .sidebar__menu-toggle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1879,20 +1879,20 @@
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
   }
-  .sidebar__menu-toggle {
+  html:not([data-totem]) .sidebar__menu-toggle {
     transition: background 0.16s ease, transform 0.18s cubic-bezier(0.34, 1.45, 0.64, 1);
   }
-  .sidebar__menu-toggle:active {
+  html:not([data-totem]) .sidebar__menu-toggle:active {
     background: rgba(255, 255, 255, 0.2);
     transform: scale(0.9);
   }
-  .sidebar__menu-toggle[aria-expanded='true'] {
+  html:not([data-totem]) .sidebar__menu-toggle[aria-expanded='true'] {
     background: rgba(255, 255, 255, 0.2);
   }
-  .sidebar__menu-toggle svg {
+  html:not([data-totem]) .sidebar__menu-toggle svg {
     animation: sidebar-icon-pop 0.4s cubic-bezier(0.34, 1.5, 0.64, 1);
   }
-  .sidebar__logo {
+  html:not([data-totem]) .sidebar__logo {
     flex: 1 1 auto;
     min-width: 0;
     padding: 0;
@@ -1903,29 +1903,29 @@
   }
   /* Escopado na sidebar: no celular a logo encolhe e vai para o lado do
      hambúrguer, mas o pássaro do descanso de tela continua grande. */
-  .sidebar__logo .logo-bird {
+  html:not([data-totem]) .sidebar__logo .logo-bird {
     width: 90px;
     height: 90px;
     margin: 0 var(--space-2) 0 0;
   }
-  .sidebar__logo .logo-bird__base {
+  html:not([data-totem]) .sidebar__logo .logo-bird__base {
     width: 90px;
     height: 90px;
   }
-  .sidebar__logo-name,
-  .sidebar__logo-tag {
+  html:not([data-totem]) .sidebar__logo-name,
+html:not([data-totem]) .sidebar__logo-tag {
     display: none;
   }
 
   /* Categorias, idioma e mesa viram uma gaveta acionada pelo hambúrguer.
      Fica no fluxo normal (empurra o conteúdo abaixo) para nunca ser
      cortada por overflow dos containers pais. */
-  .sidebar__drawer {
+  html:not([data-totem]) .sidebar__drawer {
     display: none;
     flex-direction: column;
     gap: var(--space-4);
   }
-  .sidebar__drawer--open {
+  html:not([data-totem]) .sidebar__drawer--open {
     display: flex;
     position: relative;
     z-index: 2;
@@ -1945,23 +1945,23 @@
       transform: translateY(0) scaleY(1);
     }
   }
-  .sidebar__nav {
+  html:not([data-totem]) .sidebar__nav {
     flex-direction: column;
     gap: var(--space-2);
   }
-  .sidebar__item {
+  html:not([data-totem]) .sidebar__item {
     width: 100%;
     white-space: normal;
     min-height: 48px;
   }
-  .sidebar__divider {
+  html:not([data-totem]) .sidebar__divider {
     margin-bottom: 0;
   }
-  .sidebar__footer {
+  html:not([data-totem]) .sidebar__footer {
     padding-bottom: 0;
     border-bottom: none;
   }
-  .sidebar__backdrop {
+  html:not([data-totem]) .sidebar__backdrop {
     display: block;
     position: fixed;
     inset: 0;
@@ -1978,13 +1978,13 @@
     }
   }
 
-  .dashboard__main {
+  html:not([data-totem]) .dashboard__main {
     padding: var(--space-4) var(--space-4) 96px;
   }
-  .dashboard__notice {
+  html:not([data-totem]) .dashboard__notice {
     max-width: none;
   }
-  .menu-grid--dashboard {
+  html:not([data-totem]) .menu-grid--dashboard {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   }
 
@@ -1993,7 +1993,7 @@
      de branco, o vidro puxaria esse cinza para dentro e o texto apagado caía
      para 3.3:1. Aqui ela é quase sólida: o véu já separa a folha do fundo, e a
      transparência não teria o que mostrar de útil. */
-  .cart-panel {
+  html:not([data-totem]) .cart-panel {
     background: rgba(255, 255, 255, 0.94);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
@@ -2012,10 +2012,10 @@
     will-change: transform;
     z-index: 40;
   }
-  .cart-panel.cart-panel--open {
+  html:not([data-totem]) .cart-panel.cart-panel--open {
     transform: translateY(0);
   }
-  .cart-panel::before {
+  html:not([data-totem]) .cart-panel::before {
     content: '';
     position: absolute;
     top: 10px;
@@ -2026,20 +2026,20 @@
     border-radius: 999px;
     background: var(--color-border);
   }
-  .cart-panel__close {
+  html:not([data-totem]) .cart-panel__close {
     display: flex;
   }
-  .cart-backdrop,
-  .cart-fab {
+  html:not([data-totem]) .cart-backdrop,
+html:not([data-totem]) .cart-fab {
     display: flex;
   }
 
   /* Modal de personalização vira folha de baixo também */
-  .modal-overlay {
+  html:not([data-totem]) .modal-overlay {
     align-items: flex-end;
     padding: 0;
   }
-  .modal {
+  html:not([data-totem]) .modal {
     max-width: none;
     width: 100%;
     max-height: 92vh;
@@ -2815,6 +2815,99 @@
   }
 }
 
+/* Modo totem: o mesmo layout de tela grande em pé, ligado pelo atributo e não
+   pela largura. Em tela cheia o Chrome do Android ignora a meta viewport de
+   1080 px e volta à largura do aparelho; o totem.ts então reduz a página com
+   zoom, e o layout continua o de totem (as regras de celular acima também
+   ficam de fora com html:not([data-totem])). */
+
+  html[data-totem] .dashboard__top {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  html[data-totem] .sidebar {
+    grid-row: 1 / 3;
+    width: 260px;
+  }
+  html[data-totem] .dashboard__main {
+    grid-column: 2;
+    grid-row: 1;
+    padding: max(var(--space-6), env(safe-area-inset-top)) var(--space-6) var(--space-5);
+  }
+  html[data-totem] .menu-grid--dashboard {
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: var(--space-5);
+  }
+
+  /* Sem vidro no totem: desfocar uma faixa de 1000px de largura em toda
+     pintura custa caro em placa fraca, e por trás dela só há o degradê do
+     fundo — o efeito quase não aparecia. Branco quase sólido dá o mesmo ar. */
+  html[data-totem] .cart-panel {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.86);
+    grid-column: 2;
+    grid-row: 2;
+    width: auto;
+    height: clamp(230px, 24vh, 480px);
+    margin: 0 max(var(--space-5), env(safe-area-inset-right)) var(--space-5) var(--space-5);
+  }
+  /* Vazio não precisa da faixa inteira: encolhe e devolve espaço ao cardápio. */
+  html[data-totem] .cart-panel:has(.cart-panel__empty) {
+    height: auto;
+  }
+  html[data-totem] .cart-panel__header {
+    padding: var(--space-4) var(--space-5);
+  }
+  /* Vazio: pássaro ao lado do texto, para caber na faixa baixa. */
+  html[data-totem] .cart-panel__empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    text-align: left;
+  }
+  html[data-totem] .cart-panel__empty-bird {
+    width: 72px;
+    margin: 0;
+  }
+  /* Itens em colunas, que a faixa é larga e baixa. */
+  html[data-totem] .cart-panel__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    align-content: start;
+    gap: var(--space-3) var(--space-5);
+  }
+  /* Total e botão lado a lado. */
+  html[data-totem] .cart-panel__footer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    padding: var(--space-4) var(--space-5);
+  }
+  html[data-totem] .cart-panel__total {
+    flex: 1;
+    margin: 0;
+    font-size: 1.25rem;
+  }
+  html[data-totem] .cart-panel__footer .btn {
+    width: auto;
+    flex: 0 1 380px;
+  }
+  /* O véu do modal cobre a tela inteira: o desfoque por trás era refeito a
+     cada quadro da animação de abertura. Um pouco mais escuro compensa. */
+  html[data-totem] .modal-overlay {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(15, 10, 24, 0.68);
+  }
+  html[data-totem] .modal__close {
+    backdrop-filter: none;
+  }
+
+
 /* ===== Modo leve do totem (html[data-totem], ver src/mesa/totem.ts) =====
    Painéis de sinalização (ex.: iiyama TF3239AS, Android 11, Mali-G52) têm
    processador e GPU de TV, e o navegador embutido deles costuma ser antigo.
@@ -2892,4 +2985,14 @@ html[data-totem] .screensaver__still--zoom {
   opacity: 0.01;
   pointer-events: none;
   z-index: -1;
+}
+
+/* As regras de celular ganharam html:not([data-totem]) (mais específicas), então
+   o "reduzir movimento" precisa da mesma força para continuar valendo nelas. */
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-totem]) .sidebar__menu-toggle svg,
+  html:not([data-totem]) .sidebar__drawer--open,
+  html:not([data-totem]) .sidebar__backdrop {
+    animation: none;
+  }
 }
