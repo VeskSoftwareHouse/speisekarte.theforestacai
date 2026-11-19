@@ -21,6 +21,10 @@ export default defineConfig({
     },
   },
   build: {
+    // Painéis Android de sinalização (totem) vêm com WebView antigo (~Chrome 83).
+    // Com este alvo o esbuild reescreve CSS novo na forma antiga — ex.: `inset`
+    // vira top/right/bottom/left —, senão as camadas de tela cheia quebravam lá.
+    cssTarget: ['chrome80', 'safari14'],
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),

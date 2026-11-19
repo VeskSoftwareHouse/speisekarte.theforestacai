@@ -52,7 +52,10 @@ export default function TaglineTypewriter() {
   // Abaixo de 900px o CSS esconde a frase; sem esta guarda o cronômetro
   // continuaria redesenhando o componente a cada 55ms no celular, à toa.
   const visible = useMediaQuery('(min-width: 901px)')
-  const animate = visible && !reduced
+  // No totem (modo leve) a frase fica parada: são 6 fontes a mais e um
+  // redesenho a cada 55 ms, para sempre, num painel de processador fraco.
+  const totem = document.documentElement.hasAttribute('data-totem')
+  const animate = visible && !reduced && !totem
 
   const [index, setIndex] = useState(0)
   const [chars, setChars] = useState(0)

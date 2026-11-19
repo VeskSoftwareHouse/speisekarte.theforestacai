@@ -3,6 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <!-- Modo totem aplicado aqui, antes de qualquer pintura: navegadores
+         embutidos antigos (painéis Android) às vezes ignoram a troca da meta
+         viewport feita depois que a página já carregou. Mesma regra de
+         src/mesa/totem.ts: ?totem=1 liga e fica guardado, ?totem=0 desliga. -->
+    <script>
+      (function () {
+        var p = /[?&]totem=([01])/.exec(location.search)
+        var on = false
+        try {
+          if (p && p[1] === '1') localStorage.setItem('mesa:totem', '1')
+          if (p && p[1] === '0') localStorage.removeItem('mesa:totem')
+          on = localStorage.getItem('mesa:totem') === '1'
+        } catch (e) {
+          on = !!(p && p[1] === '1')
+        }
+        if (!on) return
+        document.documentElement.setAttribute('data-totem', '')
+        var m = document.querySelector('meta[name="viewport"]')
+        if (m) m.setAttribute('content', 'width=1080, user-scalable=no, viewport-fit=cover')
+      })()
+    </script>
     <title>Cardápio Faça seu Pedido</title>
     <meta name="description" content="Cardápio digital da mesa: navegue, monte seu pedido e envie para a cozinha." />
     <meta name="theme-color" content="#17121f" />
