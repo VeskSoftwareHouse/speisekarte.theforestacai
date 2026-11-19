@@ -2596,12 +2596,28 @@
     opacity: 0;
   }
 }
-.screensaver__video {
+.screensaver__video-slot,
+.screensaver__video,
+.screensaver__still {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+/* Some com o botão de play que o Safari desenha por cima de vídeo bloqueado:
+   ele fazia a tela parecer travada. Quem toca acorda o cardápio de qualquer jeito. */
+.screensaver__video::-webkit-media-controls,
+.screensaver__video::-webkit-media-controls-start-playback-button,
+.screensaver__video::-webkit-media-controls-overlay-play-button {
+  display: none !important;
+  -webkit-appearance: none;
+}
+/* Plano B: o navegador não deixou o vídeo tocar (iPad em economia de bateria).
+   Entram as imagens do .screensaver__still (o vídeo em WebP animado) e o
+   <video> parado some. */
+.screensaver--still .screensaver__video-slot {
+  visibility: hidden;
 }
 /* Escurece só a base do vídeo, para a chamada ler bem sobre qualquer quadro. */
 .screensaver::after {
