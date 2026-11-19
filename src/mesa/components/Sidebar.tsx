@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { Menu, X } from 'lucide-react'
 import type { Category } from '@shared/types'
 import { iconFor, motionFor, FeaturedIcon, FEATURED_MOTION } from '../categoryIcons'
@@ -14,9 +14,11 @@ interface Props {
   categories: Category[]
   activeId: string
   onSelect: (id: string) => void
+  /** Carrinho embutido na barra (só no totem), entre as categorias e o idioma. */
+  cartSlot?: ReactNode
 }
 
-export default function Sidebar({ categories, activeId, onSelect }: Props) {
+export default function Sidebar({ categories, activeId, onSelect, cartSlot }: Props) {
   const { t, lang } = useLanguage()
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -87,6 +89,8 @@ export default function Sidebar({ categories, activeId, onSelect }: Props) {
             )
           })}
         </nav>
+
+        {cartSlot}
 
         <div className="sidebar__divider" />
 

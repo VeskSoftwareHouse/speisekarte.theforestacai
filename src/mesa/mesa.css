@@ -2996,3 +2996,99 @@ html[data-totem] .screensaver__still--zoom {
     animation: none;
   }
 }
+
+/* ===== Totem: carrinho na barra lateral =====
+   O carrinho deixa de ser uma faixa por cima da listagem e passa a morar na
+   barra roxa, abaixo das categorias, no espaço que sobrava vazio. A listagem
+   fica com a tela inteira. Vem por último para vencer as regras de faixa do
+   bloco html[data-totem] acima (mesma especificidade). */
+html[data-totem] .dashboard__top {
+  grid-template-columns: 320px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+html[data-totem] .sidebar {
+  grid-row: 1;
+  width: 320px;
+  overflow: hidden;
+}
+html[data-totem] .dashboard__main {
+  padding: max(var(--space-6), env(safe-area-inset-top)) var(--space-5) var(--space-6);
+}
+/* Com a barra lateral mais larga, cards a partir de 200 px para manter as
+   três colunas em 1080 px. */
+html[data-totem] .menu-grid--dashboard {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+/* Categorias mais compactas, para sobrar altura ao carrinho. */
+html[data-totem] .sidebar__nav {
+  flex: 0 0 auto;
+  gap: var(--space-2);
+}
+html[data-totem] .sidebar__item {
+  min-height: 46px;
+}
+html[data-totem] .cart-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: auto;
+  height: auto;
+  margin: var(--space-4) 0 var(--space-3);
+  background: #fff;
+  border: none;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+  /* A barra roxa pinta o texto de branco; dentro do cartão branco, volta ao normal. */
+  color: var(--color-text);
+}
+/* Vazio, o cartão fica só do tamanho do conteúdo. */
+html[data-totem] .cart-panel--empty {
+  flex: 0 0 auto;
+}
+html[data-totem] .cart-panel__header {
+  padding: var(--space-3) var(--space-4);
+  font-size: 1rem;
+}
+html[data-totem] .cart-panel__empty {
+  flex-direction: column;
+  text-align: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+html[data-totem] .cart-panel__empty-bird {
+  width: 56px;
+}
+html[data-totem] .cart-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+html[data-totem] .cart-panel__thumb {
+  width: 44px;
+  height: 44px;
+}
+html[data-totem] .cart-panel__name {
+  font-size: 0.86rem;
+}
+html[data-totem] .cart-panel__footer {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+html[data-totem] .cart-panel__total {
+  font-size: 1.1rem;
+}
+html[data-totem] .cart-panel__footer .btn {
+  width: 100%;
+  flex: none;
+  font-size: 1rem;
+  white-space: nowrap;
+  padding-left: var(--space-3);
+  padding-right: var(--space-3);
+}
+html[data-totem] .sidebar__divider {
+  display: none;
+}

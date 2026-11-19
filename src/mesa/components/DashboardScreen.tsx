@@ -117,10 +117,29 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
     )
   }
 
+  const cartPanel = (
+    <CartPanel
+      items={cart}
+      isOpen={cartOpen}
+      onChangeQuantity={onChangeQuantity}
+      onRemove={onRemove}
+      onSubmit={onSubmit}
+      onClose={() => setCartOpen(false)}
+    />
+  )
+  // No totem o carrinho mora na barra lateral, abaixo das categorias: a
+  // listagem de produtos fica com a tela inteira, sem nada por cima.
+  const totem = document.documentElement.hasAttribute('data-totem')
+
   return (
     <div className="dashboard">
       <div className="dashboard__top">
-        <Sidebar categories={visibleCategories} activeId={activeCategory} onSelect={setActiveCategory} />
+        <Sidebar
+          categories={visibleCategories}
+          activeId={activeCategory}
+          onSelect={setActiveCategory}
+          cartSlot={totem ? cartPanel : undefined}
+        />
 
         <main className="dashboard__main">
           <header className="dashboard__header">
@@ -215,14 +234,7 @@ export default function DashboardScreen({ cart, onAddToCart, onChangeQuantity, o
           )}
         </main>
 
-        <CartPanel
-          items={cart}
-          isOpen={cartOpen}
-          onChangeQuantity={onChangeQuantity}
-          onRemove={onRemove}
-          onSubmit={onSubmit}
-          onClose={() => setCartOpen(false)}
-        />
+        {!totem && cartPanel}
       </div>
 
       {cartOpen && <div className="cart-backdrop" onClick={() => setCartOpen(false)} />}

@@ -111,7 +111,7 @@ export default function CartPanel({ items, isOpen, onChangeQuantity, onRemove, o
   const wakingUp = useJustEnabled(items.length > 0)
 
   return (
-    <aside className={`cart-panel ${isOpen ? 'cart-panel--open' : ''}`}>
+    <aside className={`cart-panel ${isOpen ? 'cart-panel--open' : ''} ${rows.length === 0 ? 'cart-panel--empty' : ''}`}>
       <header className="cart-panel__header">
         <ShoppingBag size={20} strokeWidth={2} aria-hidden />
         {t('cartTitle')}
