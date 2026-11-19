@@ -23,15 +23,64 @@ const POSTER_SRC = '/brand/descanso-acai-2-poster.jpg'
 const ANIM_SRC = '/brand/descanso-acai-2.webp'
 // Versão maior para o totem (tela de 32"), onde ela substitui o vídeo de vez.
 const ANIM_TOTEM_SRC = '/brand/descanso-acai-2-720.webp'
+// Foto parada do totem, em tamanho de tela cheia (o poster comum tem 540 px).
+const POSTER_TOTEM_SRC = '/brand/descanso-acai-2-totem.jpg'
+
+const isTotem = () => document.documentElement.hasAttribute('data-totem')
 
 /*
- * No totem (painel Android de sinalização, ex.: iiyama TF3239AS) o <video> não
- * serve: o chip de vídeo desenha numa camada própria por cima da página — com
- * os canais de cor trocados (o roxo do açaí saía azul, o bico laranja também),
- * cobrindo o "Peça aqui" e atrapalhando o toque para acordar. Lá a tela de
- * descanso usa só a imagem animada, que o navegador desenha junto com a página.
+ * Totem (painel Android de sinalização, ex.: iiyama TF3239AS). Mostrar o
+ * <video> direto não serve lá: o chip de vídeo desenha numa camada própria por
+ * cima da página, com os canais de cor trocados (o roxo saía azul), cobrindo o
+ * "Peça aqui" e travando o toque para sair. A imagem animada também não: cada
+ * quadro redesenha a tela inteira (o Android dele roda em 4K) e o toque ficava
+ * na fila.
+ *
+ * Então lá o vídeo toca escondido num ponto de 2 px e, a cada quadro, é
+ * copiado para um <canvas> em tela cheia. O chip só decodifica; quem mostra é
+ * a placa de vídeo, junto com a página — cores certas, "Peça aqui" por cima,
+ * toque normal, e o canvas atualiza sem redesenhar o resto. O <video> nunca é
+ * removido da página (só pausado): desmontá-lo tocando era suspeito do
+ * travamento.
+ *
+ * `?descanso=foto` (foto com zoom) e `?descanso=anim` (WebP animado) trocam o
+ * modo naquele aparelho, para comparar; `?descanso=video` volta ao padrão.
  */
-const isTotem = () => document.documentElement.hasAttribute('data-totem')
+type TotemMode = 'video' | 'foto' | 'anim'
+const totemMode: TotemMode = (() => {
+  const param = new URLSearchParams(window.location.search).get('descanso')
+  const valid = (m: string | null): m is TotemMode => m === 'video' || m === 'foto' || m === 'anim'
+  try {
+    if (param === 'video') localStorage.removeItem('mesa:descanso')
+    else if (valid(param)) localStorage.setItem('mesa:descanso', param)
+    const saved = localStorage.getItem('mesa:descanso')
+    return valid(saved) ? saved : 'video'
+  } catch {
+    return valid(param) ? param : 'video'
+  }
+})()
+
+let totemVideo: HTMLVideoElement | null = null
+/** O <video> fonte do totem: criado uma vez, fica na página para sempre. */
+function getTotemVideo(): HTMLVideoElement {
+  if (totemVideo) return totemVideo
+  const v = document.createElement('video')
+  v.className = 'screensaver__source'
+  v.src = VIDEO_SRC
+  v.muted = true
+  v.defaultMuted = true
+  v.setAttribute('muted', '')
+  v.loop = true
+  v.playsInline = true
+  v.setAttribute('playsinline', '')
+  v.preload = 'auto'
+  v.disablePictureInPicture = true
+  v.setAttribute('disableremoteplayback', '')
+  v.setAttribute('aria-hidden', 'true')
+  document.body.appendChild(v)
+  totemVideo = v
+  return v
+}
 
 /** iPhone/iPad (inclui iPad que se apresenta como Mac). */
 const isIOS = () =>
@@ -128,6 +177,7 @@ export default function Screensaver({ enabled, onAbandoned }: Props) {
   const [videoBlocked, setVideoBlocked] = useState(false)
   const timer = useRef<number>()
   const videoSlot = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   // Guardado numa ref para o efeito abaixo depender só da fase. Recebendo a
   // função direto, qualquer re-render do App recriaria a callback e reiniciaria
@@ -176,7 +226,7 @@ export default function Screensaver({ enabled, onAbandoned }: Props) {
 
     // Já começa a baixar o que o descanso vai mostrar, para ele abrir sem espera.
     const totem = isTotem()
-    if (totem) new Image().src = ANIM_TOTEM_SRC
+    if (totem) new Image().src = totemMode === 'anim' ? ANIM_TOTEM_SRC : POSTER_TOTEM_SRC
     // Fora do iOS o vídeo só nasce quando o descanso abre: nada de vídeo
     // carregado em segundo plano enquanto o cliente navega no cardápio.
     else if (isIOS()) getVideo()
@@ -224,6 +274,59 @@ export default function Screensaver({ enabled, onAbandoned }: Props) {
     }
   }, [showing, totem])
 
+  // Totem: o vídeo escondido é copiado quadro a quadro para o canvas.
+  const totemVideoMode = totem && totemMode === 'video'
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!showing || !totemVideoMode || !canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) {
+      setVideoBlocked(true)
+      return
+    }
+    const v = getTotemVideo()
+    setVideoBlocked(false)
+    let stopped = false
+    let raf = 0
+    type FrameCallbackVideo = HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number }
+    const fv = v as FrameCallbackVideo
+
+    const draw = () => {
+      if (stopped) return
+      if (v.readyState >= 2) {
+        try {
+          ctx.drawImage(v, 0, 0, canvas.width, canvas.height)
+        } catch {
+          stopped = true
+          setVideoBlocked(true)
+          return
+        }
+      }
+      schedule()
+    }
+    // requestVideoFrameCallback desenha só quando chega quadro novo (30 por
+    // segundo, não 60); sem ele, a cada quadro de tela.
+    const schedule = () => {
+      if (fv.requestVideoFrameCallback) fv.requestVideoFrameCallback(draw)
+      else raf = requestAnimationFrame(draw)
+    }
+
+    const startTime = v.currentTime
+    v.play()
+      .then(schedule)
+      .catch(() => setVideoBlocked(true))
+    const check = window.setTimeout(() => {
+      if (v.paused || v.currentTime === startTime) setVideoBlocked(true)
+    }, STALL_MS * 2)
+
+    return () => {
+      stopped = true
+      window.clearTimeout(check)
+      cancelAnimationFrame(raf)
+      v.pause()
+    }
+  }, [showing, totemVideoMode])
+
   if (!showing) return null
 
   return (
@@ -241,7 +344,20 @@ export default function Screensaver({ enabled, onAbandoned }: Props) {
       {/* Plano B quando o navegador não deixa o vídeo tocar: o mesmo vídeo
           como imagem animada, que começa sozinha. O quadro estático fica por
           baixo enquanto ela ainda baixa. */}
-      {(totem || videoBlocked) && (
+      {/* Totem: foto por baixo (aparece até o primeiro quadro, e fica com zoom
+          lento se o vídeo não tocar ou no modo "foto"), canvas do vídeo por cima. */}
+      {totem && totemMode !== 'anim' && (
+        <img
+          className={`screensaver__still ${totemMode === 'foto' || videoBlocked ? 'screensaver__still--zoom' : ''}`}
+          src={POSTER_TOTEM_SRC}
+          alt=""
+          aria-hidden
+        />
+      )}
+      {totemVideoMode && !videoBlocked && (
+        <canvas ref={canvasRef} className="screensaver__canvas" width={720} height={1280} aria-hidden />
+      )}
+      {((totem && totemMode === 'anim') || (!totem && videoBlocked)) && (
         <>
           <img className="screensaver__still" src={POSTER_SRC} alt="" aria-hidden />
           <img className="screensaver__still" src={totem ? ANIM_TOTEM_SRC : ANIM_SRC} alt="" aria-hidden />

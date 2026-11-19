@@ -2842,12 +2842,54 @@ html[data-totem] .celebration,
 html[data-totem] .fly-layer {
   display: none;
 }
-/* Cards fora da tela não são desenhados até a rolagem chegar perto deles. */
-html[data-totem] .menu-grid .item-card-slot {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 420px;
-}
+/* Sem content-visibility nos cards: com ela o navegador deixava de desenhar
+   (e de reconhecer o toque em) cards que achava fora da tela, e o toque caía
+   no envelope do card — o produto não ia para o carrinho. Com ~20 cards o
+   ganho era pequeno. */
 /* Sombras grandes dos cards custam a cada quadro de rolagem em GPU fraca. */
 html[data-totem] .item-card {
   box-shadow: none;
+}
+
+/* Descanso do totem: foto parada com zoom lento. Camada própria
+   (will-change), então o zoom é só composição na placa de vídeo — a página
+   não é redesenhada e o toque para sair responde na hora. Mais específico que
+   o "animation: none" do modo leve, por isso vence. */
+html[data-totem] .screensaver__still--zoom {
+  will-change: transform;
+  transform-origin: 50% 45%;
+  animation: screensaver-zoom 18s ease-in-out infinite alternate !important;
+}
+@keyframes screensaver-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.1);
+  }
+}
+
+/* Totem: o vídeo é copiado para este canvas (ver Screensaver.tsx). */
+.screensaver__canvas {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* O <video> fonte: dentro da tela (Android pausa vídeo mudo fora dela), mas
+   num ponto de 2 px, invisível e atrás de tudo. Pequeno assim, nenhum
+   navegador o promove a camada própria nem a player de tela cheia. */
+.screensaver__source {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 2px;
+  height: 2px;
+  opacity: 0.01;
+  pointer-events: none;
+  z-index: -1;
 }
