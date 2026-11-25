@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Forest Açaí Cardápio Digital</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+        color: #fff;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(120% 90% at 50% 0%, #2a1f3d 0%, #17121f 60%, #0c0910 100%);
+      }
+      .wrap { text-align: center; padding: 2rem; }
+      .logo { width: 140px; height: 140px; object-fit: cover; border-radius: 24px; box-shadow: 0 16px 34px rgba(0,0,0,0.5); margin-bottom: 1.5rem; }
+      h1 { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 1.5rem; margin: 0 0 0.5rem; letter-spacing: 0.02em; }
+      p.subtitle { color: #c9bfe0; margin: 0 0 2.5rem; }
+      .links { display: flex; gap: 1.25rem; justify-content: center; flex-wrap: wrap; }
+      a.card {
+        display: block;
+        width: 220px;
+        padding: 2rem 1rem;
+        border-radius: 20px;
+        background: rgba(255,255,255,0.06);
+        border: 2px solid rgba(255,255,255,0.16);
+        color: #fff;
+        text-decoration: none;
+        font-size: 1.1rem;
+        font-weight: 700;
+        backdrop-filter: blur(2px);
+      }
+      a.card:active { background: #d6a93b; border-color: #d6a93b; color: #17121f; }
+      .card-icon { display: block; margin: 0 auto 0.75rem; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <img class="logo" src="/brand/logo.png" alt="Forest Açaí" />
+      <h1>FOREST AÇAÍ Cardápio Digital</h1>
+      <p class="subtitle">Protótipo, escolha o app para abrir</p>
+      <div class="links">
+        <a class="card" href="/mesa/">
+          <svg class="card-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+          App da Mesa
+        </a>
+        <a class="card" href="/equipe/">
+          <svg class="card-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+          App da Equipe
+        </a>
+        <a class="card" href="/cardapio/">
+          <svg class="card-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Cardápio (só consulta)
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

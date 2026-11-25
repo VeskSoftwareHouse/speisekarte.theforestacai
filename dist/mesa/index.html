@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <!-- Modo totem aplicado aqui, antes de qualquer pintura: navegadores
+         embutidos antigos (painéis Android) às vezes ignoram a troca da meta
+         viewport feita depois que a página já carregou. Mesma regra de
+         src/mesa/totem.ts: ?totem=1 liga e fica guardado, ?totem=0 desliga.
+         Além disso o painel do totem (iiyama ProLite TF....) é reconhecido
+         pelo modelo e liga sozinho — trocar de navegador ou limpar os dados
+         não derruba mais o layout. -->
+    <script>
+      (function () {
+        var PANEL = /\bTF\d{4}[A-Z]{0,3}\b/ // modelos iiyama ProLite TF (ex.: TF3239AS-B1AG)
+        var p = /[?&]totem=([01])/.exec(location.search)
+        var off = false
+        var on = false
+        try {
+          if (p && p[1] === '1') localStorage.setItem('mesa:totem', '1')
+          if (p && p[1] === '0') localStorage.setItem('mesa:totem', '0')
+          var saved = localStorage.getItem('mesa:totem')
+          on = saved === '1'
+          off = saved === '0'
+        } catch (e) {
+          on = !!(p && p[1] === '1')
+          off = !!(p && p[1] === '0')
+        }
+        // Opera e navegadores antigos mandam o modelo no user agent.
+        if (!on && !off && PANEL.test(navigator.userAgent)) on = true
+
+        function apply() {
+          document.documentElement.setAttribute('data-totem', '')
+          var m = document.querySelector('meta[name="viewport"]')
+          if (m) m.setAttribute('content', 'width=1080, user-scalable=no, viewport-fit=cover')
+        }
+        if (on) {
+          apply()
+          try { localStorage.setItem('mesa:totem', '1') } catch (e) {}
+          return
+        }
+        if (off) return
+
+        // Chrome esconde o modelo no user agent, mas o entrega se pedido. Como a
+        // resposta chega depois da página começar, grava e recarrega uma vez.
+        var uad = navigator.userAgentData
+        if (uad && uad.getHighEntropyValues) {
+          uad.getHighEntropyValues(['model']).then(function (d) {
+            if (!PANEL.test(d.model || '')) return
+            try {
+              if (sessionStorage.getItem('mesa:totem-reload')) return
+              sessionStorage.setItem('mesa:totem-reload', '1')
+              localStorage.setItem('mesa:totem', '1')
+              location.reload()
+            } catch (e) {
+              apply()
+            }
+          }, function () {})
+        }
+      })()
+    </script>
+    <title>Cardápio Faça seu Pedido</title>
+    <meta name="description" content="Cardápio digital da mesa: navegue, monte seu pedido e envie para a cozinha." />
+    <meta name="theme-color" content="#17121f" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Caveat, Fredoka, Playfair Display e Space Mono existem só para a frase
+         da sidebar, que reescreve a si mesma trocando de idioma e de fonte.
+         Um peso de cada, para não pesar o carregamento à toa. -->
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700;800&family=Caveat:wght@700&family=Fredoka:wght@500&family=Playfair+Display:ital,wght@1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono&display=swap" rel="stylesheet" />
+
+    <link rel="manifest" href="/mesa/manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Cardápio" />
+    <link rel="apple-touch-icon" href="/mesa/icons/icon-192.png" />
+    <link rel="icon" href="/mesa/icons/icon-192.png" />
+    <script type="module" crossorigin src="/assets/mesa-CWb-qoYX.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/base-BEHDrlS7.js">
+    <link rel="modulepreload" crossorigin href="/assets/createLucideIcon-BWlmi5VN.js">
+    <link rel="modulepreload" crossorigin href="/assets/supabaseClient-B09I4poB.js">
+    <link rel="modulepreload" crossorigin href="/assets/mesa-B_ucYKlk.js">
+    <link rel="modulepreload" crossorigin href="/assets/smartphone-0qcHCtqK.js">
+    <link rel="modulepreload" crossorigin href="/assets/nfc-CKVeyqIu.js">
+    <link rel="modulepreload" crossorigin href="/assets/triangle-alert-DNQBBAXt.js">
+    <link rel="stylesheet" crossorigin href="/assets/base-B92Bhnrm.css">
+    <link rel="stylesheet" crossorigin href="/assets/mesa-NmIdrerY.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
