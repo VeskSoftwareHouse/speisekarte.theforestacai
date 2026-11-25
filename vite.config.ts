@@ -9,6 +9,7 @@ import { resolve } from 'path'
 //   /equipe/     -> App da Equipe (staff)
 //   /recibo/     -> comprovante que o QR do totem abre no celular do cliente
 //   /cardapio/   -> cardápio só para consulta, sem carrinho nem pagamento
+//   /balanca/    -> estação self-service: lê a balança e cobra pelo peso
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -32,6 +33,7 @@ export default defineConfig({
         equipe: resolve(__dirname, 'equipe/index.html'),
         recibo: resolve(__dirname, 'recibo/index.html'),
         cardapio: resolve(__dirname, 'cardapio/index.html'),
+        balanca: resolve(__dirname, 'balanca/index.html'),
       },
     },
   },

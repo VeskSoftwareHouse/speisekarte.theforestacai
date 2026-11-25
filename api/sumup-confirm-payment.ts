@@ -161,9 +161,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // `pago_em` é carimbado pelo gatilho do banco na troca de status.
     // Condicional ao status: duas consultas simultâneas (totem + varredura do
     // painel) não baixam o estoque duas vezes.
+    // Pedido da balança é autoatendimento: não passa pela cozinha, então já
+    // nasce `entregue` (o gatilho só carimba `pago_em` ao entrar em `recebido`,
+    // por isso ele é gravado aqui).
+    const selfService = order.origem === 'balanca'
     const { data: updated, error: updateErr } = await supabase
       .from('orders')
-      .update({ status: 'recebido', forma_pagamento: paymentMethod })
+      .update(
+        selfService
+          ? { status: 'entregue', forma_pagamento: paymentMethod, pago_em: new Date().toISOString() }
+          : { status: 'recebido', forma_pagamento: paymentMethod },
+      )
       .eq('id', orderId)
       .eq('status', 'aguardando_pagamento')
       .select('id')
@@ -182,7 +190,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.error('sumup-confirm-payment: falha na baixa de estoque', { orderId, err })
       }
     }
-    res.status(200).json({ status: 'recebido' })
+    res.status(200).json({ status: selfService ? 'entregue' : 'recebido' })
     return
   }
 

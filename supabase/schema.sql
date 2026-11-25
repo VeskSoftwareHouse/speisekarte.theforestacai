@@ -194,6 +194,11 @@ alter table orders add column if not exists forma_pagamento text;
 -- editar um sem o outro).
 alter table orders add column if not exists valor_recebido_dinheiro numeric(10,2);
 
+-- De onde veio o pedido: 'totem' (cardápio digital, padrão) ou 'balanca'
+-- (estação self-service por peso). Pedido da balança não passa pela cozinha —
+-- ver api/balanca-pedido.ts e api/sumup-confirm-payment.ts.
+alter table orders add column if not exists origem text not null default 'totem';
+
 -- Relatórios: marcos de tempo do pedido. `atualizado_em` sozinho não serve
 -- porque muda a cada avanço de status; estas duas colunas congelam o instante
 -- do pagamento e o da entrega, que é de onde sai o tempo médio de preparo.

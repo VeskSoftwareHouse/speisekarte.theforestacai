@@ -10,3 +10,4 @@ brand-assets/
 
 .vercel
 .env*
+server-dist
