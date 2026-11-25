@@ -3054,11 +3054,7 @@ var server = http.createServer(async (req, res) => {
       res.statusCode = 405;
       return res.end();
     }
-    if (url.pathname === "/") {
-      res.statusCode = 302;
-      res.setHeader("Location", "/mesa/" + url.search);
-      return res.end();
-    }
+    if (url.pathname === "/") url.pathname = "/mesa/index.html";
     if (url.pathname === "/apps" || url.pathname === "/apps/") url.pathname = "/index.html";
     await serveStatic(req, res, url);
   } catch (e) {
