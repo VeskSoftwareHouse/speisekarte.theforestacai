@@ -22,4 +22,9 @@ if (!pronto()) {
   }
 }
 
-await import('./server-dist/index.mjs')
+// Sem `await` no topo: o LiteSpeed da Hostinger carrega este arquivo com
+// require(), que recusa módulos ES com top-level await.
+import('./server-dist/index.mjs').catch((e) => {
+  console.error('Falha ao iniciar o servidor:', e)
+  process.exit(1)
+})
